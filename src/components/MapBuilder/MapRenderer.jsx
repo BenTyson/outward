@@ -15,6 +15,16 @@ const MapRenderer = () => {
       return;
     }
     
+    // Check if location data is available
+    const lng = location.lng || -104.9903; // Default to Denver
+    const lat = location.lat || 39.7392;   // Default to Denver
+    const zoom = location.zoom || 12;      // Default zoom
+    
+    if (!lng || !lat || !zoom) {
+      setError('Location data not available');
+      return;
+    }
+    
     setImageLoading(true);
     setLoading(true);
     
@@ -24,9 +34,9 @@ const MapRenderer = () => {
       const height = Math.round(width / aspectRatio);
       
       const url = getMapboxStaticUrl({
-        lng: location.lng,
-        lat: location.lat,
-        zoom: location.zoom,
+        lng,
+        lat,
+        zoom,
         width: Math.min(width, 1280),
         height: Math.min(height, 1280)
       });
@@ -84,7 +94,7 @@ const MapRenderer = () => {
     }, 500);
     
     return () => clearTimeout(debounceTimer);
-  }, [location.lng, location.lat, location.zoom, glassType]);
+  }, [location.lng, location.lat, location.zoom, glassType, generateMapImage]);
   
   return (
     <div className="map-renderer">
