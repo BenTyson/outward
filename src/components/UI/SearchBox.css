@@ -1,0 +1,54 @@
+.search-box-container {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.geocoder-container {
+  width: 100%;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder {
+  max-width: none;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--input {
+  height: 48px;
+  padding: 0 48px 0 16px;
+  font-size: 1rem;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--icon-search {
+  top: 14px;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--button {
+  top: 14px;
+  right: 14px;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestions {
+  border-radius: 0 0 8px 8px;
+  margin-top: -1px;
+}
+
+.search-error {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background: #fee;
+  color: #c00;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .geocoder-container .mapboxgl-ctrl-geocoder--input {
+    font-size: 16px;
+  }
+}

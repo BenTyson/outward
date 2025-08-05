@@ -1,0 +1,110 @@
+.canvas-composer {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.canvas-composer h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.export-preview {
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.export-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.export-error {
+  padding: 0.75rem;
+  background: #fee;
+  color: #c00;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.export-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preview-btn,
+.export-btn {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preview-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.preview-btn:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.export-btn {
+  background: #000;
+  color: white;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.preview-btn:disabled,
+.export-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-info {
+  padding: 1rem;
+  background: white;
+  border-radius: 4px;
+  border-left: 4px solid #333;
+}
+
+.export-info p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.export-info p:first-child {
+  margin-top: 0;
+}
+
+.export-info p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .export-controls {
+    flex-direction: column;
+  }
+  
+  .preview-btn,
+  .export-btn {
+    width: 100%;
+  }
+}

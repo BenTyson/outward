@@ -1,0 +1,166 @@
+.text-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.text-controls {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.text-controls h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.text-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.text-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.add-text-btn {
+  padding: 0.75rem 1.5rem;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s ease;
+}
+
+.add-text-btn:hover {
+  background: #555;
+}
+
+.text-preview-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
+
+.text-preview-backdrop {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, #222 25%, transparent 25%),
+              linear-gradient(-45deg, #222 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #222 75%),
+              linear-gradient(-45deg, transparent 75%, #222 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+.text-element {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+  transition: opacity 0.2s ease;
+}
+
+.text-element:hover {
+  opacity: 0.9;
+}
+
+.text-element.selected {
+  outline: 2px dashed #fff;
+  outline-offset: 4px;
+}
+
+.text-content {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.text-list {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.text-list h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.text-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.text-item-content {
+  font-weight: 500;
+  color: #333;
+}
+
+.text-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.text-item-controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.size-slider {
+  flex: 1;
+  min-width: 100px;
+}
+
+.remove-text-btn {
+  padding: 0.5rem 1rem;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s ease;
+}
+
+.remove-text-btn:hover {
+  background: #c82333;
+}
+
+@media (max-width: 640px) {
+  .text-preview-container {
+    aspect-ratio: 4 / 3;
+  }
+  
+  .text-item-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .text-item-controls label {
+    width: 100%;
+  }
+}
