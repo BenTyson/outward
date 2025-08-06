@@ -1,7 +1,8 @@
 export const GLASS_RATIOS = {
   pint: { width: 10.64, height: 6, name: 'Pint Glass' },
   wine: { width: 8.85, height: 3.8, name: 'Wine Glass' },
-  rocks: { width: 3.92, height: 9.46, name: 'Rocks Glass' }
+  rocks: { width: 9.46, height: 3.92, name: 'Rocks Glass' },
+  shot: { width: 6.2, height: 2.5, name: 'Shot Glass' }
 };
 
 export const calculateDimensions = (glassType, targetDPI = 600) => {

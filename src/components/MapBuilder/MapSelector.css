@@ -21,7 +21,11 @@
 }
 
 .map-container-wrapper.glass-rocks {
-  aspect-ratio: 3.92 / 9.46;
+  aspect-ratio: 9.46 / 3.92;
+}
+
+.map-container-wrapper.glass-shot {
+  aspect-ratio: 6.2 / 2.5;
 }
 
 .map-container {
