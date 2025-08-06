@@ -19,7 +19,6 @@ const MapSelector = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, lat: 0, lng: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
-  const [isLoadingNewImage, setIsLoadingNewImage] = useState(false);
   
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -176,6 +175,9 @@ const MapSelector = () => {
   // Drag functionality for static map
   const handleDragStart = (e) => {
     e.preventDefault();
+    const target = e.currentTarget;
+    const rect = target.getBoundingClientRect();
+    
     setIsDragging(true);
     const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
     const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
@@ -184,7 +186,9 @@ const MapSelector = () => {
       x: clientX,
       y: clientY,
       lat: location.lat || 39.7392,
-      lng: location.lng || -104.9903
+      lng: location.lng || -104.9903,
+      containerWidth: rect.width,
+      containerHeight: rect.height
     });
     setDragOffset({ x: 0, y: 0 });
   };
@@ -212,49 +216,43 @@ const MapSelector = () => {
     });
   };
 
-  const handleDragEnd = async () => {
+  const handleDragEnd = () => {
     if (!isDragging) return;
     
-    setIsLoadingNewImage(true);
-    
-    // Calculate final position
     const zoom = location.zoom || 12;
-    const pixelsPerDegree = Math.pow(2, zoom) * 256 / 360;
-    const latDelta = dragOffset.y / pixelsPerDegree;
-    const lngDelta = -dragOffset.x / (pixelsPerDegree * Math.cos(dragStart.lat * Math.PI / 180));
+    const imageWidth = 800; // Our @2x image is 1600px but displayed at 800px
     
+    // CORRECTED CALCULATION:
+    // At zoom level z, the entire world (360°) spans 256 * 2^z pixels in Web Mercator
+    // Our @2x static image is 1600px wide and represents:
+    const totalLngDegreesInImage = (360 / (256 * Math.pow(2, zoom))) * 1600;
+    
+    // But we display this 1600px image at 800px, so degrees per displayed pixel:
+    const lngDegreesPerDisplayedPixel = totalLngDegreesInImage / imageWidth;
+    
+    // For latitude, it's the same calculation (for small areas, lat/lng degrees are similar)
+    const latDegreesPerDisplayedPixel = lngDegreesPerDisplayedPixel;
+    
+    // Calculate coordinate deltas (note the direction corrections)
+    const lngDelta = -dragOffset.x * lngDegreesPerDisplayedPixel; // Negative: drag right = move west
+    const latDelta = dragOffset.y * latDegreesPerDisplayedPixel;   // Positive: drag down = move south
+    
+    console.log(`Drag: ${dragOffset.x},${dragOffset.y}px → Δ${lngDelta.toFixed(6)},${latDelta.toFixed(6)}°`);
+    
+    // Calculate new coordinates
     const newLat = Math.max(-85, Math.min(85, dragStart.lat + latDelta));
     const newLng = dragStart.lng + lngDelta;
     
-    const newLocation = {
+    // Update location
+    setLocation({
       ...location,
       lat: newLat,
       lng: newLng
-    };
+    });
     
-    // Generate new image URL
-    const { aspectRatio } = calculateDimensions(glassType);
-    const width = 800;
-    const height = Math.round(width / aspectRatio);
-    const newImageUrl = `https://api.mapbox.com/styles/v1/lumengrave/clm6vi67u02jm01qiayvjbsmt/static/${newLng},${newLat},${zoom}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
-    
-    try {
-      // Preload the new image
-      await preloadImage(newImageUrl);
-      
-      // Once loaded, update everything simultaneously
-      setLocation(newLocation);
-      setCurrentImageUrl(newImageUrl);
-      
-    } catch (error) {
-      console.error('Failed to load new image:', error);
-      // Still update location even if image fails
-      setLocation(newLocation);
-    } finally {
-      setIsDragging(false);
-      setDragOffset({ x: 0, y: 0 });
-      setIsLoadingNewImage(false);
-    }
+    // Reset drag state
+    setIsDragging(false);
+    setDragOffset({ x: 0, y: 0 });
   };
   
   // Add event listeners for drag
@@ -295,13 +293,13 @@ const MapSelector = () => {
 
   // Initialize current image URL when location changes (but not during drag)
   useEffect(() => {
-    if (!isDragging && !isLoadingNewImage) {
+    if (!isDragging) {
       const newUrl = getStaticMapUrl();
       if (newUrl !== currentImageUrl) {
         setCurrentImageUrl(newUrl);
       }
     }
-  }, [location.lng, location.lat, location.zoom, glassType, isDragging, isLoadingNewImage]);
+  }, [location.lng, location.lat, location.zoom, glassType, isDragging]);
 
   return (
     <div className="map-selector">
@@ -323,7 +321,7 @@ const MapSelector = () => {
               <img 
                 src={currentImageUrl} 
                 alt="Map" 
-                className={`static-map-image ${isDragging ? 'dragging' : ''} ${isLoadingNewImage ? 'loading' : ''}`}
+                className={`static-map-image ${isDragging ? 'dragging' : ''}`}
                 style={{
                   transform: isDragging ? `translate(${dragOffset.x}px, ${dragOffset.y}px)` : 'none',
                   transition: isDragging ? 'none' : 'transform 0.2s ease'
