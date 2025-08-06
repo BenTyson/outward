@@ -166,15 +166,7 @@
 
 .draggable-text {
   color: #000000;
-  text-shadow: 
-    -2px -2px 0 #ffffff,
-    2px -2px 0 #ffffff,
-    -2px 2px 0 #ffffff,
-    2px 2px 0 #ffffff,
-    -2px 0 0 #ffffff,
-    2px 0 0 #ffffff,
-    0 -2px 0 #ffffff,
-    0 2px 0 #ffffff;
+  /* Text shadow is dynamically generated in the component for rounded edges */
 }
 
 .draggable-icon {

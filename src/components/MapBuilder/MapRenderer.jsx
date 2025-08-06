@@ -6,22 +6,15 @@ import { flatIcons, renderIcon } from '../../utils/icons';
 import './MapRenderer.css';
 
 const MapRenderer = () => {
-  const { location, glassType, setMapImage, setLoading, setError } = useMapConfig();
+  const { location, glassType, texts, icons, updateText, updateIcon, setMapImage, setLoading, setError } = useMapConfig();
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [hasInitiallyGenerated, setHasInitiallyGenerated] = useState(false);
-  const [overlayText, setOverlayText] = useState('');
-  const [textPosition, setTextPosition] = useState({ x: 50, y: 80 }); // Percentage positions
-  const [textSize, setTextSize] = useState(50); // Font size
-  const [textStrokeWidth, setTextStrokeWidth] = useState(2); // Text stroke width
-  const [overlayText2, setOverlayText2] = useState('');
-  const [textPosition2, setTextPosition2] = useState({ x: 50, y: 20 }); // Percentage positions
-  const [textSize2, setTextSize2] = useState(40); // Font size
-  const [textStrokeWidth2, setTextStrokeWidth2] = useState(2); // Text stroke width
-  const [selectedIcon, setSelectedIcon] = useState('');
-  const [iconPosition, setIconPosition] = useState({ x: 80, y: 20 }); // Percentage positions
-  const [iconSize, setIconSize] = useState(50); // Icon size
-  const [iconStrokeWidth, setIconStrokeWidth] = useState(2); // Icon stroke width
+  
+  // Get text and icon objects from context
+  const text1 = texts.find(t => t.id === 'text1') || null;
+  const text2 = texts.find(t => t.id === 'text2') || null;
+  const icon1 = icons.find(i => i.id === 'icon1') || null;
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [isDraggingText2, setIsDraggingText2] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
@@ -32,6 +25,33 @@ const MapRenderer = () => {
   const iconRef = useRef(null);
   const updateTimeoutRef = useRef(null);
   const lastLocationRef = useRef(null);
+
+  // Generate rounded text shadow with more points for smooth curves
+  const generateRoundedTextShadow = (strokeWidth) => {
+    if (strokeWidth === 0) return 'none';
+    
+    const shadows = [];
+    const steps = 16; // More steps = smoother curves
+    
+    for (let i = 0; i < steps; i++) {
+      const angle = (i / steps) * 2 * Math.PI;
+      const x = Math.cos(angle) * strokeWidth;
+      const y = Math.sin(angle) * strokeWidth;
+      shadows.push(`${x.toFixed(2)}px ${y.toFixed(2)}px 0 #ffffff`);
+    }
+    
+    // Add additional intermediate points for extra smoothness
+    for (let radius = strokeWidth * 0.7; radius > 0; radius -= strokeWidth * 0.3) {
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * 2 * Math.PI;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        shadows.push(`${x.toFixed(2)}px ${y.toFixed(2)}px 0 #ffffff`);
+      }
+    }
+    
+    return shadows.join(', ');
+  };
 
   // Position calculation helper - converts percentage to pixels
   const getPixelPosition = useCallback((percentagePos, canvasWidth, canvasHeight) => {
@@ -108,21 +128,21 @@ const MapRenderer = () => {
     
     e.preventDefault();
     
-    if (isDraggingText) {
+    if (isDraggingText && text1) {
       const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, textRef.current);
-      setTextPosition(newPos);
+      updateText('text1', { position: newPos });
     }
     
-    if (isDraggingText2) {
+    if (isDraggingText2 && text2) {
       const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, text2Ref.current);
-      setTextPosition2(newPos);
+      updateText('text2', { position: newPos });
     }
     
-    if (isDraggingIcon) {
+    if (isDraggingIcon && icon1) {
       const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, iconRef.current);
-      setIconPosition(newPos);
+      updateIcon('icon1', { position: newPos });
     }
-  }, [isDraggingText, isDraggingText2, isDraggingIcon, dragOffset, getPercentagePosition]);
+  }, [isDraggingText, isDraggingText2, isDraggingIcon, dragOffset, getPercentagePosition, text1, text2, icon1, updateText, updateIcon]);
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
@@ -260,69 +280,87 @@ const MapRenderer = () => {
     ctx.drawImage(baseImg, 0, 0, width, height);
     
     // Add first text overlay if provided
-    if (overlayText.trim()) {
-      const fontSize = (textSize / 100) * Math.min(width, height) * 0.15;
+    if (text1 && text1.content && text1.content.trim()) {
+      const fontSize = (text1.size / 100) * Math.min(width, height) * 0.15;
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      const textCoords = getPixelPosition(textPosition, width, height);
-      const scaledStrokeWidth = textStrokeWidth * (fontSize / 50); // Scale stroke with font size
+      const textCoords = getPixelPosition(text1.position, width, height);
+      const scaledStrokeWidth = text1.strokeWidth * (fontSize / 50); // Scale stroke with font size
       
-      // White outline
+      // Generate rounded white outline
       ctx.fillStyle = '#ffffff';
-      const offsets = [
-        [-scaledStrokeWidth, -scaledStrokeWidth], [scaledStrokeWidth, -scaledStrokeWidth],
-        [-scaledStrokeWidth, scaledStrokeWidth], [scaledStrokeWidth, scaledStrokeWidth],
-        [-scaledStrokeWidth, 0], [scaledStrokeWidth, 0],
-        [0, -scaledStrokeWidth], [0, scaledStrokeWidth]
-      ];
+      const steps = 16;
       
-      offsets.forEach(([offsetX, offsetY]) => {
-        ctx.fillText(overlayText, textCoords.x + offsetX, textCoords.y + offsetY);
-      });
+      // Primary circular outline
+      for (let i = 0; i < steps; i++) {
+        const angle = (i / steps) * 2 * Math.PI;
+        const offsetX = Math.cos(angle) * scaledStrokeWidth;
+        const offsetY = Math.sin(angle) * scaledStrokeWidth;
+        ctx.fillText(text1.content, textCoords.x + offsetX, textCoords.y + offsetY);
+      }
+      
+      // Additional layers for smoother stroke
+      for (let radius = scaledStrokeWidth * 0.7; radius > 0; radius -= scaledStrokeWidth * 0.3) {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * 2 * Math.PI;
+          const offsetX = Math.cos(angle) * radius;
+          const offsetY = Math.sin(angle) * radius;
+          ctx.fillText(text1.content, textCoords.x + offsetX, textCoords.y + offsetY);
+        }
+      }
       
       // Black text
       ctx.fillStyle = '#000000';
-      ctx.fillText(overlayText, textCoords.x, textCoords.y);
+      ctx.fillText(text1.content, textCoords.x, textCoords.y);
     }
     
     // Add second text overlay if provided
-    if (overlayText2.trim()) {
-      const fontSize2 = (textSize2 / 100) * Math.min(width, height) * 0.15;
+    if (text2 && text2.content && text2.content.trim()) {
+      const fontSize2 = (text2.size / 100) * Math.min(width, height) * 0.15;
       ctx.font = `bold ${fontSize2}px Arial, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       
-      const textCoords2 = getPixelPosition(textPosition2, width, height);
-      const scaledStrokeWidth2 = textStrokeWidth2 * (fontSize2 / 50); // Scale stroke with font size
+      const textCoords2 = getPixelPosition(text2.position, width, height);
+      const scaledStrokeWidth2 = text2.strokeWidth * (fontSize2 / 50); // Scale stroke with font size
       
-      // White outline
+      // Generate rounded white outline
       ctx.fillStyle = '#ffffff';
-      const offsets2 = [
-        [-scaledStrokeWidth2, -scaledStrokeWidth2], [scaledStrokeWidth2, -scaledStrokeWidth2],
-        [-scaledStrokeWidth2, scaledStrokeWidth2], [scaledStrokeWidth2, scaledStrokeWidth2],
-        [-scaledStrokeWidth2, 0], [scaledStrokeWidth2, 0],
-        [0, -scaledStrokeWidth2], [0, scaledStrokeWidth2]
-      ];
+      const steps2 = 16;
       
-      offsets2.forEach(([offsetX, offsetY]) => {
-        ctx.fillText(overlayText2, textCoords2.x + offsetX, textCoords2.y + offsetY);
-      });
+      // Primary circular outline
+      for (let i = 0; i < steps2; i++) {
+        const angle = (i / steps2) * 2 * Math.PI;
+        const offsetX = Math.cos(angle) * scaledStrokeWidth2;
+        const offsetY = Math.sin(angle) * scaledStrokeWidth2;
+        ctx.fillText(text2.content, textCoords2.x + offsetX, textCoords2.y + offsetY);
+      }
+      
+      // Additional layers for smoother stroke
+      for (let radius = scaledStrokeWidth2 * 0.7; radius > 0; radius -= scaledStrokeWidth2 * 0.3) {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * 2 * Math.PI;
+          const offsetX = Math.cos(angle) * radius;
+          const offsetY = Math.sin(angle) * radius;
+          ctx.fillText(text2.content, textCoords2.x + offsetX, textCoords2.y + offsetY);
+        }
+      }
       
       // Black text
       ctx.fillStyle = '#000000';
-      ctx.fillText(overlayText2, textCoords2.x, textCoords2.y);
+      ctx.fillText(text2.content, textCoords2.x, textCoords2.y);
     }
     
     // Add icon overlay if selected
-    if (selectedIcon && flatIcons[selectedIcon]) {
-      const iconScale = (iconSize / 100) * Math.min(width, height) * 0.2;
-      const iconCoords = getPixelPosition(iconPosition, width, height);
+    if (icon1 && icon1.type && flatIcons[icon1.type]) {
+      const iconScale = (icon1.size / 100) * Math.min(width, height) * 0.2;
+      const iconCoords = getPixelPosition(icon1.position, width, height);
       
       // Create SVG path from icon definition
-      const icon = flatIcons[selectedIcon];
-      const path = new Path2D(icon.path);
+      const iconData = flatIcons[icon1.type];
+      const path = new Path2D(iconData.path);
       
       // Save context state
       ctx.save();
@@ -331,25 +369,37 @@ const MapRenderer = () => {
       ctx.translate(iconCoords.x - iconScale/2, iconCoords.y - iconScale/2);
       ctx.scale(iconScale/24, iconScale/24); // SVG viewBox is 24x24
       
-      // Draw white stroke behind the icon (multiple offset draws like text)
-      if (iconStrokeWidth > 0) {
-        const scaledStrokeWidth = iconStrokeWidth * (24/iconScale);
+      // Draw rounded white stroke behind the icon
+      if (icon1.strokeWidth > 0) {
+        const scaledStrokeWidth = icon1.strokeWidth * (24/iconScale);
         ctx.fillStyle = '#ffffff';
+        const strokeSteps = 16;
         
-        // Draw white background in 8 directions
-        const strokeOffsets = [
-          [-scaledStrokeWidth, -scaledStrokeWidth], [scaledStrokeWidth, -scaledStrokeWidth],
-          [-scaledStrokeWidth, scaledStrokeWidth], [scaledStrokeWidth, scaledStrokeWidth],
-          [-scaledStrokeWidth, 0], [scaledStrokeWidth, 0],
-          [0, -scaledStrokeWidth], [0, scaledStrokeWidth]
-        ];
-        
-        strokeOffsets.forEach(([offsetX, offsetY]) => {
+        // Primary circular stroke
+        for (let i = 0; i < strokeSteps; i++) {
+          const angle = (i / strokeSteps) * 2 * Math.PI;
+          const offsetX = Math.cos(angle) * scaledStrokeWidth;
+          const offsetY = Math.sin(angle) * scaledStrokeWidth;
+          
           ctx.save();
           ctx.translate(offsetX, offsetY);
           ctx.fill(path);
           ctx.restore();
-        });
+        }
+        
+        // Additional layers for smoother stroke
+        for (let radius = scaledStrokeWidth * 0.7; radius > 0; radius -= scaledStrokeWidth * 0.3) {
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * 2 * Math.PI;
+            const offsetX = Math.cos(angle) * radius;
+            const offsetY = Math.sin(angle) * radius;
+            
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.fill(path);
+            ctx.restore();
+          }
+        }
       }
       
       // Draw black icon on top
@@ -363,7 +413,7 @@ const MapRenderer = () => {
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     setMapImage(dataUrl); // This is the final export image
     return dataUrl;
-  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, overlayText2, textPosition2, textSize2, textStrokeWidth2, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, setMapImage]);
+  }, [localImageUrl, glassType, text1, text2, icon1, getPixelPosition, setMapImage]);
 
   // Initial generation when component mounts
   useEffect(() => {
@@ -447,80 +497,62 @@ const MapRenderer = () => {
             />
             
             {/* Draggable text overlay */}
-            {overlayText.trim() && (
+            {text1 && text1.content && text1.content.trim() && (
               <div
                 key="draggable-text"
                 ref={textRef}
                 className={`draggable-text ${isDraggingText ? 'dragging' : ''}`}
                 style={{
-                  left: `${textPosition.x}%`,
-                  top: `${textPosition.y}%`,
-                  fontSize: `${textSize}px`,
+                  left: `${text1.position.x}%`,
+                  top: `${text1.position.y}%`,
+                  fontSize: `${text1.size}px`,
                   transform: 'translate(-50%, -50%)',
                   pointerEvents: (isDraggingText2 || isDraggingIcon) ? 'none' : 'auto',
-                  textShadow: `
-                    -${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
-                    ${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
-                    -${textStrokeWidth}px ${textStrokeWidth}px 0 #ffffff,
-                    ${textStrokeWidth}px ${textStrokeWidth}px 0 #ffffff,
-                    -${textStrokeWidth}px 0 0 #ffffff,
-                    ${textStrokeWidth}px 0 0 #ffffff,
-                    0 -${textStrokeWidth}px 0 #ffffff,
-                    0 ${textStrokeWidth}px 0 #ffffff
-                  `
+                  textShadow: generateRoundedTextShadow(text1.strokeWidth)
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'text')}
               >
-                {overlayText}
+                {text1.content}
               </div>
             )}
             
             {/* Draggable second text overlay */}
-            {overlayText2.trim() && (
+            {text2 && text2.content && text2.content.trim() && (
               <div
                 key="draggable-text2"
                 ref={text2Ref}
                 className={`draggable-text ${isDraggingText2 ? 'dragging' : ''}`}
                 style={{
-                  left: `${textPosition2.x}%`,
-                  top: `${textPosition2.y}%`,
-                  fontSize: `${textSize2}px`,
+                  left: `${text2.position.x}%`,
+                  top: `${text2.position.y}%`,
+                  fontSize: `${text2.size}px`,
                   transform: 'translate(-50%, -50%)',
                   pointerEvents: (isDraggingText || isDraggingIcon) ? 'none' : 'auto',
-                  textShadow: `
-                    -${textStrokeWidth2}px -${textStrokeWidth2}px 0 #ffffff,
-                    ${textStrokeWidth2}px -${textStrokeWidth2}px 0 #ffffff,
-                    -${textStrokeWidth2}px ${textStrokeWidth2}px 0 #ffffff,
-                    ${textStrokeWidth2}px ${textStrokeWidth2}px 0 #ffffff,
-                    -${textStrokeWidth2}px 0 0 #ffffff,
-                    ${textStrokeWidth2}px 0 0 #ffffff,
-                    0 -${textStrokeWidth2}px 0 #ffffff,
-                    0 ${textStrokeWidth2}px 0 #ffffff
-                  `
+                  textShadow: generateRoundedTextShadow(text2.strokeWidth)
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'text2')}
               >
-                {overlayText2}
+                {text2.content}
               </div>
             )}
             
             {/* Draggable icon overlay */}
-            {selectedIcon && flatIcons[selectedIcon] && (
+            {icon1 && icon1.type && flatIcons[icon1.type] && (
               <div
                 key="draggable-icon"
                 ref={iconRef}
                 className={`draggable-icon ${isDraggingIcon ? 'dragging' : ''}`}
                 style={{
-                  left: `${iconPosition.x}%`,
-                  top: `${iconPosition.y}%`,
-                  width: `${iconSize}px`,
-                  height: `${iconSize}px`,
+                  left: `${icon1.position.x}%`,
+                  top: `${icon1.position.y}%`,
+                  width: `${icon1.size}px`,
+                  height: `${icon1.size}px`,
                   transform: 'translate(-50%, -50%)',
                   pointerEvents: (isDraggingText || isDraggingText2) ? 'none' : 'auto'
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'icon')}
               >
-                {renderIcon(selectedIcon, iconSize, iconStrokeWidth)}
+                {renderIcon(icon1.type, icon1.size, icon1.strokeWidth)}
               </div>
             )}
           </>
@@ -535,122 +567,6 @@ const MapRenderer = () => {
         >
           {imageLoading ? 'Generating...' : 'Generate Final Design'}
         </button>
-      </div>
-
-      <div className="overlay-controls">
-        <h3>Add Text & Icons (Optional)</h3>
-        
-        <div className="controls-container">
-          <div className="text-controls">
-            <label htmlFor="overlay-text">Text 1:</label>
-            <input
-              id="overlay-text"
-              type="text"
-              value={overlayText}
-              onChange={(e) => setOverlayText(e.target.value)}
-              placeholder="Enter first text..."
-              className="text-input"
-            />
-            <div className="size-control">
-              <label>Text 1 Size: {textSize}px</label>
-              <input
-                type="range"
-                min="20"
-                max="100"
-                value={textSize}
-                onChange={(e) => setTextSize(parseInt(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-            <div className="size-control">
-              <label>Text 1 Stroke Width: {textStrokeWidth}px</label>
-              <input
-                type="range"
-                min="0"
-                max="8"
-                step="0.5"
-                value={textStrokeWidth}
-                onChange={(e) => setTextStrokeWidth(parseFloat(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-            
-            <label htmlFor="overlay-text2">Text 2 (Optional):</label>
-            <input
-              id="overlay-text2"
-              type="text"
-              value={overlayText2}
-              onChange={(e) => setOverlayText2(e.target.value)}
-              placeholder="Enter second text..."
-              className="text-input"
-            />
-            <div className="size-control">
-              <label>Text 2 Size: {textSize2}px</label>
-              <input
-                type="range"
-                min="20"
-                max="100"
-                value={textSize2}
-                onChange={(e) => setTextSize2(parseInt(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-            <div className="size-control">
-              <label>Text 2 Stroke Width: {textStrokeWidth2}px</label>
-              <input
-                type="range"
-                min="0"
-                max="8"
-                step="0.5"
-                value={textStrokeWidth2}
-                onChange={(e) => setTextStrokeWidth2(parseFloat(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-          </div>
-
-          <div className="icon-controls">
-            <label>Add Icon:</label>
-            <select 
-              className="icon-select"
-              value={selectedIcon}
-              onChange={(e) => setSelectedIcon(e.target.value)}
-            >
-              <option value="">No Icon</option>
-              <option value="star">Star</option>
-              <option value="heart">Heart</option>
-              <option value="pin">Location Pin</option>
-              <option value="home">Home</option>
-            </select>
-            <div className="size-control">
-              <label>Icon Size: {iconSize}px</label>
-              <input
-                type="range"
-                min="20"
-                max="175"
-                value={iconSize}
-                onChange={(e) => setIconSize(parseInt(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-            <div className="size-control">
-              <label>Icon Stroke Width: {iconStrokeWidth}px</label>
-              <input
-                type="range"
-                min="0"
-                max="8"
-                step="0.5"
-                value={iconStrokeWidth}
-                onChange={(e) => setIconStrokeWidth(parseFloat(e.target.value))}
-                className="size-slider"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="drag-instruction">
-          <p>💡 <strong>Tip:</strong> Drag the text and icons directly on the preview to position them exactly where you want!</p>
-        </div>
       </div>
       
       <div className="preview-note">

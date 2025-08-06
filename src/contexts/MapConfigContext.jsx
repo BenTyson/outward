@@ -11,7 +11,9 @@ const initialState = {
   mapImageUrl: null,
   previewImageUrl: null,
   isLoading: false,
-  error: null
+  error: null,
+  currentStep: 1,
+  totalSteps: 2
 };
 
 const actionTypes = {
@@ -27,6 +29,9 @@ const actionTypes = {
   SET_PREVIEW_IMAGE: 'SET_PREVIEW_IMAGE',
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',
+  SET_STEP: 'SET_STEP',
+  NEXT_STEP: 'NEXT_STEP',
+  PREV_STEP: 'PREV_STEP',
   RESET: 'RESET'
 };
 
@@ -90,6 +95,21 @@ const mapConfigReducer = (state, action) => {
     case actionTypes.SET_ERROR:
       return { ...state, error: action.payload };
     
+    case actionTypes.SET_STEP:
+      return { ...state, currentStep: action.payload };
+    
+    case actionTypes.NEXT_STEP:
+      return { 
+        ...state, 
+        currentStep: Math.min(state.currentStep + 1, state.totalSteps) 
+      };
+    
+    case actionTypes.PREV_STEP:
+      return { 
+        ...state, 
+        currentStep: Math.max(state.currentStep - 1, 1) 
+      };
+    
     case actionTypes.RESET:
       return initialState;
     
@@ -149,6 +169,18 @@ export const MapConfigProvider = ({ children }) => {
     dispatch({ type: actionTypes.SET_ERROR, payload: error });
   }, []);
   
+  const setStep = useCallback((step) => {
+    dispatch({ type: actionTypes.SET_STEP, payload: step });
+  }, []);
+  
+  const nextStep = useCallback(() => {
+    dispatch({ type: actionTypes.NEXT_STEP });
+  }, []);
+  
+  const prevStep = useCallback(() => {
+    dispatch({ type: actionTypes.PREV_STEP });
+  }, []);
+  
   const reset = useCallback(() => {
     dispatch({ type: actionTypes.RESET });
   }, []);
@@ -167,6 +199,9 @@ export const MapConfigProvider = ({ children }) => {
     setPreviewImage,
     setLoading,
     setError,
+    setStep,
+    nextStep,
+    prevStep,
     reset
   };
   

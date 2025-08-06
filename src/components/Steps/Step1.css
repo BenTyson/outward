@@ -1,0 +1,138 @@
+.step1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.step1-content {
+  display: flex;
+  gap: 0;
+  min-height: 600px; /* Ensure minimum height for map visibility */
+}
+
+/* Map Panel - Left Side */
+.map-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid #e0e0e0;
+}
+
+.panel-header {
+  flex-shrink: 0;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.panel-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.panel-header p {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.map-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem 2rem 2rem;
+  min-height: 500px; /* Ensure map has adequate height */
+}
+
+/* Glass Panel - Right Side */
+.glass-panel {
+  width: 450px;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #e0e0e0;
+}
+
+.glass-selector-container {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1200px) {
+  .glass-panel {
+    width: 380px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .glass-panel {
+    width: 350px;
+  }
+  
+  .panel-header {
+    padding: 1.25rem 1.5rem;
+  }
+  
+  .map-container {
+    padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+  }
+  
+  .glass-selector-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .step1-content {
+    flex-direction: column;
+  }
+  
+  .map-panel {
+    flex: 1;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 50vh;
+  }
+  
+  .glass-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .panel-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .panel-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .panel-header p {
+    font-size: 0.9rem;
+  }
+  
+  .map-container,
+  .glass-selector-container {
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-header {
+    padding: 1rem;
+  }
+  
+  .map-container,
+  .glass-selector-container {
+    padding: 1rem;
+  }
+}

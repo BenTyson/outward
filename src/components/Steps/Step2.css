@@ -1,0 +1,148 @@
+.step2 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.step2-content {
+  display: flex;
+  height: 100%;
+  gap: 0;
+}
+
+/* Preview Panel - Left Side */
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-right: 1px solid #e0e0e0;
+}
+
+.panel-header {
+  padding: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.panel-header h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.panel-header p {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.preview-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  min-height: 0; /* Allow flex child to shrink */
+}
+
+/* Tools Panel - Right Side */
+.tools-panel {
+  width: 400px;
+  background: #f8f9fa;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+}
+
+.tool-section {
+  padding: 2rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tool-section:last-child {
+  border-bottom: none;
+}
+
+.export-section {
+  margin-top: auto; /* Push to bottom */
+  background: white;
+  border-top: 2px solid #e0e0e0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .tools-panel {
+    width: 350px;
+  }
+  
+  .panel-header {
+    padding: 1.5rem;
+  }
+  
+  .preview-container {
+    padding: 1.5rem;
+  }
+  
+  .tool-section {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .step2-content {
+    flex-direction: column;
+  }
+  
+  .preview-panel {
+    flex: 1;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    min-height: 50vh;
+  }
+  
+  .tools-panel {
+    width: 100%;
+    border-left: none;
+    border-top: 1px solid #e0e0e0;
+    max-height: 50vh;
+  }
+  
+  .panel-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .panel-header h2 {
+    font-size: 1.25rem;
+  }
+  
+  .panel-header p {
+    font-size: 0.9rem;
+  }
+  
+  .preview-container {
+    padding: 1rem 1.5rem;
+  }
+  
+  .tool-section {
+    padding: 1rem 1.5rem;
+  }
+  
+  .export-section {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-header {
+    padding: 1rem;
+  }
+  
+  .preview-container,
+  .tool-section {
+    padding: 1rem;
+  }
+}
