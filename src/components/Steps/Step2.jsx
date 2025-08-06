@@ -1,6 +1,5 @@
 import MapRenderer from '../MapBuilder/MapRenderer';
 import TextIconControls from '../UI/TextIconControls';
-import CanvasComposer from '../MapBuilder/CanvasComposer';
 import './Step2.css';
 
 const Step2 = () => {
@@ -22,10 +21,6 @@ const Step2 = () => {
         <div className="tools-panel">
           <div className="tool-section">
             <TextIconControls />
-          </div>
-          
-          <div className="tool-section export-section">
-            <CanvasComposer />
           </div>
         </div>
       </div>

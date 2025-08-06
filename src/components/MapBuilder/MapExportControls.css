@@ -1,0 +1,110 @@
+.map-export-controls {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #333;
+}
+
+.export-error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid #f5c6cb;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.control-buttons button {
+  flex: 1;
+  min-width: 150px;
+  padding: 0.875rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.generate-btn {
+  background: #007bff;
+  color: white;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.preview-btn {
+  background: #28a745;
+  color: white;
+}
+
+.preview-btn:hover:not(:disabled) {
+  background: #1e7e34;
+  transform: translateY(-1px);
+}
+
+.export-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.control-buttons button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.control-info {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.control-info p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #495057;
+}
+
+.control-info p:last-child {
+  margin-bottom: 0;
+}
+
+.control-info strong {
+  color: #212529;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .control-buttons {
+    flex-direction: column;
+  }
+  
+  .control-buttons button {
+    min-width: unset;
+    width: 100%;
+  }
+  
+  .map-export-controls {
+    padding: 1rem;
+  }
+}

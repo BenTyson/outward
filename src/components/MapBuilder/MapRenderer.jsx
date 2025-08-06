@@ -3,6 +3,7 @@ import { getMapboxStaticUrl, validateMapboxToken } from '../../utils/mapbox';
 import { calculateDimensions } from '../../utils/canvas';
 import { useMapConfig } from '../../contexts/MapConfigContext';
 import { flatIcons, renderIcon } from '../../utils/icons';
+import MapExportControls from './MapExportControls';
 import './MapRenderer.css';
 
 const MapRenderer = () => {
@@ -559,18 +560,13 @@ const MapRenderer = () => {
         )}
       </div>
       
-      <div className="preview-controls">
-        <button 
-          onClick={generateFinalImage}
-          className="refresh-map-btn"
-          disabled={imageLoading}
-        >
-          {imageLoading ? 'Generating...' : 'Generate Final Design'}
-        </button>
-      </div>
+      <MapExportControls 
+        onGenerateFinalImage={generateFinalImage}
+        isGenerating={imageLoading}
+      />
       
       <div className="preview-note">
-        <p>This preview shows the exact static image that will be used for laser engraving. Auto-updates when you stop moving the map above.</p>
+        <p>This preview shows your design with draggable text and icons. Use the controls above to generate final exports.</p>
       </div>
     </div>
   );
