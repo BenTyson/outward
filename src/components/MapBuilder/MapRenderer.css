@@ -173,16 +173,16 @@
 }
 
 .draggable-icon {
-  filter: grayscale(100%) brightness(0%);
-  text-shadow: 
-    -2px -2px 0 #ffffff,
-    2px -2px 0 #ffffff,
-    -2px 2px 0 #ffffff,
-    2px 2px 0 #ffffff,
-    -2px 0 0 #ffffff,
-    2px 0 0 #ffffff,
-    0 -2px 0 #ffffff,
-    0 2px 0 #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000000;
+}
+
+.draggable-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .draggable-text:hover,

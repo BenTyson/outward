@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { getMapboxStaticUrl, validateMapboxToken } from '../../utils/mapbox';
 import { calculateDimensions } from '../../utils/canvas';
 import { useMapConfig } from '../../contexts/MapConfigContext';
+import { flatIcons, renderIcon } from '../../utils/icons';
 import './MapRenderer.css';
 
 const MapRenderer = () => {
@@ -23,15 +24,6 @@ const MapRenderer = () => {
   const textRef = useRef(null);
   const iconRef = useRef(null);
   const updateTimeoutRef = useRef(null);
-
-  // Icon mapping
-  const iconMap = useCallback(() => ({
-    home: '🏠',
-    heart: '❤️',
-    star: '⭐',
-    pin: '📍',
-    compass: '🧭'
-  }), []);
 
   // Position calculation helper - converts percentage to pixels
   const getPixelPosition = useCallback((percentagePos, canvasWidth, canvasHeight) => {
@@ -278,38 +270,38 @@ const MapRenderer = () => {
     }
     
     // Add icon overlay if selected
-    const icons = iconMap();
-    if (selectedIcon && icons[selectedIcon]) {
-      const iconFontSize = (iconSize / 100) * Math.min(width, height) * 0.2;
-      ctx.font = `${iconFontSize}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
+    if (selectedIcon && flatIcons[selectedIcon]) {
+      const iconScale = (iconSize / 100) * Math.min(width, height) * 0.2;
       const iconCoords = getPixelPosition(iconPosition, width, height);
-      const scaledIconStrokeWidth = iconStrokeWidth * (iconFontSize / 50); // Scale stroke with icon size
       
-      // White outline
-      ctx.fillStyle = '#ffffff';
-      const offsets = [
-        [-scaledIconStrokeWidth, -scaledIconStrokeWidth], [scaledIconStrokeWidth, -scaledIconStrokeWidth],
-        [-scaledIconStrokeWidth, scaledIconStrokeWidth], [scaledIconStrokeWidth, scaledIconStrokeWidth],
-        [-scaledIconStrokeWidth, 0], [scaledIconStrokeWidth, 0],
-        [0, -scaledIconStrokeWidth], [0, scaledIconStrokeWidth]
-      ];
+      // Create SVG path from icon definition
+      const icon = flatIcons[selectedIcon];
+      const path = new Path2D(icon.path);
       
-      offsets.forEach(([offsetX, offsetY]) => {
-        ctx.fillText(icons[selectedIcon], iconCoords.x + offsetX, iconCoords.y + offsetY);
-      });
+      // Save context state
+      ctx.save();
       
-      // Black icon
+      // Move to icon position and scale
+      ctx.translate(iconCoords.x - iconScale/2, iconCoords.y - iconScale/2);
+      ctx.scale(iconScale/24, iconScale/24); // SVG viewBox is 24x24
+      
+      // Draw white stroke
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = iconStrokeWidth * (24/iconScale) * 2; // Scale stroke to match visual size
+      ctx.stroke(path);
+      
+      // Draw black fill
       ctx.fillStyle = '#000000';
-      ctx.fillText(icons[selectedIcon], iconCoords.x, iconCoords.y);
+      ctx.fill(path);
+      
+      // Restore context state
+      ctx.restore();
     }
     
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     setMapImage(dataUrl); // This is the final export image
     return dataUrl;
-  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, iconMap, setMapImage]);
+  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, setMapImage]);
 
   // Initial generation when component mounts
   useEffect(() => {
@@ -400,7 +392,7 @@ const MapRenderer = () => {
             )}
             
             {/* Draggable icon overlay */}
-            {selectedIcon && iconMap()[selectedIcon] && (
+            {selectedIcon && flatIcons[selectedIcon] && (
               <div
                 key="draggable-icon"
                 ref={iconRef}
@@ -408,23 +400,14 @@ const MapRenderer = () => {
                 style={{
                   left: `${iconPosition.x}%`,
                   top: `${iconPosition.y}%`,
-                  fontSize: `${iconSize}px`,
+                  width: `${iconSize}px`,
+                  height: `${iconSize}px`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: isDraggingText ? 'none' : 'auto',
-                  textShadow: `
-                    -${iconStrokeWidth}px -${iconStrokeWidth}px 0 #ffffff,
-                    ${iconStrokeWidth}px -${iconStrokeWidth}px 0 #ffffff,
-                    -${iconStrokeWidth}px ${iconStrokeWidth}px 0 #ffffff,
-                    ${iconStrokeWidth}px ${iconStrokeWidth}px 0 #ffffff,
-                    -${iconStrokeWidth}px 0 0 #ffffff,
-                    ${iconStrokeWidth}px 0 0 #ffffff,
-                    0 -${iconStrokeWidth}px 0 #ffffff,
-                    0 ${iconStrokeWidth}px 0 #ffffff
-                  `
+                  pointerEvents: isDraggingText ? 'none' : 'auto'
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'icon')}
               >
-                {iconMap()[selectedIcon]}
+                {renderIcon(selectedIcon, iconSize, iconStrokeWidth)}
               </div>
             )}
           </>
@@ -487,11 +470,14 @@ const MapRenderer = () => {
             onChange={(e) => setSelectedIcon(e.target.value)}
           >
             <option value="">No Icon</option>
-            <option value="home">🏠 Home</option>
-            <option value="heart">❤️ Heart</option>
-            <option value="star">⭐ Star</option>
-            <option value="pin">📍 Pin</option>
-            <option value="compass">🧭 Compass</option>
+            <option value="home">Home</option>
+            <option value="heart">Heart</option>
+            <option value="star">Star</option>
+            <option value="pin">Location Pin</option>
+            <option value="compass">Compass</option>
+            <option value="mountain">Mountain</option>
+            <option value="tree">Tree</option>
+            <option value="anchor">Anchor</option>
           </select>
           <div className="size-control">
             <label>Icon Size: {iconSize}px</label>

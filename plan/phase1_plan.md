@@ -223,49 +223,138 @@ VITE_MAPBOX_STYLE_ID=lumengrave/clm6vi67u02jm01qiayvjbsmt
 
 ---
 
-## Implementation Status (Current State)
+## Implementation Status (Phase 1 COMPLETE)
 
 ### ✅ Completed Features
 - **MapSelector Component**: Interactive Mapbox GL map with seamless pan/zoom
-- **MapRenderer Component**: Auto-refreshing static preview generation 
+- **MapRenderer Component**: Integrated text/icon overlay system with draggable positioning
 - **Glass Type Support**: All 4 glass types (Pint, Wine, Rocks, Shot) with correct ratios
+- **Text Overlay System**: Full drag-and-drop text with adjustable size and stroke width
+- **Icon System**: 8 flat SVG icons with drag positioning and adjustable size/stroke
+- **Dual Image Generation**: Base map for preview, final composite for export
 - **Context State Management**: MapConfigContext with useReducer pattern
-- **Location Synchronization**: Live map updates static preview after 2s delay
-- **Mobile Responsive**: Aspect ratios adapt to glass type selection
+- **Location Synchronization**: Live map updates with 2s debounced refresh
+- **Mobile Responsive**: Touch-enabled dragging and responsive layouts
 
 ### 🔧 Current Architecture
 ```javascript
-// Main components working:
-- MapSelector.jsx (Interactive Mapbox GL map)
-- MapRenderer.jsx (Static preview with auto-refresh)  
-- MapConfigContext.jsx (Centralized state management)
-- canvas.js (Glass ratio calculations)
-- mapbox.js (API utilities)
+// Core Components:
+MapSelector.jsx       // Interactive Mapbox GL map
+MapRenderer.jsx       // Preview + text/icon overlays + export generation
+GlassTypeSelector.jsx // Glass type switching
+SearchBox.jsx         // Location search functionality
+CanvasComposer.jsx    // Export/download functionality
 
-// File locations:
-- /src/components/MapBuilder/
-- /src/contexts/MapConfigContext.jsx
-- /src/utils/canvas.js, mapbox.js, coordinates.js
+// Utility Files:
+/utils/mapbox.js      // Mapbox API utilities
+/utils/canvas.js      // Glass ratios & canvas calculations
+/utils/coordinates.js // Location defaults & calculations
+/utils/icons.jsx      // Flat SVG icon definitions
+
+// Context:
+/contexts/MapConfigContext.jsx // Centralized state management
+
+// Removed Components:
+TextOverlay.jsx       // REMOVED - integrated into MapRenderer
+```
+
+### 🎨 Text & Icon Features
+```javascript
+// Text Overlay Controls:
+- Text input field
+- Font size: 20-100px (slider)
+- Stroke width: 0-5px (0.5 increments)
+- Position: Drag-and-drop anywhere on map
+- Style: Black text with white stroke (behind letters)
+
+// Icon System:
+- 8 flat SVG icons (home, heart, star, pin, compass, mountain, tree, anchor)
+- Icon size: 20-100px (slider)
+- Stroke width: 0-5px (0.5 increments)
+- Position: Drag-and-drop anywhere on map
+- Style: Black fill with white stroke
+
+// Both text and icons can be used simultaneously
 ```
 
 ### 🔄 Active State Flow
-1. User interacts with MapSelector (drag/zoom)
-2. MapSelector updates location via setLocation()
-3. MapRenderer detects location changes  
-4. After 2s delay, generates new static preview
-5. Preview syncs perfectly with interactive map
+1. **Map Interaction**: User drags/zooms MapSelector
+2. **Location Update**: MapSelector updates location via setLocation()
+3. **Base Map Generation**: generateBaseMapImage() creates map WITHOUT overlays
+4. **Overlay Rendering**: Text/icons render as draggable DOM elements
+5. **Final Export**: generateFinalImage() composites everything for download
 
-### ⏳ Next Phase Requirements
-- **TextOverlay Component**: Text positioning and styling system
-- **IconSelector Component**: Preloaded icon placement
-- **CanvasComposer Component**: Final high-res export generation
-- **UI Polish**: Search integration, control panels
+### 🛠️ Key Technical Solutions
+```javascript
+// Prevent Text Duplication:
+- Separated base map from overlay rendering
+- Base map auto-refreshes without text/icons
+- Overlays are DOM elements, not canvas-rendered during preview
 
-### 🐛 Known Working Solutions
-- **Map Sync Issue**: Fixed setLocation function vs object passing
-- **Auto-refresh**: Implemented proper useEffect dependencies with debounce
-- **Aspect Ratios**: Glass ratios correctly applied to map containers
-- **Mobile Performance**: Smooth GL interactions without white flashing
+// Smooth Dragging:
+- Direct position updates (no debouncing during drag)
+- Dynamic boundary calculation based on element size
+- Prevents elements from leaving map bounds
+
+// Text Stroke (white behind black):
+- CSS: 8-directional text-shadow technique
+- Canvas: Draw white text 8 times offset, then black on top
+- No inward stroke affecting letter shape
+
+// SVG Icons:
+- Path2D API for canvas rendering
+- React SVG components for preview
+- Consistent black/white styling
+```
+
+### 📦 Working File Structure
+```
+src/
+├── components/
+│   ├── MapBuilder/
+│   │   ├── MapSelector.jsx      ✅ Complete
+│   │   ├── MapRenderer.jsx      ✅ Complete (includes text/icon)
+│   │   ├── CanvasComposer.jsx   ✅ Basic implementation
+│   │   ├── MapSelector.css      ✅ Complete
+│   │   └── MapRenderer.css      ✅ Complete
+│   └── UI/
+│       ├── GlassTypeSelector.jsx ✅ Complete
+│       └── SearchBox.jsx         ✅ Complete
+├── contexts/
+│   └── MapConfigContext.jsx     ✅ Complete
+├── utils/
+│   ├── mapbox.js                ✅ Complete
+│   ├── canvas.js                ✅ Complete
+│   ├── coordinates.js           ✅ Complete
+│   └── icons.jsx                ✅ Complete (SVG icons)
+└── App.jsx                      ✅ Updated (removed TextOverlay)
+```
+
+### ✅ Success Criteria Status
+- [x] User can search and select any international location
+- [x] Map displays in correct black/white style
+- [x] Glass type selection updates map proportions correctly
+- [x] Text can be positioned anywhere with proper styling
+- [x] Icons can be added and positioned
+- [x] High-resolution PNG export works (via generateFinalImage)
+- [x] Configuration state is properly managed
+- [x] Mobile touch interactions work smoothly
+
+### 🐛 Resolved Issues
+- **Text Duplication**: Separated base map from overlays
+- **Map Sync**: Fixed with proper setLocation object passing
+- **Text Compression at Edges**: Dynamic bounds calculation
+- **Stroke Style**: White behind text, not affecting letter shape
+- **Icon System**: Replaced emojis with flat SVG icons
+
+### 📝 API Keys & Configuration
+```javascript
+// .env.local
+VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoibHVtZW5ncmF2ZSIsImEiOiJjbGx6ZG83a2sxaHhjM2xwNGVwYWowY3JzIn0.-3meyG5AjY3rfC86-C-hdQ
+
+// Mapbox Style
+mapbox://styles/lumengrave/clm6vi67u02jm01qiayvjbsmt
+```
 
 ## Notes for Claude Code Agent
 
