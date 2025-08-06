@@ -8,9 +8,18 @@ const MapRenderer = () => {
   const { location, glassType, setMapImage, setLoading, setError } = useMapConfig();
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
+  const [hasInitiallyGenerated, setHasInitiallyGenerated] = useState(false);
   
   const generateMapImage = useCallback(async () => {
+    console.log('generateMapImage called with location:', {
+      lat: location.lat,
+      lng: location.lng,
+      zoom: location.zoom,
+      glassType
+    });
+    
     if (!validateMapboxToken()) {
+      console.log('Mapbox token validation failed');
       setError('Mapbox token not configured');
       return;
     }
@@ -21,10 +30,12 @@ const MapRenderer = () => {
     const zoom = location.zoom || 12;      // Default zoom
     
     if (!lng || !lat || !zoom) {
+      console.log('Location data missing:', { lng, lat, zoom });
       setError('Location data not available');
       return;
     }
     
+    console.log('Starting image generation with coordinates:', { lat, lng, zoom, glassType });
     setImageLoading(true);
     setLoading(true);
     
@@ -41,12 +52,20 @@ const MapRenderer = () => {
         height: Math.min(height, 1280)
       });
       
+      console.log('Generated static map URL:', url);
+      
       const img = new Image();
       img.crossOrigin = 'anonymous';
       
       await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+        img.onload = () => {
+          console.log('Static map image loaded successfully');
+          resolve();
+        };
+        img.onerror = (e) => {
+          console.error('Static map image failed to load:', e);
+          reject(e);
+        };
         img.src = url;
       });
       
@@ -76,6 +95,7 @@ const MapRenderer = () => {
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
       
       const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('Map preview generated successfully');
       setLocalImageUrl(dataUrl);
       setMapImage(dataUrl);
       setError(null);
@@ -87,13 +107,41 @@ const MapRenderer = () => {
       setLoading(false);
     }
   }, [location, glassType, setMapImage, setLoading, setError]);
+
+  // Initial generation when component mounts
+  useEffect(() => {
+    if (!hasInitiallyGenerated && location.lat && location.lng && location.zoom) {
+      console.log('Initial map image generation on mount');
+      generateMapImage();
+      setHasInitiallyGenerated(true);
+    }
+  }, [location.lat, location.lng, location.zoom, hasInitiallyGenerated, generateMapImage]);
   
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      generateMapImage();
-    }, 500);
+    console.log('MapRenderer detected location change:', {
+      lat: location.lat,
+      lng: location.lng, 
+      zoom: location.zoom,
+      glassType,
+      fullLocation: location
+    });
     
-    return () => clearTimeout(debounceTimer);
+    // Only trigger auto-generation if we have valid location data
+    if (location.lat && location.lng && location.zoom) {
+      console.log('Setting timer for auto-generation with valid location data');
+      // Auto-generate map image after user stops moving the map
+      const debounceTimer = setTimeout(() => {
+        console.log('Auto-generating static preview after map movement stopped...');
+        generateMapImage();
+      }, 2000); // 2 second delay after movement stops
+      
+      return () => {
+        console.log('Clearing auto-generate timer');
+        clearTimeout(debounceTimer);
+      };
+    } else {
+      console.log('Skipping auto-generation - invalid location data, full location object:', location);
+    }
   }, [location.lng, location.lat, location.zoom, glassType, generateMapImage]);
   
   return (
@@ -119,8 +167,12 @@ const MapRenderer = () => {
         className="refresh-map-btn"
         disabled={imageLoading}
       >
-        Refresh Map
+        {imageLoading ? 'Generating...' : 'Refresh Preview'}
       </button>
+      
+      <div className="preview-note">
+        <p>This preview shows the exact static image that will be used for laser engraving. Auto-updates when you stop moving the map above.</p>
+      </div>
     </div>
   );
 };

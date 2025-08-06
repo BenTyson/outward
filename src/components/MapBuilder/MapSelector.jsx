@@ -63,12 +63,25 @@ const MapSelector = () => {
       map.on('moveend', () => {
         const center = map.getCenter();
         const zoom = map.getZoom();
-        setLocation(prev => ({
-          ...prev,
+        console.log('Map moved - updating location:', {
+          lat: center.lat,
+          lng: center.lng,
+          zoom: zoom
+        });
+        
+        // Update location state with new coordinates
+        const newLocation = {
+          ...location,
           lng: center.lng,
           lat: center.lat,
           zoom: zoom
-        }));
+        };
+        setLocation(newLocation);
+        
+        // Update marker position
+        if (markerRef.current) {
+          markerRef.current.setLngLat([center.lng, center.lat]);
+        }
       });
 
       map.on('error', (e) => {
