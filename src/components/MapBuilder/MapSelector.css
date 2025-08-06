@@ -110,7 +110,11 @@
 
 .static-map-image.dragging {
   cursor: grabbing;
-  opacity: 0.8;
+  opacity: 0.9;
+}
+
+.static-map-image.loading {
+  opacity: 0.95;
 }
 
 .static-map-image:active {

@@ -17,6 +17,9 @@ const MapSelector = () => {
   const [useStaticFallback, setUseStaticFallback] = useState(true); // Use static map - GL has compatibility issues
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, lat: 0, lng: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [currentImageUrl, setCurrentImageUrl] = useState(null);
+  const [isLoadingNewImage, setIsLoadingNewImage] = useState(false);
   
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -172,6 +175,7 @@ const MapSelector = () => {
   
   // Drag functionality for static map
   const handleDragStart = (e) => {
+    e.preventDefault();
     setIsDragging(true);
     const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
     const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
@@ -182,6 +186,7 @@ const MapSelector = () => {
       lat: location.lat || 39.7392,
       lng: location.lng || -104.9903
     });
+    setDragOffset({ x: 0, y: 0 });
   };
   
   const handleDragMove = (e) => {
@@ -194,24 +199,62 @@ const MapSelector = () => {
     const deltaX = clientX - dragStart.x;
     const deltaY = clientY - dragStart.y;
     
-    // Calculate movement in degrees based on zoom level
+    // Just store the pixel offset for smooth visual dragging
+    setDragOffset({ x: deltaX, y: deltaY });
+  };
+  
+  const preloadImage = (url) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(url);
+      img.onerror = reject;
+      img.src = url;
+    });
+  };
+
+  const handleDragEnd = async () => {
+    if (!isDragging) return;
+    
+    setIsLoadingNewImage(true);
+    
+    // Calculate final position
     const zoom = location.zoom || 12;
     const pixelsPerDegree = Math.pow(2, zoom) * 256 / 360;
-    const latDelta = deltaY / pixelsPerDegree;
-    const lngDelta = -deltaX / (pixelsPerDegree * Math.cos(dragStart.lat * Math.PI / 180));
+    const latDelta = dragOffset.y / pixelsPerDegree;
+    const lngDelta = -dragOffset.x / (pixelsPerDegree * Math.cos(dragStart.lat * Math.PI / 180));
     
     const newLat = Math.max(-85, Math.min(85, dragStart.lat + latDelta));
     const newLng = dragStart.lng + lngDelta;
     
-    setLocation({
+    const newLocation = {
       ...location,
       lat: newLat,
       lng: newLng
-    });
-  };
-  
-  const handleDragEnd = () => {
-    setIsDragging(false);
+    };
+    
+    // Generate new image URL
+    const { aspectRatio } = calculateDimensions(glassType);
+    const width = 800;
+    const height = Math.round(width / aspectRatio);
+    const newImageUrl = `https://api.mapbox.com/styles/v1/lumengrave/clm6vi67u02jm01qiayvjbsmt/static/${newLng},${newLat},${zoom}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+    
+    try {
+      // Preload the new image
+      await preloadImage(newImageUrl);
+      
+      // Once loaded, update everything simultaneously
+      setLocation(newLocation);
+      setCurrentImageUrl(newImageUrl);
+      
+    } catch (error) {
+      console.error('Failed to load new image:', error);
+      // Still update location even if image fails
+      setLocation(newLocation);
+    } finally {
+      setIsDragging(false);
+      setDragOffset({ x: 0, y: 0 });
+      setIsLoadingNewImage(false);
+    }
   };
   
   // Add event listeners for drag
@@ -234,7 +277,7 @@ const MapSelector = () => {
         document.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isDragging, dragStart, location]);
+  }, [isDragging, dragStart, dragOffset]);
   
   // Generate static map URL for fallback
   const getStaticMapUrl = () => {
@@ -249,6 +292,16 @@ const MapSelector = () => {
     const customStyleUrl = `https://api.mapbox.com/styles/v1/lumengrave/clm6vi67u02jm01qiayvjbsmt/static/${lng},${lat},${zoom}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
     return customStyleUrl;
   };
+
+  // Initialize current image URL when location changes (but not during drag)
+  useEffect(() => {
+    if (!isDragging && !isLoadingNewImage) {
+      const newUrl = getStaticMapUrl();
+      if (newUrl !== currentImageUrl) {
+        setCurrentImageUrl(newUrl);
+      }
+    }
+  }, [location.lng, location.lat, location.zoom, glassType, isDragging, isLoadingNewImage]);
 
   return (
     <div className="map-selector">
@@ -266,15 +319,20 @@ const MapSelector = () => {
           </div>
         ) : useStaticFallback ? (
           <div className="static-map-fallback">
-            <img 
-              key={`${location.lng}-${location.lat}-${location.zoom}`}
-              src={getStaticMapUrl()} 
-              alt="Map" 
-              className={`static-map-image ${isDragging ? 'dragging' : ''}`}
-              onMouseDown={handleDragStart}
-              onTouchStart={handleDragStart}
-              draggable={false}
-            />
+            {currentImageUrl && (
+              <img 
+                src={currentImageUrl} 
+                alt="Map" 
+                className={`static-map-image ${isDragging ? 'dragging' : ''} ${isLoadingNewImage ? 'loading' : ''}`}
+                style={{
+                  transform: isDragging ? `translate(${dragOffset.x}px, ${dragOffset.y}px)` : 'none',
+                  transition: isDragging ? 'none' : 'transform 0.2s ease'
+                }}
+                onMouseDown={handleDragStart}
+                onTouchStart={handleDragStart}
+                draggable={false}
+              />
+            )}
             <div className="static-map-controls">
               <button 
                 onClick={() => {
