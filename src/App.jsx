@@ -2,7 +2,6 @@ import { MapConfigProvider } from './contexts/MapConfigContext'
 import GlassTypeSelector from './components/UI/GlassTypeSelector'
 import MapSelector from './components/MapBuilder/MapSelector'
 import MapRenderer from './components/MapBuilder/MapRenderer'
-import TextOverlay from './components/MapBuilder/TextOverlay'
 import CanvasComposer from './components/MapBuilder/CanvasComposer'
 import './App.css'
 
@@ -27,13 +26,8 @@ function App() {
             </section>
             
             <section className="config-section">
-              <h2>Map Preview</h2>
+              <h2>Map Preview & Design</h2>
               <MapRenderer />
-            </section>
-            
-            <section className="config-section">
-              <h2>Add Text</h2>
-              <TextOverlay />
             </section>
             
             <section className="config-section">

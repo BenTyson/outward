@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { getMapboxStaticUrl, validateMapboxToken } from '../../utils/mapbox';
 import { calculateDimensions } from '../../utils/canvas';
 import { useMapConfig } from '../../contexts/MapConfigContext';
@@ -18,6 +18,9 @@ const MapRenderer = () => {
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const textRef = useRef(null);
+  const iconRef = useRef(null);
+  const updateTimeoutRef = useRef(null);
 
   // Icon mapping
   const iconMap = useCallback(() => ({
@@ -36,15 +39,40 @@ const MapRenderer = () => {
     };
   }, []);
 
-  // Convert mouse position to percentage
-  const getPercentagePosition = useCallback((clientX, clientY, element, offset = { x: 0, y: 0 }) => {
+  // Convert mouse position to percentage with dynamic bounds
+  const getPercentagePosition = useCallback((clientX, clientY, element, offset = { x: 0, y: 0 }, elementRef = null) => {
     const rect = element.getBoundingClientRect();
-    const x = ((clientX - rect.left - offset.x) / rect.width) * 100;
-    const y = ((clientY - rect.top - offset.y) / rect.height) * 100;
-    return {
-      x: Math.max(5, Math.min(95, x)), // Keep within 5-95% bounds
-      y: Math.max(5, Math.min(95, y))
-    };
+    let x = ((clientX - rect.left - offset.x) / rect.width) * 100;
+    let y = ((clientY - rect.top - offset.y) / rect.height) * 100;
+    
+    // If we have a reference to the draggable element, calculate dynamic bounds
+    if (elementRef && elementRef.getBoundingClientRect) {
+      try {
+        const elementRect = elementRef.getBoundingClientRect();
+        const elementWidthPercent = (elementRect.width / rect.width) * 100 * 0.5; // Half width for centering
+        const elementHeightPercent = (elementRect.height / rect.height) * 100 * 0.5; // Half height for centering
+        
+        // Adjust bounds based on element size
+        const minX = elementWidthPercent + 2; // Small padding
+        const maxX = 100 - elementWidthPercent - 2;
+        const minY = elementHeightPercent + 2;
+        const maxY = 100 - elementHeightPercent - 2;
+        
+        x = Math.max(minX, Math.min(maxX, x));
+        y = Math.max(minY, Math.min(maxY, y));
+      } catch (error) {
+        console.warn('Error calculating element bounds:', error);
+        // Fallback to fixed bounds on error
+        x = Math.max(5, Math.min(95, x));
+        y = Math.max(5, Math.min(95, y));
+      }
+    } else {
+      // Fallback to fixed bounds
+      x = Math.max(5, Math.min(95, x));
+      y = Math.max(5, Math.min(95, y));
+    }
+    
+    return { x, y };
   }, []);
 
   // Handle drag start
@@ -69,19 +97,19 @@ const MapRenderer = () => {
     }
   }, []);
 
-  // Handle drag move
+  // Handle drag move - direct updates without debouncing
   const handleDragMove = useCallback((e) => {
     if (!isDraggingText && !isDraggingIcon) return;
     
     e.preventDefault();
     
     if (isDraggingText) {
-      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset);
+      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, textRef.current);
       setTextPosition(newPos);
     }
     
     if (isDraggingIcon) {
-      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset);
+      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, iconRef.current);
       setIconPosition(newPos);
     }
   }, [isDraggingText, isDraggingIcon, dragOffset, getPercentagePosition]);
@@ -93,8 +121,9 @@ const MapRenderer = () => {
     setDragOffset({ x: 0, y: 0 });
   }, []);
   
-  const generateMapImage = useCallback(async () => {
-    console.log('generateMapImage called with location:', {
+  // Generate base map image WITHOUT overlays (for preview background)
+  const generateBaseMapImage = useCallback(async () => {
+    console.log('generateBaseMapImage called with location:', {
       lat: location.lat,
       lng: location.lng,
       zoom: location.zoom,
@@ -118,7 +147,7 @@ const MapRenderer = () => {
       return;
     }
     
-    console.log('Starting image generation with coordinates:', { lat, lng, zoom, glassType });
+    console.log('Starting base image generation with coordinates:', { lat, lng, zoom, glassType });
     setImageLoading(true);
     setLoading(true);
     
@@ -177,63 +206,117 @@ const MapRenderer = () => {
       
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
       
-      // Add text overlay if provided
-      if (overlayText.trim()) {
-        const fontSize = (textSize / 100) * Math.min(width, height) * 0.15; // Scale based on size slider
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-        ctx.fillStyle = '#ffffff';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = fontSize * 0.05;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const textCoords = getPixelPosition(textPosition, width, height);
-        ctx.strokeText(overlayText, textCoords.x, textCoords.y);
-        ctx.fillText(overlayText, textCoords.x, textCoords.y);
-      }
-      
-      // Add icon overlay if selected
-      const icons = iconMap();
-      if (selectedIcon && icons[selectedIcon]) {
-        const iconFontSize = (iconSize / 100) * Math.min(width, height) * 0.2; // Scale based on size slider
-        ctx.font = `${iconFontSize}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const iconCoords = getPixelPosition(iconPosition, width, height);
-        
-        // Add white outline for icon
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = iconFontSize * 0.1;
-        ctx.strokeText(icons[selectedIcon], iconCoords.x, iconCoords.y);
-        
-        // Fill the icon
-        ctx.fillStyle = '#ffffff';
-        ctx.fillText(icons[selectedIcon], iconCoords.x, iconCoords.y);
-      }
+      // DO NOT add text or icon overlays - they will be rendered as draggable elements
       
       const dataUrl = canvas.toDataURL('image/png', 1.0);
-      console.log('Map preview generated successfully with overlays');
+      console.log('Base map preview generated successfully (no overlays)');
       setLocalImageUrl(dataUrl);
-      setMapImage(dataUrl);
       setError(null);
     } catch (err) {
-      console.error('Failed to generate map image:', err);
+      console.error('Failed to generate base map image:', err);
       setError('Failed to load map image. Please try again.');
     } finally {
       setImageLoading(false);
       setLoading(false);
     }
-  }, [location, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, setMapImage, setLoading, setError, getPixelPosition, iconMap]);
+  }, [location, glassType, setLoading, setError]);
+
+  // Generate final image WITH overlays (for export/download)
+  const generateFinalImage = useCallback(async () => {
+    console.log('Generating final image with overlays...');
+    
+    if (!localImageUrl) {
+      console.error('No base image available');
+      return;
+    }
+    
+    const { aspectRatio } = calculateDimensions(glassType);
+    const width = 1280;
+    const height = Math.round(width / aspectRatio);
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw base map
+    const baseImg = new Image();
+    baseImg.src = localImageUrl;
+    await new Promise(resolve => {
+      baseImg.onload = resolve;
+    });
+    ctx.drawImage(baseImg, 0, 0, width, height);
+    
+    // Add text overlay if provided
+    if (overlayText.trim()) {
+      const fontSize = (textSize / 100) * Math.min(width, height) * 0.15;
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const textCoords = getPixelPosition(textPosition, width, height);
+      const strokeWidth = 3;
+      
+      // White outline
+      ctx.fillStyle = '#ffffff';
+      const offsets = [
+        [-strokeWidth, -strokeWidth], [strokeWidth, -strokeWidth],
+        [-strokeWidth, strokeWidth], [strokeWidth, strokeWidth],
+        [-strokeWidth, 0], [strokeWidth, 0],
+        [0, -strokeWidth], [0, strokeWidth]
+      ];
+      
+      offsets.forEach(([offsetX, offsetY]) => {
+        ctx.fillText(overlayText, textCoords.x + offsetX, textCoords.y + offsetY);
+      });
+      
+      // Black text
+      ctx.fillStyle = '#000000';
+      ctx.fillText(overlayText, textCoords.x, textCoords.y);
+    }
+    
+    // Add icon overlay if selected
+    const icons = iconMap();
+    if (selectedIcon && icons[selectedIcon]) {
+      const iconFontSize = (iconSize / 100) * Math.min(width, height) * 0.2;
+      ctx.font = `${iconFontSize}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const iconCoords = getPixelPosition(iconPosition, width, height);
+      
+      // White outline
+      ctx.fillStyle = '#ffffff';
+      const strokeWidth = 3;
+      const offsets = [
+        [-strokeWidth, -strokeWidth], [strokeWidth, -strokeWidth],
+        [-strokeWidth, strokeWidth], [strokeWidth, strokeWidth],
+        [-strokeWidth, 0], [strokeWidth, 0],
+        [0, -strokeWidth], [0, strokeWidth]
+      ];
+      
+      offsets.forEach(([offsetX, offsetY]) => {
+        ctx.fillText(icons[selectedIcon], iconCoords.x + offsetX, iconCoords.y + offsetY);
+      });
+      
+      // Black icon
+      ctx.fillStyle = '#000000';
+      ctx.fillText(icons[selectedIcon], iconCoords.x, iconCoords.y);
+    }
+    
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    setMapImage(dataUrl); // This is the final export image
+    return dataUrl;
+  }, [localImageUrl, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, getPixelPosition, iconMap, setMapImage]);
 
   // Initial generation when component mounts
   useEffect(() => {
     if (!hasInitiallyGenerated && location.lat && location.lng && location.zoom) {
-      console.log('Initial map image generation on mount');
-      generateMapImage();
+      console.log('Initial base map generation on mount');
+      generateBaseMapImage();
       setHasInitiallyGenerated(true);
     }
-  }, [location.lat, location.lng, location.zoom, hasInitiallyGenerated, generateMapImage]);
+  }, [location.lat, location.lng, location.zoom, hasInitiallyGenerated, generateBaseMapImage]);
   
   useEffect(() => {
     console.log('MapRenderer detected location change:', {
@@ -247,10 +330,10 @@ const MapRenderer = () => {
     // Only trigger auto-generation if we have valid location data and not currently dragging
     if (location.lat && location.lng && location.zoom && !isDraggingText && !isDraggingIcon) {
       console.log('Setting timer for auto-generation with valid location data');
-      // Auto-generate map image after user stops moving the map
+      // Auto-generate base map image after user stops moving the map
       const debounceTimer = setTimeout(() => {
-        console.log('Auto-generating static preview after map movement stopped...');
-        generateMapImage();
+        console.log('Auto-generating base map preview after map movement stopped...');
+        generateBaseMapImage();
       }, 2000); // 2 second delay after movement stops
       
       return () => {
@@ -260,7 +343,7 @@ const MapRenderer = () => {
     } else {
       console.log('Skipping auto-generation - invalid location data or currently dragging');
     }
-  }, [location.lng, location.lat, location.zoom, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, isDraggingText, isDraggingIcon, generateMapImage]);
+  }, [location.lng, location.lat, location.zoom, glassType, isDraggingText, isDraggingIcon, generateBaseMapImage]);
   
   return (
     <div className="map-renderer">
@@ -288,6 +371,8 @@ const MapRenderer = () => {
             {/* Draggable text overlay */}
             {overlayText.trim() && (
               <div
+                key="draggable-text"
+                ref={textRef}
                 className={`draggable-text ${isDraggingText ? 'dragging' : ''}`}
                 style={{
                   left: `${textPosition.x}%`,
@@ -305,6 +390,8 @@ const MapRenderer = () => {
             {/* Draggable icon overlay */}
             {selectedIcon && iconMap()[selectedIcon] && (
               <div
+                key="draggable-icon"
+                ref={iconRef}
                 className={`draggable-icon ${isDraggingIcon ? 'dragging' : ''}`}
                 style={{
                   left: `${iconPosition.x}%`,
@@ -324,11 +411,11 @@ const MapRenderer = () => {
       
       <div className="preview-controls">
         <button 
-          onClick={generateMapImage}
+          onClick={generateFinalImage}
           className="refresh-map-btn"
           disabled={imageLoading}
         >
-          {imageLoading ? 'Generating...' : 'Refresh Preview'}
+          {imageLoading ? 'Generating...' : 'Generate Final Design'}
         </button>
       </div>
 
