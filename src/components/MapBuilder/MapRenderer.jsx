@@ -12,9 +12,11 @@ const MapRenderer = () => {
   const [overlayText, setOverlayText] = useState('');
   const [textPosition, setTextPosition] = useState({ x: 50, y: 80 }); // Percentage positions
   const [textSize, setTextSize] = useState(50); // Font size
+  const [textStrokeWidth, setTextStrokeWidth] = useState(2); // Text stroke width
   const [selectedIcon, setSelectedIcon] = useState('');
   const [iconPosition, setIconPosition] = useState({ x: 80, y: 20 }); // Percentage positions
   const [iconSize, setIconSize] = useState(50); // Icon size
+  const [iconStrokeWidth, setIconStrokeWidth] = useState(2); // Icon stroke width
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -255,15 +257,15 @@ const MapRenderer = () => {
       ctx.textBaseline = 'middle';
       
       const textCoords = getPixelPosition(textPosition, width, height);
-      const strokeWidth = 3;
+      const scaledStrokeWidth = textStrokeWidth * (fontSize / 50); // Scale stroke with font size
       
       // White outline
       ctx.fillStyle = '#ffffff';
       const offsets = [
-        [-strokeWidth, -strokeWidth], [strokeWidth, -strokeWidth],
-        [-strokeWidth, strokeWidth], [strokeWidth, strokeWidth],
-        [-strokeWidth, 0], [strokeWidth, 0],
-        [0, -strokeWidth], [0, strokeWidth]
+        [-scaledStrokeWidth, -scaledStrokeWidth], [scaledStrokeWidth, -scaledStrokeWidth],
+        [-scaledStrokeWidth, scaledStrokeWidth], [scaledStrokeWidth, scaledStrokeWidth],
+        [-scaledStrokeWidth, 0], [scaledStrokeWidth, 0],
+        [0, -scaledStrokeWidth], [0, scaledStrokeWidth]
       ];
       
       offsets.forEach(([offsetX, offsetY]) => {
@@ -284,15 +286,15 @@ const MapRenderer = () => {
       ctx.textBaseline = 'middle';
       
       const iconCoords = getPixelPosition(iconPosition, width, height);
+      const scaledIconStrokeWidth = iconStrokeWidth * (iconFontSize / 50); // Scale stroke with icon size
       
       // White outline
       ctx.fillStyle = '#ffffff';
-      const strokeWidth = 3;
       const offsets = [
-        [-strokeWidth, -strokeWidth], [strokeWidth, -strokeWidth],
-        [-strokeWidth, strokeWidth], [strokeWidth, strokeWidth],
-        [-strokeWidth, 0], [strokeWidth, 0],
-        [0, -strokeWidth], [0, strokeWidth]
+        [-scaledIconStrokeWidth, -scaledIconStrokeWidth], [scaledIconStrokeWidth, -scaledIconStrokeWidth],
+        [-scaledIconStrokeWidth, scaledIconStrokeWidth], [scaledIconStrokeWidth, scaledIconStrokeWidth],
+        [-scaledIconStrokeWidth, 0], [scaledIconStrokeWidth, 0],
+        [0, -scaledIconStrokeWidth], [0, scaledIconStrokeWidth]
       ];
       
       offsets.forEach(([offsetX, offsetY]) => {
@@ -307,7 +309,7 @@ const MapRenderer = () => {
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     setMapImage(dataUrl); // This is the final export image
     return dataUrl;
-  }, [localImageUrl, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, getPixelPosition, iconMap, setMapImage]);
+  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, iconMap, setMapImage]);
 
   // Initial generation when component mounts
   useEffect(() => {
@@ -379,7 +381,17 @@ const MapRenderer = () => {
                   top: `${textPosition.y}%`,
                   fontSize: `${textSize}px`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: isDraggingIcon ? 'none' : 'auto'
+                  pointerEvents: isDraggingIcon ? 'none' : 'auto',
+                  textShadow: `
+                    -${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
+                    ${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
+                    -${textStrokeWidth}px ${textStrokeWidth}px 0 #ffffff,
+                    ${textStrokeWidth}px ${textStrokeWidth}px 0 #ffffff,
+                    -${textStrokeWidth}px 0 0 #ffffff,
+                    ${textStrokeWidth}px 0 0 #ffffff,
+                    0 -${textStrokeWidth}px 0 #ffffff,
+                    0 ${textStrokeWidth}px 0 #ffffff
+                  `
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'text')}
               >
@@ -398,7 +410,17 @@ const MapRenderer = () => {
                   top: `${iconPosition.y}%`,
                   fontSize: `${iconSize}px`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: isDraggingText ? 'none' : 'auto'
+                  pointerEvents: isDraggingText ? 'none' : 'auto',
+                  textShadow: `
+                    -${iconStrokeWidth}px -${iconStrokeWidth}px 0 #ffffff,
+                    ${iconStrokeWidth}px -${iconStrokeWidth}px 0 #ffffff,
+                    -${iconStrokeWidth}px ${iconStrokeWidth}px 0 #ffffff,
+                    ${iconStrokeWidth}px ${iconStrokeWidth}px 0 #ffffff,
+                    -${iconStrokeWidth}px 0 0 #ffffff,
+                    ${iconStrokeWidth}px 0 0 #ffffff,
+                    0 -${iconStrokeWidth}px 0 #ffffff,
+                    0 ${iconStrokeWidth}px 0 #ffffff
+                  `
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'icon')}
               >
@@ -443,6 +465,18 @@ const MapRenderer = () => {
               className="size-slider"
             />
           </div>
+          <div className="size-control">
+            <label>Text Stroke Width: {textStrokeWidth}px</label>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.5"
+              value={textStrokeWidth}
+              onChange={(e) => setTextStrokeWidth(parseFloat(e.target.value))}
+              className="size-slider"
+            />
+          </div>
         </div>
 
         <div className="icon-controls">
@@ -467,6 +501,18 @@ const MapRenderer = () => {
               max="100"
               value={iconSize}
               onChange={(e) => setIconSize(parseInt(e.target.value))}
+              className="size-slider"
+            />
+          </div>
+          <div className="size-control">
+            <label>Icon Stroke Width: {iconStrokeWidth}px</label>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.5"
+              value={iconStrokeWidth}
+              onChange={(e) => setIconStrokeWidth(parseFloat(e.target.value))}
               className="size-slider"
             />
           </div>
