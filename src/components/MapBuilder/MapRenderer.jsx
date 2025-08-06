@@ -17,6 +17,7 @@ const MapRenderer = () => {
   const [iconSize, setIconSize] = useState(50); // Icon size
   const [isDraggingText, setIsDraggingText] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   // Icon mapping
   const iconMap = useCallback(() => ({
@@ -36,14 +37,60 @@ const MapRenderer = () => {
   }, []);
 
   // Convert mouse position to percentage
-  const getPercentagePosition = useCallback((clientX, clientY, element) => {
+  const getPercentagePosition = useCallback((clientX, clientY, element, offset = { x: 0, y: 0 }) => {
     const rect = element.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * 100;
-    const y = ((clientY - rect.top) / rect.height) * 100;
+    const x = ((clientX - rect.left - offset.x) / rect.width) * 100;
+    const y = ((clientY - rect.top - offset.y) / rect.height) * 100;
     return {
       x: Math.max(5, Math.min(95, x)), // Keep within 5-95% bounds
       y: Math.max(5, Math.min(95, y))
     };
+  }, []);
+
+  // Handle drag start
+  const handleDragStart = useCallback((e, type) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const rect = e.currentTarget.parentElement.getBoundingClientRect();
+    const elementRect = e.currentTarget.getBoundingClientRect();
+    
+    const offset = {
+      x: e.clientX - (elementRect.left + elementRect.width / 2),
+      y: e.clientY - (elementRect.top + elementRect.height / 2)
+    };
+    
+    setDragOffset(offset);
+    
+    if (type === 'text') {
+      setIsDraggingText(true);
+    } else {
+      setIsDraggingIcon(true);
+    }
+  }, []);
+
+  // Handle drag move
+  const handleDragMove = useCallback((e) => {
+    if (!isDraggingText && !isDraggingIcon) return;
+    
+    e.preventDefault();
+    
+    if (isDraggingText) {
+      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset);
+      setTextPosition(newPos);
+    }
+    
+    if (isDraggingIcon) {
+      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset);
+      setIconPosition(newPos);
+    }
+  }, [isDraggingText, isDraggingIcon, dragOffset, getPercentagePosition]);
+
+  // Handle drag end
+  const handleDragEnd = useCallback(() => {
+    setIsDraggingText(false);
+    setIsDraggingIcon(false);
+    setDragOffset({ x: 0, y: 0 });
   }, []);
   
   const generateMapImage = useCallback(async () => {
@@ -197,8 +244,8 @@ const MapRenderer = () => {
       fullLocation: location
     });
     
-    // Only trigger auto-generation if we have valid location data
-    if (location.lat && location.lng && location.zoom) {
+    // Only trigger auto-generation if we have valid location data and not currently dragging
+    if (location.lat && location.lng && location.zoom && !isDraggingText && !isDraggingIcon) {
       console.log('Setting timer for auto-generation with valid location data');
       // Auto-generate map image after user stops moving the map
       const debounceTimer = setTimeout(() => {
@@ -211,32 +258,17 @@ const MapRenderer = () => {
         clearTimeout(debounceTimer);
       };
     } else {
-      console.log('Skipping auto-generation - invalid location data, full location object:', location);
+      console.log('Skipping auto-generation - invalid location data or currently dragging');
     }
-  }, [location.lng, location.lat, location.zoom, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, generateMapImage]);
+  }, [location.lng, location.lat, location.zoom, glassType, overlayText, textPosition, textSize, selectedIcon, iconPosition, iconSize, isDraggingText, isDraggingIcon, generateMapImage]);
   
   return (
     <div className="map-renderer">
       <div 
         className="map-preview-container"
-        onMouseMove={(e) => {
-          if (isDraggingText) {
-            const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget);
-            setTextPosition(newPos);
-          }
-          if (isDraggingIcon) {
-            const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget);
-            setIconPosition(newPos);
-          }
-        }}
-        onMouseUp={() => {
-          setIsDraggingText(false);
-          setIsDraggingIcon(false);
-        }}
-        onMouseLeave={() => {
-          setIsDraggingText(false);
-          setIsDraggingIcon(false);
-        }}
+        onMouseMove={handleDragMove}
+        onMouseUp={handleDragEnd}
+        onMouseLeave={handleDragEnd}
       >
         {imageLoading && (
           <div className="map-loading">
@@ -261,12 +293,10 @@ const MapRenderer = () => {
                   left: `${textPosition.x}%`,
                   top: `${textPosition.y}%`,
                   fontSize: `${textSize}px`,
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: isDraggingIcon ? 'none' : 'auto'
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setIsDraggingText(true);
-                }}
+                onMouseDown={(e) => handleDragStart(e, 'text')}
               >
                 {overlayText}
               </div>
@@ -280,12 +310,10 @@ const MapRenderer = () => {
                   left: `${iconPosition.x}%`,
                   top: `${iconPosition.y}%`,
                   fontSize: `${iconSize}px`,
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: isDraggingText ? 'none' : 'auto'
                 }}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  setIsDraggingIcon(true);
-                }}
+                onMouseDown={(e) => handleDragStart(e, 'icon')}
               >
                 {iconMap()[selectedIcon]}
               </div>
