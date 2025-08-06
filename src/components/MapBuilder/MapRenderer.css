@@ -18,9 +18,9 @@
   user-select: none;
 }
 
-/* Ensure only one of each draggable element can appear */
-.map-preview-container .draggable-text:not(:last-of-type),
-.map-preview-container .draggable-icon:not(:last-of-type) {
+/* Remove duplicate elements if they somehow appear */
+.map-preview-container .draggable-text ~ .draggable-text,
+.map-preview-container .draggable-icon ~ .draggable-icon {
   display: none;
 }
 
