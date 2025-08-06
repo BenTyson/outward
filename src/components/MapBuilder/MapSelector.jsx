@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN, validateMapboxToken } from '../../utils/mapbox';
+import { calculateDimensions } from '../../utils/canvas';
 import { useMapConfig } from '../../contexts/MapConfigContext';
 import SearchBox from '../UI/SearchBox';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -13,21 +14,17 @@ const MapSelector = () => {
   const { location, setLocation, glassType } = useMapConfig();
   const [mapError, setMapError] = useState(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [useStaticFallback, setUseStaticFallback] = useState(true); // Default to static map
+  const [useStaticFallback, setUseStaticFallback] = useState(true); // Use static map - GL has compatibility issues
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0, lat: 0, lng: 0 });
   
   useEffect(() => {
-    // Skip GL map initialization - using static map instead
+    if (!mapContainerRef.current || mapRef.current) return;
+    
     if (!validateMapboxToken()) {
       setMapError('Please configure your Mapbox token in .env.local');
       return;
     }
-    
-    console.log('Using static map for location selection');
-    return;
-    
-    // GL map code commented out due to loading issues
-    /*
-    if (!mapContainerRef.current || mapRef.current) return;
     
     // Check if WebGL is supported
     const canvas = document.createElement('canvas');
@@ -47,54 +44,53 @@ const MapSelector = () => {
     }, 2000);
     
     mapboxgl.accessToken = MAPBOX_TOKEN;
-    console.log('Initializing map with token:', MAPBOX_TOKEN.substring(0, 10) + '...');
-    console.log('Container element:', mapContainerRef.current);
-    console.log('Container dimensions:', mapContainerRef.current.offsetWidth, 'x', mapContainerRef.current.offsetHeight);
+    console.log('Initializing GL map with token:', MAPBOX_TOKEN.substring(0, 10) + '...');
     
     try {
-      // Check if mapbox-gl is properly loaded
-      if (!mapboxgl || !mapboxgl.Map) {
-        console.error('Mapbox GL JS not properly loaded');
-        setUseStaticFallback(true);
-        return;
-      }
-      
-      // Use standard style first to ensure map loads
+      // Start with a basic style to ensure map loads, then switch to custom
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [location.lng, location.lat],
-        zoom: location.zoom,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: [location.lng || -104.9903, location.lat || 39.7392],
+        zoom: location.zoom || 12,
         interactive: true,
         attributionControl: true,
         failIfMajorPerformanceCaveat: false
       });
       
-      console.log('Map instance created');
+      console.log('Map instance created with basic style');
+      console.log('Container dimensions after creation:', mapContainerRef.current.offsetWidth, 'x', mapContainerRef.current.offsetHeight);
+      
+      // Force a resize to ensure proper dimensions
+      setTimeout(() => {
+        console.log('Forcing map resize...');
+        map.resize();
+      }, 100);
       
       // Add navigation controls
       map.addControl(new mapboxgl.NavigationControl(), 'top-right');
       
       map.on('load', () => {
-        console.log('Map loaded successfully');
+        console.log('GL Map loaded successfully with basic style');
         setMapLoaded(true);
+        clearTimeout(fallbackTimeout);
         map.resize();
         
-        // Now try to apply the custom style
+        // Now try to switch to custom style
         setTimeout(() => {
-          console.log('Attempting to load custom style...');
+          console.log('Switching to custom style...');
           map.setStyle('mapbox://styles/lumengrave/clm6vi67u02jm01qiayvjbsmt');
-        }, 1000);
+        }, 500);
       });
       
       map.on('style.load', () => {
-        console.log('Style loaded successfully');
-        // Re-add marker after style change
+        console.log('Custom style loaded successfully');
+        // Add marker after style loads
         if (markerRef.current) {
           markerRef.current.remove();
         }
-        const marker = new mapboxgl.Marker({ color: '#000000' })
-          .setLngLat([location.lng, location.lat])
+        const marker = new mapboxgl.Marker({ color: '#ffffff' }) // White marker for dark style
+          .setLngLat([location.lng || -104.9903, location.lat || 39.7392])
           .addTo(map);
         markerRef.current = marker;
       });
@@ -115,10 +111,22 @@ const MapSelector = () => {
         if (e.error && e.error.message) {
           console.error('Error details:', e.error.message);
         }
-        // Don't set error for style issues, just use fallback
-        if (e.error && e.error.status === 404) {
-          console.log('Custom style not found, keeping default style');
-        }
+        // Fall back to static map on any error
+        console.log('GL map failed, switching to static fallback');
+        setUseStaticFallback(true);
+      });
+      
+      // Add more event listeners for debugging
+      map.on('styledata', () => {
+        console.log('Style data loaded');
+      });
+      
+      map.on('sourcedata', () => {
+        console.log('Source data loaded');
+      });
+      
+      map.on('idle', () => {
+        console.log('Map is idle (fully loaded)');
       });
       
       mapRef.current = map;
@@ -143,7 +151,6 @@ const MapSelector = () => {
       setMapError('Failed to initialize map. Please check your configuration.');
       setUseStaticFallback(true);
     }
-    */
   }, []);
   
   useEffect(() => {
@@ -163,21 +170,91 @@ const MapSelector = () => {
     setTimeout(() => mapRef.current.resize(), 100);
   }, [glassType]);
   
+  // Drag functionality for static map
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+    
+    setDragStart({
+      x: clientX,
+      y: clientY,
+      lat: location.lat || 39.7392,
+      lng: location.lng || -104.9903
+    });
+  };
+  
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+    const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+    
+    const deltaX = clientX - dragStart.x;
+    const deltaY = clientY - dragStart.y;
+    
+    // Calculate movement in degrees based on zoom level
+    const zoom = location.zoom || 12;
+    const pixelsPerDegree = Math.pow(2, zoom) * 256 / 360;
+    const latDelta = deltaY / pixelsPerDegree;
+    const lngDelta = -deltaX / (pixelsPerDegree * Math.cos(dragStart.lat * Math.PI / 180));
+    
+    const newLat = Math.max(-85, Math.min(85, dragStart.lat + latDelta));
+    const newLng = dragStart.lng + lngDelta;
+    
+    setLocation({
+      ...location,
+      lat: newLat,
+      lng: newLng
+    });
+  };
+  
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+  
+  // Add event listeners for drag
+  useEffect(() => {
+    if (isDragging) {
+      const handleMouseMove = (e) => handleDragMove(e);
+      const handleMouseUp = () => handleDragEnd();
+      const handleTouchMove = (e) => handleDragMove(e);
+      const handleTouchEnd = () => handleDragEnd();
+      
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [isDragging, dragStart, location]);
+  
   // Generate static map URL for fallback
   const getStaticMapUrl = () => {
+    // Use the same aspect ratio as the selected glass type
+    const { aspectRatio } = calculateDimensions(glassType);
     const width = 800;
-    const height = 450;
+    const height = Math.round(width / aspectRatio);
     const zoom = location.zoom || 12;
     const lng = location.lng || -104.9903; // Default to Denver
     const lat = location.lat || 39.7392;   // Default to Denver
-    return `https://api.mapbox.com/styles/v1/mapbox/light-v11/static/${lng},${lat},${zoom}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+    
+    const customStyleUrl = `https://api.mapbox.com/styles/v1/lumengrave/clm6vi67u02jm01qiayvjbsmt/static/${lng},${lat},${zoom}/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+    return customStyleUrl;
   };
 
   return (
     <div className="map-selector">
       <SearchBox />
       
-      <div className="map-container-wrapper">
+      <div className={`map-container-wrapper glass-${glassType}`}>
         {mapError ? (
           <div className="map-error">
             <p>{mapError}</p>
@@ -193,24 +270,34 @@ const MapSelector = () => {
               key={`${location.lng}-${location.lat}-${location.zoom}`}
               src={getStaticMapUrl()} 
               alt="Map" 
-              className="static-map-image"
+              className={`static-map-image ${isDragging ? 'dragging' : ''}`}
+              onMouseDown={handleDragStart}
+              onTouchStart={handleDragStart}
+              draggable={false}
             />
             <div className="static-map-controls">
-              <button onClick={() => {
-                console.log('Zoom in clicked, current zoom:', location.zoom);
-                const newZoom = Math.min((location.zoom || 12) + 1, 18);
-                console.log('New zoom:', newZoom);
-                setLocation({ ...location, zoom: newZoom });
-              }}>+</button>
-              <button onClick={() => {
-                console.log('Zoom out clicked, current zoom:', location.zoom);
-                const newZoom = Math.max((location.zoom || 12) - 1, 1);
-                console.log('New zoom:', newZoom);
-                setLocation({ ...location, zoom: newZoom });
-              }}>-</button>
+              <button 
+                onClick={() => {
+                  const newZoom = Math.min((location.zoom || 12) + 1, 18);
+                  setLocation({ ...location, zoom: newZoom });
+                }}
+                title="Zoom in"
+                className="zoom-btn"
+              >+</button>
+              <button 
+                onClick={() => {
+                  const newZoom = Math.max((location.zoom || 12) - 1, 1);
+                  setLocation({ ...location, zoom: newZoom });
+                }}
+                title="Zoom out"
+                className="zoom-btn"
+              >-</button>
+              <div className="zoom-level">
+                {(location.zoom || 12).toFixed(0)}
+              </div>
             </div>
             <div className="static-map-note">
-              Interactive map unavailable. Use search to select location.
+              Click and drag to navigate • Use zoom controls to adjust view
             </div>
           </div>
         ) : (

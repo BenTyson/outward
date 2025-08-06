@@ -7,19 +7,27 @@
 .map-container-wrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
+.map-container-wrapper.glass-pint {
+  aspect-ratio: 10.64 / 6;
+}
+
+.map-container-wrapper.glass-wine {
+  aspect-ratio: 8.85 / 3.8;
+}
+
+.map-container-wrapper.glass-rocks {
+  aspect-ratio: 3.92 / 9.46;
+}
+
 .map-container {
   width: 100%;
   height: 100%;
-  min-height: 400px;
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
 }
 
 .map-error {
@@ -95,6 +103,18 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  cursor: grab;
+  user-select: none;
+  transition: opacity 0.1s ease;
+}
+
+.static-map-image.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+
+.static-map-image:active {
+  cursor: grabbing;
 }
 
 .static-map-controls {
@@ -103,24 +123,47 @@
   right: 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-.static-map-controls button {
-  width: 30px;
-  height: 30px;
+.zoom-btn {
+  width: 32px;
+  height: 32px;
   background: white;
-  border: 2px solid #ddd;
+  border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;
   font-size: 18px;
+  font-weight: bold;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
-.static-map-controls button:hover {
+.zoom-btn:hover {
   background: #f0f0f0;
+  border-color: #999;
+}
+
+.zoom-btn:active {
+  background: #e0e0e0;
+  transform: scale(0.95);
+}
+
+.zoom-level {
+  background: #333;
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  padding: 4px;
+  border-radius: 3px;
+  margin-top: 2px;
+  font-weight: bold;
 }
 
 .static-map-note {
