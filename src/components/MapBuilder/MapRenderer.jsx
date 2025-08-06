@@ -470,14 +470,10 @@ const MapRenderer = () => {
             onChange={(e) => setSelectedIcon(e.target.value)}
           >
             <option value="">No Icon</option>
-            <option value="home">Home</option>
-            <option value="heart">Heart</option>
             <option value="star">Star</option>
+            <option value="heart">Heart</option>
             <option value="pin">Location Pin</option>
-            <option value="compass">Compass</option>
-            <option value="mountain">Mountain</option>
-            <option value="tree">Tree</option>
-            <option value="anchor">Anchor</option>
+            <option value="home">Home</option>
           </select>
           <div className="size-control">
             <label>Icon Size: {iconSize}px</label>

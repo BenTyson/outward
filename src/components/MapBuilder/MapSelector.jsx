@@ -10,7 +10,6 @@ import './MapSelector.css';
 const MapSelector = () => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
-  const markerRef = useRef(null);
   const { location, setLocation, glassType } = useMapConfig();
   const [mapError, setMapError] = useState(null);
 
@@ -46,17 +45,6 @@ const MapSelector = () => {
 
       map.on('style.load', () => {
         console.log('Custom style loaded');
-        // Add white marker for dark style
-        if (markerRef.current) {
-          markerRef.current.remove();
-        }
-        const marker = new mapboxgl.Marker({ 
-          color: '#ffffff',
-          scale: 0.8
-        })
-          .setLngLat([location.lng || -104.9903, location.lat || 39.7392])
-          .addTo(map);
-        markerRef.current = marker;
       });
 
       // Update location when user moves the map
@@ -78,10 +66,6 @@ const MapSelector = () => {
         };
         setLocation(newLocation);
         
-        // Update marker position
-        if (markerRef.current) {
-          markerRef.current.setLngLat([center.lng, center.lat]);
-        }
       });
 
       map.on('error', (e) => {
@@ -99,10 +83,8 @@ const MapSelector = () => {
 
       return () => {
         window.removeEventListener('resize', handleResize);
-        if (markerRef.current) markerRef.current.remove();
         if (mapRef.current) mapRef.current.remove();
         mapRef.current = null;
-        markerRef.current = null;
       };
     } catch (err) {
       console.error('Failed to initialize map:', err);
@@ -110,15 +92,14 @@ const MapSelector = () => {
     }
   }, []);
 
-  // Update marker when location changes externally (e.g., from search)
+  // Update map when location changes externally (e.g., from search)
   useEffect(() => {
-    if (mapRef.current && markerRef.current && location.lng && location.lat) {
+    if (mapRef.current && location.lng && location.lat) {
       mapRef.current.flyTo({
         center: [location.lng, location.lat],
         zoom: location.zoom || 12,
         essential: true
       });
-      markerRef.current.setLngLat([location.lng, location.lat]);
     }
   }, [location.lng, location.lat, location.zoom]);
 
