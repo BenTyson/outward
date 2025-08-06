@@ -14,14 +14,20 @@ const MapRenderer = () => {
   const [textPosition, setTextPosition] = useState({ x: 50, y: 80 }); // Percentage positions
   const [textSize, setTextSize] = useState(50); // Font size
   const [textStrokeWidth, setTextStrokeWidth] = useState(2); // Text stroke width
+  const [overlayText2, setOverlayText2] = useState('');
+  const [textPosition2, setTextPosition2] = useState({ x: 50, y: 20 }); // Percentage positions
+  const [textSize2, setTextSize2] = useState(40); // Font size
+  const [textStrokeWidth2, setTextStrokeWidth2] = useState(2); // Text stroke width
   const [selectedIcon, setSelectedIcon] = useState('');
   const [iconPosition, setIconPosition] = useState({ x: 80, y: 20 }); // Percentage positions
   const [iconSize, setIconSize] = useState(50); // Icon size
   const [iconStrokeWidth, setIconStrokeWidth] = useState(2); // Icon stroke width
   const [isDraggingText, setIsDraggingText] = useState(false);
+  const [isDraggingText2, setIsDraggingText2] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const textRef = useRef(null);
+  const text2Ref = useRef(null);
   const iconRef = useRef(null);
   const updateTimeoutRef = useRef(null);
 
@@ -86,6 +92,8 @@ const MapRenderer = () => {
     
     if (type === 'text') {
       setIsDraggingText(true);
+    } else if (type === 'text2') {
+      setIsDraggingText2(true);
     } else {
       setIsDraggingIcon(true);
     }
@@ -93,7 +101,7 @@ const MapRenderer = () => {
 
   // Handle drag move - direct updates without debouncing
   const handleDragMove = useCallback((e) => {
-    if (!isDraggingText && !isDraggingIcon) return;
+    if (!isDraggingText && !isDraggingText2 && !isDraggingIcon) return;
     
     e.preventDefault();
     
@@ -102,15 +110,21 @@ const MapRenderer = () => {
       setTextPosition(newPos);
     }
     
+    if (isDraggingText2) {
+      const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, text2Ref.current);
+      setTextPosition2(newPos);
+    }
+    
     if (isDraggingIcon) {
       const newPos = getPercentagePosition(e.clientX, e.clientY, e.currentTarget, dragOffset, iconRef.current);
       setIconPosition(newPos);
     }
-  }, [isDraggingText, isDraggingIcon, dragOffset, getPercentagePosition]);
+  }, [isDraggingText, isDraggingText2, isDraggingIcon, dragOffset, getPercentagePosition]);
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
     setIsDraggingText(false);
+    setIsDraggingText2(false);
     setIsDraggingIcon(false);
     setDragOffset({ x: 0, y: 0 });
   }, []);
@@ -241,7 +255,7 @@ const MapRenderer = () => {
     });
     ctx.drawImage(baseImg, 0, 0, width, height);
     
-    // Add text overlay if provided
+    // Add first text overlay if provided
     if (overlayText.trim()) {
       const fontSize = (textSize / 100) * Math.min(width, height) * 0.15;
       ctx.font = `bold ${fontSize}px Arial, sans-serif`;
@@ -267,6 +281,34 @@ const MapRenderer = () => {
       // Black text
       ctx.fillStyle = '#000000';
       ctx.fillText(overlayText, textCoords.x, textCoords.y);
+    }
+    
+    // Add second text overlay if provided
+    if (overlayText2.trim()) {
+      const fontSize2 = (textSize2 / 100) * Math.min(width, height) * 0.15;
+      ctx.font = `bold ${fontSize2}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      const textCoords2 = getPixelPosition(textPosition2, width, height);
+      const scaledStrokeWidth2 = textStrokeWidth2 * (fontSize2 / 50); // Scale stroke with font size
+      
+      // White outline
+      ctx.fillStyle = '#ffffff';
+      const offsets2 = [
+        [-scaledStrokeWidth2, -scaledStrokeWidth2], [scaledStrokeWidth2, -scaledStrokeWidth2],
+        [-scaledStrokeWidth2, scaledStrokeWidth2], [scaledStrokeWidth2, scaledStrokeWidth2],
+        [-scaledStrokeWidth2, 0], [scaledStrokeWidth2, 0],
+        [0, -scaledStrokeWidth2], [0, scaledStrokeWidth2]
+      ];
+      
+      offsets2.forEach(([offsetX, offsetY]) => {
+        ctx.fillText(overlayText2, textCoords2.x + offsetX, textCoords2.y + offsetY);
+      });
+      
+      // Black text
+      ctx.fillStyle = '#000000';
+      ctx.fillText(overlayText2, textCoords2.x, textCoords2.y);
     }
     
     // Add icon overlay if selected
@@ -301,7 +343,7 @@ const MapRenderer = () => {
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     setMapImage(dataUrl); // This is the final export image
     return dataUrl;
-  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, setMapImage]);
+  }, [localImageUrl, glassType, overlayText, textPosition, textSize, textStrokeWidth, overlayText2, textPosition2, textSize2, textStrokeWidth2, selectedIcon, iconPosition, iconSize, iconStrokeWidth, getPixelPosition, setMapImage]);
 
   // Initial generation when component mounts
   useEffect(() => {
@@ -322,7 +364,7 @@ const MapRenderer = () => {
     });
     
     // Only trigger auto-generation if we have valid location data and not currently dragging
-    if (location.lat && location.lng && location.zoom && !isDraggingText && !isDraggingIcon) {
+    if (location.lat && location.lng && location.zoom && !isDraggingText && !isDraggingText2 && !isDraggingIcon) {
       console.log('Setting timer for auto-generation with valid location data');
       // Auto-generate base map image after user stops moving the map
       const debounceTimer = setTimeout(() => {
@@ -337,7 +379,7 @@ const MapRenderer = () => {
     } else {
       console.log('Skipping auto-generation - invalid location data or currently dragging');
     }
-  }, [location.lng, location.lat, location.zoom, glassType, isDraggingText, isDraggingIcon, generateBaseMapImage]);
+  }, [location.lng, location.lat, location.zoom, glassType, isDraggingText, isDraggingText2, isDraggingIcon, generateBaseMapImage]);
   
   return (
     <div className="map-renderer">
@@ -373,7 +415,7 @@ const MapRenderer = () => {
                   top: `${textPosition.y}%`,
                   fontSize: `${textSize}px`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: isDraggingIcon ? 'none' : 'auto',
+                  pointerEvents: (isDraggingText2 || isDraggingIcon) ? 'none' : 'auto',
                   textShadow: `
                     -${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
                     ${textStrokeWidth}px -${textStrokeWidth}px 0 #ffffff,
@@ -391,6 +433,35 @@ const MapRenderer = () => {
               </div>
             )}
             
+            {/* Draggable second text overlay */}
+            {overlayText2.trim() && (
+              <div
+                key="draggable-text2"
+                ref={text2Ref}
+                className={`draggable-text ${isDraggingText2 ? 'dragging' : ''}`}
+                style={{
+                  left: `${textPosition2.x}%`,
+                  top: `${textPosition2.y}%`,
+                  fontSize: `${textSize2}px`,
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: (isDraggingText || isDraggingIcon) ? 'none' : 'auto',
+                  textShadow: `
+                    -${textStrokeWidth2}px -${textStrokeWidth2}px 0 #ffffff,
+                    ${textStrokeWidth2}px -${textStrokeWidth2}px 0 #ffffff,
+                    -${textStrokeWidth2}px ${textStrokeWidth2}px 0 #ffffff,
+                    ${textStrokeWidth2}px ${textStrokeWidth2}px 0 #ffffff,
+                    -${textStrokeWidth2}px 0 0 #ffffff,
+                    ${textStrokeWidth2}px 0 0 #ffffff,
+                    0 -${textStrokeWidth2}px 0 #ffffff,
+                    0 ${textStrokeWidth2}px 0 #ffffff
+                  `
+                }}
+                onMouseDown={(e) => handleDragStart(e, 'text2')}
+              >
+                {overlayText2}
+              </div>
+            )}
+            
             {/* Draggable icon overlay */}
             {selectedIcon && flatIcons[selectedIcon] && (
               <div
@@ -403,7 +474,7 @@ const MapRenderer = () => {
                   width: `${iconSize}px`,
                   height: `${iconSize}px`,
                   transform: 'translate(-50%, -50%)',
-                  pointerEvents: isDraggingText ? 'none' : 'auto'
+                  pointerEvents: (isDraggingText || isDraggingText2) ? 'none' : 'auto'
                 }}
                 onMouseDown={(e) => handleDragStart(e, 'icon')}
               >
@@ -427,76 +498,111 @@ const MapRenderer = () => {
       <div className="overlay-controls">
         <h3>Add Text & Icons (Optional)</h3>
         
-        <div className="text-controls">
-          <label htmlFor="overlay-text">Custom Text:</label>
-          <input
-            id="overlay-text"
-            type="text"
-            value={overlayText}
-            onChange={(e) => setOverlayText(e.target.value)}
-            placeholder="Enter text to overlay on map..."
-            className="text-input"
-          />
-          <div className="size-control">
-            <label>Text Size: {textSize}px</label>
+        <div className="controls-container">
+          <div className="text-controls">
+            <label htmlFor="overlay-text">Text 1:</label>
             <input
-              type="range"
-              min="20"
-              max="100"
-              value={textSize}
-              onChange={(e) => setTextSize(parseInt(e.target.value))}
-              className="size-slider"
+              id="overlay-text"
+              type="text"
+              value={overlayText}
+              onChange={(e) => setOverlayText(e.target.value)}
+              placeholder="Enter first text..."
+              className="text-input"
             />
-          </div>
-          <div className="size-control">
-            <label>Text Stroke Width: {textStrokeWidth}px</label>
+            <div className="size-control">
+              <label>Text 1 Size: {textSize}px</label>
+              <input
+                type="range"
+                min="20"
+                max="100"
+                value={textSize}
+                onChange={(e) => setTextSize(parseInt(e.target.value))}
+                className="size-slider"
+              />
+            </div>
+            <div className="size-control">
+              <label>Text 1 Stroke Width: {textStrokeWidth}px</label>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={textStrokeWidth}
+                onChange={(e) => setTextStrokeWidth(parseFloat(e.target.value))}
+                className="size-slider"
+              />
+            </div>
+            
+            <label htmlFor="overlay-text2">Text 2 (Optional):</label>
             <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.5"
-              value={textStrokeWidth}
-              onChange={(e) => setTextStrokeWidth(parseFloat(e.target.value))}
-              className="size-slider"
+              id="overlay-text2"
+              type="text"
+              value={overlayText2}
+              onChange={(e) => setOverlayText2(e.target.value)}
+              placeholder="Enter second text..."
+              className="text-input"
             />
+            <div className="size-control">
+              <label>Text 2 Size: {textSize2}px</label>
+              <input
+                type="range"
+                min="20"
+                max="100"
+                value={textSize2}
+                onChange={(e) => setTextSize2(parseInt(e.target.value))}
+                className="size-slider"
+              />
+            </div>
+            <div className="size-control">
+              <label>Text 2 Stroke Width: {textStrokeWidth2}px</label>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={textStrokeWidth2}
+                onChange={(e) => setTextStrokeWidth2(parseFloat(e.target.value))}
+                className="size-slider"
+              />
+            </div>
           </div>
-        </div>
 
-        <div className="icon-controls">
-          <label>Add Icon:</label>
-          <select 
-            className="icon-select"
-            value={selectedIcon}
-            onChange={(e) => setSelectedIcon(e.target.value)}
-          >
-            <option value="">No Icon</option>
-            <option value="star">Star</option>
-            <option value="heart">Heart</option>
-            <option value="pin">Location Pin</option>
-            <option value="home">Home</option>
-          </select>
-          <div className="size-control">
-            <label>Icon Size: {iconSize}px</label>
-            <input
-              type="range"
-              min="20"
-              max="100"
-              value={iconSize}
-              onChange={(e) => setIconSize(parseInt(e.target.value))}
-              className="size-slider"
-            />
-          </div>
-          <div className="size-control">
-            <label>Icon Stroke Width: {iconStrokeWidth}px</label>
-            <input
-              type="range"
-              min="0"
-              max="5"
-              step="0.5"
-              value={iconStrokeWidth}
-              onChange={(e) => setIconStrokeWidth(parseFloat(e.target.value))}
-              className="size-slider"
-            />
+          <div className="icon-controls">
+            <label>Add Icon:</label>
+            <select 
+              className="icon-select"
+              value={selectedIcon}
+              onChange={(e) => setSelectedIcon(e.target.value)}
+            >
+              <option value="">No Icon</option>
+              <option value="star">Star</option>
+              <option value="heart">Heart</option>
+              <option value="pin">Location Pin</option>
+              <option value="home">Home</option>
+            </select>
+            <div className="size-control">
+              <label>Icon Size: {iconSize}px</label>
+              <input
+                type="range"
+                min="20"
+                max="100"
+                value={iconSize}
+                onChange={(e) => setIconSize(parseInt(e.target.value))}
+                className="size-slider"
+              />
+            </div>
+            <div className="size-control">
+              <label>Icon Stroke Width: {iconStrokeWidth}px</label>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={iconStrokeWidth}
+                onChange={(e) => setIconStrokeWidth(parseFloat(e.target.value))}
+                className="size-slider"
+              />
+            </div>
           </div>
         </div>
 

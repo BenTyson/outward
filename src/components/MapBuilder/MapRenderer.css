@@ -93,8 +93,14 @@
   font-size: 1.1rem;
 }
 
+.overlay-controls .controls-container {
+  display: flex;
+  gap: 2rem;
+}
+
 .text-controls,
 .icon-controls {
+  flex: 1;
   margin-bottom: 1.5rem;
 }
 
