@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Flat SVG icons for laser engraving
 export const flatIcons = {
   home: {
@@ -167,9 +169,24 @@ export const flatIcons = {
   }
 };
 
-// Helper function to render icon
+// Helper function to render icon with stroke behind (like text shadow)
 export const renderIcon = (iconKey, size = 24, strokeWidth = 2) => {
   const icon = flatIcons[iconKey];
   if (!icon) return null;
-  return icon.svg(size, strokeWidth);
+  
+  // Return the original SVG with CSS filter for stroke effect
+  return (
+    <div style={{
+      filter: strokeWidth > 0 ? `drop-shadow(-${strokeWidth}px -${strokeWidth}px 0 white) 
+               drop-shadow(${strokeWidth}px -${strokeWidth}px 0 white) 
+               drop-shadow(-${strokeWidth}px ${strokeWidth}px 0 white) 
+               drop-shadow(${strokeWidth}px ${strokeWidth}px 0 white) 
+               drop-shadow(-${strokeWidth}px 0 0 white) 
+               drop-shadow(${strokeWidth}px 0 0 white) 
+               drop-shadow(0 -${strokeWidth}px 0 white) 
+               drop-shadow(0 ${strokeWidth}px 0 white)` : 'none'
+    }}>
+      {icon.svg(size, 0)}
+    </div>
+  );
 };

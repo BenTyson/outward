@@ -18,8 +18,7 @@
   user-select: none;
 }
 
-/* Remove duplicate elements if they somehow appear */
-.map-preview-container .draggable-text ~ .draggable-text,
+/* Remove duplicate icons if they somehow appear (but allow multiple text elements) */
 .map-preview-container .draggable-icon ~ .draggable-icon {
   display: none;
 }

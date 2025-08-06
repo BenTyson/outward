@@ -26,10 +26,12 @@ const MapRenderer = () => {
   const [isDraggingText2, setIsDraggingText2] = useState(false);
   const [isDraggingIcon, setIsDraggingIcon] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isAnyElementDragging, setIsAnyElementDragging] = useState(false);
   const textRef = useRef(null);
   const text2Ref = useRef(null);
   const iconRef = useRef(null);
   const updateTimeoutRef = useRef(null);
+  const lastLocationRef = useRef(null);
 
   // Position calculation helper - converts percentage to pixels
   const getPixelPosition = useCallback((percentagePos, canvasWidth, canvasHeight) => {
@@ -97,6 +99,7 @@ const MapRenderer = () => {
     } else {
       setIsDraggingIcon(true);
     }
+    setIsAnyElementDragging(true);
   }, []);
 
   // Handle drag move - direct updates without debouncing
@@ -126,6 +129,7 @@ const MapRenderer = () => {
     setIsDraggingText(false);
     setIsDraggingText2(false);
     setIsDraggingIcon(false);
+    setIsAnyElementDragging(false);
     setDragOffset({ x: 0, y: 0 });
   }, []);
   
@@ -327,12 +331,28 @@ const MapRenderer = () => {
       ctx.translate(iconCoords.x - iconScale/2, iconCoords.y - iconScale/2);
       ctx.scale(iconScale/24, iconScale/24); // SVG viewBox is 24x24
       
-      // Draw white stroke
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = iconStrokeWidth * (24/iconScale) * 2; // Scale stroke to match visual size
-      ctx.stroke(path);
+      // Draw white stroke behind the icon (multiple offset draws like text)
+      if (iconStrokeWidth > 0) {
+        const scaledStrokeWidth = iconStrokeWidth * (24/iconScale);
+        ctx.fillStyle = '#ffffff';
+        
+        // Draw white background in 8 directions
+        const strokeOffsets = [
+          [-scaledStrokeWidth, -scaledStrokeWidth], [scaledStrokeWidth, -scaledStrokeWidth],
+          [-scaledStrokeWidth, scaledStrokeWidth], [scaledStrokeWidth, scaledStrokeWidth],
+          [-scaledStrokeWidth, 0], [scaledStrokeWidth, 0],
+          [0, -scaledStrokeWidth], [0, scaledStrokeWidth]
+        ];
+        
+        strokeOffsets.forEach(([offsetX, offsetY]) => {
+          ctx.save();
+          ctx.translate(offsetX, offsetY);
+          ctx.fill(path);
+          ctx.restore();
+        });
+      }
       
-      // Draw black fill
+      // Draw black icon on top
       ctx.fillStyle = '#000000';
       ctx.fill(path);
       
@@ -355,31 +375,53 @@ const MapRenderer = () => {
   }, [location.lat, location.lng, location.zoom, hasInitiallyGenerated, generateBaseMapImage]);
   
   useEffect(() => {
-    console.log('MapRenderer detected location change:', {
-      lat: location.lat,
-      lng: location.lng, 
-      zoom: location.zoom,
-      glassType,
-      fullLocation: location
-    });
-    
-    // Only trigger auto-generation if we have valid location data and not currently dragging
-    if (location.lat && location.lng && location.zoom && !isDraggingText && !isDraggingText2 && !isDraggingIcon) {
-      console.log('Setting timer for auto-generation with valid location data');
-      // Auto-generate base map image after user stops moving the map
-      const debounceTimer = setTimeout(() => {
-        console.log('Auto-generating base map preview after map movement stopped...');
-        generateBaseMapImage();
-      }, 2000); // 2 second delay after movement stops
-      
-      return () => {
-        console.log('Clearing auto-generate timer');
-        clearTimeout(debounceTimer);
-      };
-    } else {
-      console.log('Skipping auto-generation - invalid location data or currently dragging');
+    // Clear any existing timeout first
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = null;
     }
-  }, [location.lng, location.lat, location.zoom, glassType, isDraggingText, isDraggingText2, isDraggingIcon, generateBaseMapImage]);
+    
+    // Don't trigger refresh during any dragging operations
+    if (isAnyElementDragging) {
+      console.log('Skipping auto-generation - currently dragging elements');
+      return;
+    }
+    
+    // Check if location has actually changed significantly
+    const currentLocation = { lat: location.lat, lng: location.lng, zoom: location.zoom };
+    const lastLocation = lastLocationRef.current;
+    
+    if (lastLocation) {
+      const latDiff = Math.abs(currentLocation.lat - lastLocation.lat);
+      const lngDiff = Math.abs(currentLocation.lng - lastLocation.lng);
+      const zoomDiff = Math.abs(currentLocation.zoom - lastLocation.zoom);
+      
+      // Only refresh if there's a significant change (reduce sensitivity)
+      if (latDiff < 0.001 && lngDiff < 0.001 && zoomDiff < 0.1) {
+        console.log('Skipping auto-generation - location change too small');
+        return;
+      }
+    }
+    
+    // Only trigger auto-generation if we have valid location data
+    if (location.lat && location.lng && location.zoom) {
+      console.log('Setting timer for auto-generation with significant location change');
+      
+      updateTimeoutRef.current = setTimeout(() => {
+        console.log('Auto-generating base map preview after significant map movement...');
+        lastLocationRef.current = currentLocation;
+        generateBaseMapImage();
+        updateTimeoutRef.current = null;
+      }, 3000); // Increased to 3 seconds for less aggressive updates
+    }
+    
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+    };
+  }, [location.lng, location.lat, location.zoom, glassType, isAnyElementDragging, generateBaseMapImage]);
   
   return (
     <div className="map-renderer">
@@ -525,7 +567,7 @@ const MapRenderer = () => {
               <input
                 type="range"
                 min="0"
-                max="5"
+                max="8"
                 step="0.5"
                 value={textStrokeWidth}
                 onChange={(e) => setTextStrokeWidth(parseFloat(e.target.value))}
@@ -558,7 +600,7 @@ const MapRenderer = () => {
               <input
                 type="range"
                 min="0"
-                max="5"
+                max="8"
                 step="0.5"
                 value={textStrokeWidth2}
                 onChange={(e) => setTextStrokeWidth2(parseFloat(e.target.value))}
@@ -585,7 +627,7 @@ const MapRenderer = () => {
               <input
                 type="range"
                 min="20"
-                max="100"
+                max="175"
                 value={iconSize}
                 onChange={(e) => setIconSize(parseInt(e.target.value))}
                 className="size-slider"
@@ -596,7 +638,7 @@ const MapRenderer = () => {
               <input
                 type="range"
                 min="0"
-                max="5"
+                max="8"
                 step="0.5"
                 value={iconStrokeWidth}
                 onChange={(e) => setIconStrokeWidth(parseFloat(e.target.value))}
