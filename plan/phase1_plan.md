@@ -31,14 +31,16 @@ Seamless integration with existing Shopify store and checkout process.
 |------------|----------------|-------|
 | Pint Glass | 10.64:6 | TBD |
 | Wine Glass | 8.85:3.8 | TBD |
-| Rocks Glass | 3.92:9.46 | TBD |
+| Rocks Glass | 9.46:3.92 | TBD |
+| Shot Glass | 6.2:2.5 | TBD |
 
 ### Map Configuration
 - **Style**: `mapbox://styles/lumengrave/clm6vi67u02jm01qiayvjbsmt`
 - **Colors**: Black and white only
 - **Coverage**: International locations supported
-- **API**: Mapbox Static Images API (primary), GL JS (fallback)
-- **Zoom**: User-controlled with ratio constraints
+- **Interactive Map**: Mapbox GL JS for seamless user interaction
+- **Static Export**: Mapbox Static Images API for final high-res previews
+- **Zoom**: User-controlled with smooth pan/zoom
 - **Output Resolution**: 1280px max from Static API, upscale client-side
 
 ### Text & Graphics
@@ -221,12 +223,56 @@ VITE_MAPBOX_STYLE_ID=lumengrave/clm6vi67u02jm01qiayvjbsmt
 
 ---
 
+## Implementation Status (Current State)
+
+### ✅ Completed Features
+- **MapSelector Component**: Interactive Mapbox GL map with seamless pan/zoom
+- **MapRenderer Component**: Auto-refreshing static preview generation 
+- **Glass Type Support**: All 4 glass types (Pint, Wine, Rocks, Shot) with correct ratios
+- **Context State Management**: MapConfigContext with useReducer pattern
+- **Location Synchronization**: Live map updates static preview after 2s delay
+- **Mobile Responsive**: Aspect ratios adapt to glass type selection
+
+### 🔧 Current Architecture
+```javascript
+// Main components working:
+- MapSelector.jsx (Interactive Mapbox GL map)
+- MapRenderer.jsx (Static preview with auto-refresh)  
+- MapConfigContext.jsx (Centralized state management)
+- canvas.js (Glass ratio calculations)
+- mapbox.js (API utilities)
+
+// File locations:
+- /src/components/MapBuilder/
+- /src/contexts/MapConfigContext.jsx
+- /src/utils/canvas.js, mapbox.js, coordinates.js
+```
+
+### 🔄 Active State Flow
+1. User interacts with MapSelector (drag/zoom)
+2. MapSelector updates location via setLocation()
+3. MapRenderer detects location changes  
+4. After 2s delay, generates new static preview
+5. Preview syncs perfectly with interactive map
+
+### ⏳ Next Phase Requirements
+- **TextOverlay Component**: Text positioning and styling system
+- **IconSelector Component**: Preloaded icon placement
+- **CanvasComposer Component**: Final high-res export generation
+- **UI Polish**: Search integration, control panels
+
+### 🐛 Known Working Solutions
+- **Map Sync Issue**: Fixed setLocation function vs object passing
+- **Auto-refresh**: Implemented proper useEffect dependencies with debounce
+- **Aspect Ratios**: Glass ratios correctly applied to map containers
+- **Mobile Performance**: Smooth GL interactions without white flashing
+
 ## Notes for Claude Code Agent
 
 ### Build Priority
-1. Start with basic MapSelector component
-2. Add MapRenderer with Static API
-3. Implement TextOverlay system
+1. ~~Start with basic MapSelector component~~ ✅ DONE
+2. ~~Add MapRenderer with Static API~~ ✅ DONE  
+3. Implement TextOverlay system ⏳ NEXT
 4. Add CanvasComposer for export
 5. Polish UI and mobile experience
 
@@ -236,10 +282,11 @@ VITE_MAPBOX_STYLE_ID=lumengrave/clm6vi67u02jm01qiayvjbsmt
 - Optimize for mobile performance
 - Store configuration state for Phase 2 handoff
 
-### Placeholder Data
-- Use sample coordinates: Denver, CO (39.7392, -104.9903)
-- Test text: "Home Sweet Home"
-- Glass types: Use provided ratios exactly
+### Working Environment Setup
+- **Mapbox Token**: Configured in .env.local
+- **Custom Style**: lumengrave/clm6vi67u02jm01qiayvjbsmt (black/white theme)
+- **Default Location**: Denver, CO (39.7392, -104.9903)
+- **Glass Types**: All ratios tested and working correctly
 
 ---
 
