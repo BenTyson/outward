@@ -1,9 +1,9 @@
 .map-export-controls {
   margin-top: 1rem;
   padding: 1.5rem;
-  background: #f8f9fa;
+  background: #fffdf8;
   border-radius: 8px;
-  border-left: 3px solid #333;
+  border-left: 3px solid #738263;
 }
 
 .export-error {
@@ -35,33 +35,43 @@
   text-align: center;
 }
 
+/* When only one button is shown, center it */
+.control-buttons:has(> button:only-child) {
+  justify-content: center;
+}
+
+.control-buttons:has(> button:only-child) button {
+  flex: none;
+  min-width: 200px;
+}
+
 .generate-btn {
-  background: #007bff;
-  color: white;
+  background: #738263;
+  color: #ffffff;
 }
 
 .generate-btn:hover:not(:disabled) {
-  background: #0056b3;
+  background: #000000;
   transform: translateY(-1px);
 }
 
 .preview-btn {
-  background: #28a745;
-  color: white;
+  background: #545f49;
+  color: #ffffff;
 }
 
 .preview-btn:hover:not(:disabled) {
-  background: #1e7e34;
+  background: #000000;
   transform: translateY(-1px);
 }
 
 .export-btn {
-  background: #dc3545;
-  color: white;
+  background: #161d25;
+  color: #ffffff;
 }
 
 .export-btn:hover:not(:disabled) {
-  background: #c82333;
+  background: #738263;
   transform: translateY(-1px);
 }
 
@@ -72,17 +82,17 @@
 }
 
 .control-info {
-  background: #fff;
+  background: #ffffff;
   padding: 1rem;
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #EEEEE0;
 }
 
 .control-info p {
   margin: 0 0 0.5rem 0;
   font-size: 0.85rem;
   line-height: 1.4;
-  color: #495057;
+  color: #666666;
 }
 
 .control-info p:last-child {
@@ -90,7 +100,7 @@
 }
 
 .control-info strong {
-  color: #212529;
+  color: #161d25;
 }
 
 /* Mobile responsive */

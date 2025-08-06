@@ -172,6 +172,17 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       const url = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(url);
       
+      // Auto-download the preview
+      const link = document.createElement('a');
+      link.download = `lumengrave-preview-${Date.now()}.png`;
+      link.href = url;
+      link.click();
+      
+      console.log('Generated quick preview:', {
+        resolution: `${previewWidth}x${previewHeight}px`,
+        fileSize: `~${Math.round(url.length / 1024)}KB`
+      });
+      
     } catch (err) {
       console.error('Preview generation failed:', err);
       setExportError('Failed to generate preview. Please try again.');
@@ -316,27 +327,39 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
           {isGenerating ? 'Generating...' : 'Generate Final Design'}
         </button>
         
-        <button
-          onClick={generatePreview}
-          disabled={isExporting || !mapImageUrl}
-          className="preview-btn"
-        >
-          {isExporting ? 'Generating...' : 'Generate Preview'}
-        </button>
-        
-        <button
-          onClick={generateHighResExport}
-          disabled={isExporting || !mapImageUrl}
-          className="export-btn"
-        >
-          {isExporting ? 'Exporting...' : 'Export Ultra High Res'}
-        </button>
+        {/* Only show preview and export buttons after final design is generated */}
+        {mapImageUrl && (
+          <>
+            <button
+              onClick={generatePreview}
+              disabled={isExporting}
+              className="preview-btn"
+            >
+              {isExporting ? 'Generating...' : 'Quick Preview'}
+            </button>
+            
+            <button
+              onClick={generateHighResExport}
+              disabled={isExporting}
+              className="export-btn"
+            >
+              {isExporting ? 'Exporting...' : 'Export Ultra High Res'}
+            </button>
+          </>
+        )}
       </div>
       
       <div className="control-info">
         <p><strong>Final Design:</strong> Creates composite image with text/icons for laser engraving</p>
-        <p><strong>Preview:</strong> Screen resolution (800px) for quick viewing</p>
-        <p><strong>Ultra High Res:</strong> 1200 DPI export (4800px) for professional laser engraving</p>
+        {mapImageUrl && (
+          <>
+            <p><strong>Quick Preview:</strong> Screen resolution (800px) for quick viewing</p>
+            <p><strong>Ultra High Res:</strong> 1200 DPI export (4800px) for professional laser engraving</p>
+          </>
+        )}
+        {!mapImageUrl && (
+          <p><em>Generate final design first to access preview and export options.</em></p>
+        )}
       </div>
     </div>
   );

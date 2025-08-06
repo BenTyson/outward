@@ -564,10 +564,6 @@ const MapRenderer = () => {
         onGenerateFinalImage={generateFinalImage}
         isGenerating={imageLoading}
       />
-      
-      <div className="preview-note">
-        <p>This preview shows your design with draggable text and icons. Use the controls above to generate final exports.</p>
-      </div>
     </div>
   );
 };

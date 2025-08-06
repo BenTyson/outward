@@ -2,14 +2,14 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: #fafafa;
+  background: #fffdf8;
 }
 
 /* Header */
 .wizard-header {
-  background: white;
+  background: #ffffff;
   padding: 2rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #EEEEE0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
@@ -22,12 +22,12 @@
   margin: 0 0 0.5rem 0;
   font-size: 1.75rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: #161d25;
 }
 
 .step-description {
   margin: 0;
-  color: #7f8c8d;
+  color: #666666;
   font-size: 1rem;
 }
 
@@ -72,31 +72,31 @@
 
 /* Step States */
 .progress-step.upcoming .step-number {
-  background: #ecf0f1;
-  color: #95a5a6;
-  border: 2px solid #bdc3c7;
+  background: #f1efe8;
+  color: #666666;
+  border: 2px solid #EEEEE0;
 }
 
 .progress-step.upcoming .step-label {
-  color: #95a5a6;
+  color: #666666;
 }
 
 .progress-step.active .step-number {
-  background: #3498db;
+  background: #738263;
   color: white;
-  border: 2px solid #2980b9;
-  box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.2);
+  border: 2px solid #545f49;
+  box-shadow: 0 0 0 4px rgba(115, 130, 99, 0.2);
 }
 
 .progress-step.active .step-label {
-  color: #2980b9;
+  color: #738263;
   font-weight: 600;
 }
 
 .progress-step.completed .step-number {
-  background: #27ae60;
+  background: #545f49;
   color: white;
-  border: 2px solid #229954;
+  border: 2px solid #738263;
 }
 
 .progress-step.completed .step-number::after {
@@ -104,7 +104,7 @@
 }
 
 .progress-step.completed .step-label {
-  color: #27ae60;
+  color: #545f49;
 }
 
 /* Progress Fill */
@@ -114,7 +114,7 @@
   left: 20px;
   right: 20px;
   height: 4px;
-  background: linear-gradient(90deg, #27ae60 0%, #3498db 100%);
+  background: linear-gradient(90deg, #545f49 0%, #738263 100%);
   border-radius: 2px;
   transition: width 0.5s ease;
   z-index: 1;
@@ -134,8 +134,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 2rem;
-  background: white;
-  border-top: 1px solid #e0e0e0;
+  background: #ffffff;
+  border-top: 1px solid #EEEEE0;
   box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
 }
 
@@ -156,28 +156,28 @@
 }
 
 .wizard-btn-primary {
-  background: #3498db;
+  background: #738263;
   color: white;
 }
 
 .wizard-btn-primary:hover:not(:disabled) {
-  background: #2980b9;
+  background: #000000;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 4px 8px rgba(115, 130, 99, 0.3);
 }
 
 .wizard-btn-secondary {
-  background: #ecf0f1;
-  color: #2c3e50;
+  background: #f1efe8;
+  color: #161d25;
 }
 
 .wizard-btn-secondary:hover:not(:disabled) {
-  background: #d5dbdb;
+  background: #EEEEE0;
 }
 
 .step-indicator {
   font-size: 0.9rem;
-  color: #7f8c8d;
+  color: #666666;
   font-weight: 500;
 }
 
