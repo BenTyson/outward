@@ -1,0 +1,145 @@
+.mockup-viewer {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.viewer-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.viewer-controls {
+  display: flex;
+  gap: 20px;
+}
+
+.background-selector {
+  display: flex;
+  gap: 5px;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.background-selector button {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.background-selector button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.background-selector button.active {
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mockup-stage {
+  position: relative;
+  min-height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: background 0.3s;
+  user-select: none;
+}
+
+.mockup-stage.bg-white {
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+}
+
+.mockup-stage.bg-black {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+}
+
+.mockup-stage.bg-studio {
+  background: radial-gradient(ellipse at center top, #ffffff 0%, #e8e8e8 50%, #d0d0d0 100%);
+}
+
+.viewer-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.preset-views {
+  display: flex;
+  gap: 10px;
+}
+
+.preset-views button {
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.preset-views button:hover {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.export-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.instructions {
+  text-align: center;
+  margin-top: 15px;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .viewer-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .viewer-footer {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .preset-views {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .export-btn {
+    width: 100%;
+  }
+}

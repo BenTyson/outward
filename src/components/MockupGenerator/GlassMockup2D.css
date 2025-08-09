@@ -1,0 +1,48 @@
+.glass-mockup-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-mockup-canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: grab;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+.glass-mockup-canvas:active {
+  cursor: grabbing;
+}
+
+.mockup-controls {
+  margin-top: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Loading state */
+.glass-mockup-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #999;
+}
+
+/* Different glass backgrounds */
+.glass-mockup-container.dark-background {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+}
+
+.glass-mockup-container.studio-background {
+  background: radial-gradient(ellipse at center, #ffffff 0%, #e8e8e8 100%);
+}

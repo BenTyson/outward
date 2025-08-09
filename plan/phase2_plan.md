@@ -1,7 +1,7 @@
 # Phase 2: 3D Mockup Generator
 
 ## Overview
-Integrate Three.js 3D glass models with the map configurations from Phase 1. Create realistic glass materials with transmission effects and dynamic texture mapping for real-time preview.
+Integrate Three.js 3D glass models with the map configurations from Phase 1. Create realistic glass materials with transmission effects and full-surface texture mapping for real-time preview. Maps will cover the entire curved surface of the glass, matching the production engraving process.
 
 ## Prerequisites
 - Phase 1 Map Builder completed and functional
@@ -19,9 +19,10 @@ Integrate Three.js 3D glass models with the map configurations from Phase 1. Cre
 Purpose: Load and render 3D glass models
 Features:
 - GLB/GLTF model loading
-- Multiple glass type support (Pint/Wine/Rocks)
+- Multiple glass type support (Pint/Wine/Rocks/Shot)
 - Optimized geometry for web performance
-- Proper UV mapping for engraving areas
+- Cylindrical UV mapping for full-surface engraving
+- Real-world scale and proportions
 ```
 
 #### 2. GlassMaterial Component
@@ -36,12 +37,13 @@ Features:
 
 #### 3. TextureMapper Component
 ```
-Purpose: Apply map designs to 3D models
+Purpose: Apply map designs to entire glass surface
 Features:
 - CanvasTexture integration from Phase 1
+- Full-surface cylindrical texture mapping
 - Dynamic texture updates
-- UV mapping to engraving areas
 - Real-time preview updates
+- Handles curved surface distortion naturally
 ```
 
 #### 4. Scene3D Component
@@ -70,43 +72,55 @@ Features:
 ```
 File Format: GLB (optimized GLTF)
 Polygon Count: <10,000 triangles per model (mobile performance)
-UV Mapping: Engraving area properly unwrapped
+UV Mapping: Full cylindrical unwrap covering entire curved surface
 Scale: Real-world dimensions in meters
 Optimization: Draco compression enabled
+Base Exclusion: Bottom/base faces separate from engraving surface
 ```
 
 #### Model Preparation Checklist
 - [ ] Export from Blender as GLB with Draco compression
-- [ ] Verify UV mapping covers engraving area correctly
-- [ ] Test polygon count for mobile performance
+- [ ] Cylindrical UV unwrap for full curved surface coverage
+- [ ] Exclude bottom/base from main UV layout
+- [ ] Test polygon count for mobile performance (<10k triangles)
 - [ ] Confirm scale matches real glass dimensions
-- [ ] Validate materials export properly
+- [ ] Position UV seam at back of glass for minimal visibility
+- [ ] Validate single material setup exports properly
 
 #### Required Models
 1. **Pint Glass Model**
-   - Engraving ratio: 10.64:6
+   - Full-surface engraving covering curved walls
+   - Circumference to height ratio based on real pint glass
    - File: `pint-glass.glb`
+   - Reference: https://lumengrave.com/products/portland-pint-glass
    
 2. **Wine Glass Model**
-   - Engraving ratio: 8.85:3.8
+   - Bowl area engraving (curved surface only)
    - File: `wine-glass.glb`
    
-3. **Rocks Glass Model**
-   - Engraving ratio: 3.92:9.46
+3. **Rocks Glass Model** 
+   - Short, wide surface for engraving
    - File: `rocks-glass.glb`
+
+4. **Shot Glass Model**
+   - Small surface area, full coverage
+   - File: `shot-glass.glb`
 
 ### Glass Material Implementation
 
-#### Realistic Glass Shader
+#### Realistic Glass Shader with Engraving
 ```javascript
 const glassMaterial = new THREE.MeshPhysicalMaterial({
-  transmission: 1.0,           // Full transparency
-  roughness: 0.1,             // Smooth glass surface
-  thickness: 0.5,             // Glass thickness for refraction
-  ior: 1.5,                   // Glass index of refraction
-  clearcoat: 1.0,             // Surface coating
-  clearcoatRoughness: 0.1,    // Coating smoothness
-  envMapIntensity: 1.0        // Environment reflection strength
+  map: engravingTexture,       // Full-surface map texture
+  transmission: 0.8,           // Slightly reduced for engraved areas
+  roughness: 0.2,              // Textured surface from engraving
+  thickness: 0.5,              // Glass thickness for refraction
+  ior: 1.5,                    // Glass index of refraction
+  clearcoat: 0.8,              // Reduced coating over engraved areas
+  clearcoatRoughness: 0.2,     // Slight texture from engraving
+  envMapIntensity: 0.9,        // Slightly reduced reflections
+  transparent: true,           // Enable transparency
+  opacity: 0.95               // Slight opacity for realism
 });
 ```
 
@@ -122,36 +136,43 @@ scene.environment = environmentTexture;
 
 ### Dynamic Texture Mapping
 
-#### Canvas-to-Texture Pipeline
+#### Full-Surface Canvas-to-Texture Pipeline
 ```javascript
 // Get map configuration from Phase 1
 const { mapImageUrl, text, icons, glassType } = mapConfig;
 
-// Create canvas texture
-const canvas = createHighResCanvas(mapConfig);
+// Create high-resolution canvas for full glass surface
+const canvas = createFullSurfaceCanvas(mapConfig);
 const texture = new THREE.CanvasTexture(canvas);
 texture.needsUpdate = true;
 
-// Apply to glass model engraving area
-const engravingMaterial = new THREE.MeshBasicMaterial({
+// Configure texture wrapping for cylindrical surface
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.ClampToEdgeWrapping;
+
+// Apply to entire glass surface
+const glassMaterial = new THREE.MeshPhysicalMaterial({
   map: texture,
-  transparent: true,
-  opacity: 0.9
+  transmission: 0.8,
+  transparent: true
 });
 ```
 
-#### UV Mapping Strategy
+#### Cylindrical UV Mapping Strategy
 ```javascript
-// Map canvas texture to specific UV coordinates
-// Engraving area should be isolated in UV space (0-1 range)
+// Full cylindrical UV mapping covers entire curved surface
+// UV layout: (0,0) to (1,1) represents full glass circumference and height
 const geometry = glassModel.geometry;
 const uvAttribute = geometry.attributes.uv;
 
-// Engraving area UV coordinates (will vary per glass model)
-const engravingUVBounds = {
-  pint: { minU: 0.2, maxU: 0.8, minV: 0.3, maxV: 0.7 },
-  wine: { minU: 0.15, maxU: 0.85, minV: 0.4, maxV: 0.8 },
-  rocks: { minU: 0.1, maxU: 0.9, minV: 0.2, maxV: 0.8 }
+// Glass surface coverage (matches real engraving area)
+const glassUVBounds = {
+  // Full circumference (0-1 U represents 360° around glass)
+  // Height coverage excludes bottom base
+  pint: { fullCircumference: true, heightCoverage: 0.85 },
+  wine: { fullCircumference: true, heightCoverage: 0.75 }, // Bowl area only
+  rocks: { fullCircumference: true, heightCoverage: 0.8 },
+  shot: { fullCircumference: true, heightCoverage: 0.9 }
 };
 ```
 
@@ -303,6 +324,166 @@ VITE_TEXTURE_CDN_URL=https://your-cdn.com/textures/
 - 3D preview images for Shopify product pages
 - Final laser files (high-res PNG) for order fulfillment
 - Configuration data for order processing
+
+---
+
+## Blender Model Preparation (Detailed Walkthrough)
+
+### Part 1: Initial Setup & File Assessment
+
+#### Step 1: Open Existing Blender Animation File
+1. **Launch Blender** (version 3.0+ recommended)
+2. **File → Open** your glass animation file
+3. **Identify glass objects** in Scene Collection (outliner)
+4. **Take inventory**: Note glass types, animation elements, extra objects
+
+#### Step 2: Scene Cleanup for Web Export
+1. **Delete unnecessary objects**:
+   - **Cameras** (except one for reference): Select → Delete
+   - **Lights** (we'll use web lighting): Select → Delete
+   - **Animation keyframes**: Timeline → Select All → X → Delete Keyframes
+   - **Background objects**: Remove anything not part of glass models
+2. **Keep only the glass geometries** for each type (Pint, Wine, Rocks, Shot)
+
+### Part 2: Model Optimization
+
+#### Step 3: Reduce Polygon Count (Mobile Performance)
+1. **Select glass model**
+2. **Tab** to Edit Mode
+3. **Check triangle count**: Top-right corner shows "Tris: XXXX"
+4. **Target**: Under 10,000 triangles per model
+5. **If over target**:
+   - **Modifier Properties** (wrench icon)
+   - **Add Modifier → Decimate**
+   - **Type**: Collapse
+   - **Ratio**: Start with 0.5 (adjust as needed)
+   - **Apply modifier** when satisfied
+
+#### Step 4: Clean Geometry
+1. **Edit Mode** (Tab)
+2. **Select All** (A)
+3. **Mesh → Clean Up → Merge by Distance** (0.001 threshold)
+4. **Mesh → Normals → Recalculate Outside**
+
+### Part 3: Full-Surface UV Mapping
+
+#### Step 5: Select Curved Engraving Surface
+1. **Edit Mode**, **Alt+A** (deselect all)
+2. **Select curved glass walls** (the engraving surface):
+   - **Alt+Click** edge loops to select around glass
+   - **Use Box Select (B)** for complex selections
+   - **Exclude bottom/base faces** (no engraving there)
+3. **Goal**: Select all curved surfaces where map will appear
+
+#### Step 6: Cylindrical UV Unwrap
+1. **UV Editing workspace** (top tab)
+2. **Split view**: UV Editor left, 3D Viewport right
+3. **With engraving surfaces selected**:
+   - **U key → Cylinder Projection**
+   - **Align**: View on Equator
+   - **Direction**: Z-axis (vertical)
+4. **Alternative**: **U → Unwrap** if cylinder projection fails
+
+#### Step 7: Optimize UV Layout
+1. **In UV Editor**:
+   - **Select all UVs** (A)
+   - **Scale to fill** UV space: S → type 0.95 → Enter
+   - **Position centrally** if needed: G to grab/move
+2. **Rotate if necessary**: R → 90 → Enter (for proper orientation)
+3. **Goal**: Rectangular layout filling most of 0-1 UV space
+
+#### Step 8: Handle Glass Base/Bottom
+1. **Select bottom faces** of glass
+2. **U → Unwrap**
+3. **In UV Editor**:
+   - **Scale very small**: S → 0.1 → Enter
+   - **Move to corner**: G → position in corner
+   - **These won't have engraving**, so minimize their UV space
+
+### Part 4: Material Setup
+
+#### Step 9: Single Material for Full Surface
+1. **Material Properties** (red sphere icon)
+2. **New Material** → Name: "Glass_With_Engraving"
+3. **Principled BSDF settings**:
+   - **Base Color**: White (1,1,1) - will be replaced by texture
+   - **Transmission**: 0.8
+   - **Roughness**: 0.2
+   - **IOR**: 1.5
+   - **Alpha**: 1.0
+
+#### Step 10: UV Seam Positioning
+1. **Edit Mode**
+2. **Select edge** where UV seam should be (back of glass)
+3. **Mesh → UV → Mark Seam**
+4. **Re-unwrap if needed**: U → Unwrap
+5. **Goal**: Seam at back where it's least visible
+
+### Part 5: Export Preparation
+
+#### Step 11: Object Naming & Transforms
+1. **Object Mode** (Tab)
+2. **Rename objects** clearly:
+   - "PintGlass", "WineGlass", "RocksGlass", "ShotGlass"
+3. **Apply transforms**:
+   - **Object → Apply → All Transforms**
+   - **Object → Transform → Geometry to Origin**
+
+#### Step 12: Scale Verification
+1. **Properties panel** (N key)
+2. **Item tab → Dimensions**:
+   - **Pint**: ~0.15m wide × 0.16m tall
+   - **Wine**: ~0.08m wide × 0.25m tall
+   - **Rocks**: ~0.09m wide × 0.09m tall
+   - **Shot**: ~0.05m wide × 0.08m tall
+3. **Scale if needed**: S → number → Enter
+
+### Part 6: GLB Export
+
+#### Step 13: Export Settings
+1. **File → Export → glTF 2.0 (.glb/.gltf)**
+2. **Critical settings**:
+   - **Format**: GLB (binary)
+   - **Include**: Selected Objects
+   - **Transform**: +Y Up (NOT Z Up!)
+   - **Geometry**: Apply Modifiers ✓, UVs ✓, Normals ✓
+   - **Materials**: Export Materials ✓
+   - **Compression**: Draco ✓
+
+#### Step 14: Export Each Glass Type
+1. **Select one glass type only**
+2. **Export with proper name**:
+   - `pint-glass.glb`
+   - `wine-glass.glb`  
+   - `rocks-glass.glb`
+   - `shot-glass.glb`
+
+### Part 7: Verification
+
+#### Step 15: Test GLB Files
+1. **Use online GLB viewer**: https://gltf-viewer.donmccurdy.com/
+2. **Verify each export**:
+   - Model loads correctly
+   - Scale looks appropriate
+   - Materials appear
+   - File size <2MB (preferably <500KB)
+   - UV mapping visible (if viewer supports it)
+
+#### Step 16: Document UV Layout
+1. **Screenshot UV layout** in Blender UV Editor
+2. **Note seam position** (should be at back)
+3. **Confirm full coverage** of curved surfaces
+4. **Save reference images** for development
+
+### Success Criteria
+- [ ] All glass models under 10,000 triangles
+- [ ] Cylindrical UV unwrap covers entire curved surface  
+- [ ] Bottom/base faces excluded from main UV layout
+- [ ] UV seam positioned at back of glass
+- [ ] Single material per glass model
+- [ ] GLB files under 2MB each
+- [ ] Real-world scale maintained
+- [ ] Clean geometry with proper normals
 
 ---
 
