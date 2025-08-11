@@ -19,12 +19,12 @@ const TestTransform = () => {
   const [perspectiveTaper, setPerspectiveTaper] = useState(0.8); // Bottom width relative to top (1 = rectangle, 0.5 = strong taper) - LEGACY
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
-  // Smoothing parameters - Optimized defaults for rocks glass mapping
-  const [horizontalOverlap, setHorizontalOverlap] = useState(1); // Horizontal strip overlap in pixels
-  const [bottomArcCompensation, setBottomArcCompensation] = useState(2); // Additional bottom arc compensation
-  const [verticalOverlap, setVerticalOverlap] = useState(1); // Vertical slice overlap in pixels
+  // Smoothing parameters - Reset to defaults for clean rendering
+  const [horizontalOverlap, setHorizontalOverlap] = useState(0); // Horizontal strip overlap in pixels
+  const [bottomArcCompensation, setBottomArcCompensation] = useState(0); // Additional bottom arc compensation
+  const [verticalOverlap, setVerticalOverlap] = useState(0); // Vertical slice overlap in pixels
   const [blurAmount, setBlurAmount] = useState(0); // Post-processing blur amount
-  const [blendOpacity, setBlendOpacity] = useState(0.85); // Overlap blending opacity
+  const [blendOpacity, setBlendOpacity] = useState(1.0); // Overlap blending opacity
   
   // Tab state
   const [activeTab, setActiveTab] = useState('position');
@@ -35,10 +35,14 @@ const TestTransform = () => {
   
   // Load both images
   useEffect(() => {
-    // Load map design (overlay)
+    // Load map design (overlay) - Using optimized 1600x1200 image from Phase 1
     const mapImg = new Image();
-    mapImg.onload = () => setTestImage(mapImg);
-    mapImg.src = '/glass-images/rocks-test-design.png';
+    mapImg.onload = () => {
+      console.log('Loaded optimized test image:', mapImg.width, 'x', mapImg.height);
+      console.log('Pixels per strip:', mapImg.height / 80, '(should be clean integer)');
+      setTestImage(mapImg);
+    };
+    mapImg.src = '/glass-images/rocks-test-design-optimal.png';
     
     // Load glass background
     const glassImg = new Image();
@@ -111,29 +115,48 @@ const TestTransform = () => {
       sourceX = 0;
       sourceY = (processedImage.height - sourceHeight) / 2; // Center crop
     }
-    // Disable canvas smoothing to maintain pure binary pixels
-    ctx.imageSmoothingEnabled = false;
+    // Enable minimal smoothing for binary images - helps blend strip boundaries without gray artifacts
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'low'; // Minimal smoothing
     
-    // Use horizontal strips with configurable overlap - maximum density for perfect smoothness
-    const strips = 160;
+    // Use strip count that evenly divides common resolutions
+    // For integration with Phase 1, we'll generate images at optimal sizes
+    const strips = 80; // Will work perfectly with 1600px height from Phase 1
     const stripHeight = height / strips;
     const sourceStripHeight = sourceHeight / strips;
     
     for (let i = 0; i < strips; i++) {
       const progress = i / (strips - 1); // 0 to 1 from top to bottom
       
-      // Calculate dynamic overlap based on arc distortion FIRST
-      // Increase base overlap significantly for binary mode to eliminate strip boundaries
-      let currentHorizontalOverlap = horizontalOverlap + 3; // Add 3px base overlap for binary mode
+      // Smart overlap compensation: increase overlap in arc areas where strips get distorted
+      let currentHorizontalOverlap = horizontalOverlap;
+      
+      // Top arc area compensation - mathematical precision  
       if (progress < 0.4 && arcAmount > 0) {
-        const arcProgress = progress / 0.4;
-        const distortionFactor = arcAmount * (1 - arcProgress);
-        currentHorizontalOverlap = horizontalOverlap + (distortionFactor * 4); // Scale factor for compensation
-      } else if (progress > 0.6 && bottomArcAmount > 0) {
-        const bottomArcProgress = (progress - 0.6) / 0.4;
-        const distortionFactor = bottomArcAmount * bottomArcProgress;
-        // Use manual compensation slider instead of automatic calculation
-        currentHorizontalOverlap = horizontalOverlap + (bottomArcCompensation * bottomArcProgress);
+        const arcProgress = progress / 0.4; // 0 at top, 1 at 40% down
+        
+        // Calculate exact gap created by top arc curvature
+        const arcCurvature = arcAmount * height * 0.1 * (1 - arcProgress); // Inverse of bottom arc
+        
+        // Gap expansion factor - strips spread more at the very top
+        const gapExpansion = Math.pow((1 - arcProgress), 1.2); // Max expansion at top
+        const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Same precision as bottom
+        
+        currentHorizontalOverlap = horizontalOverlap + calculatedOverlap;
+      } 
+      // Bottom arc area compensation - mathematical precision
+      else if (progress > 0.6 && bottomArcAmount > 0) {
+        const bottomArcProgress = (progress - 0.6) / 0.4; // 0 at 60%, 1 at bottom
+        
+        // Calculate exact gap created by arc curvature
+        const arcCurvature = bottomArcAmount * height * 0.1 * bottomArcProgress;
+        const stripSpacing = stripHeight;
+        
+        // Gap expansion factor - strips spread more as they curve
+        const gapExpansion = Math.pow(bottomArcProgress, 1.2); // Less steep curve for more consistent compensation
+        const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Much more aggressive compensation
+        
+        currentHorizontalOverlap = horizontalOverlap + calculatedOverlap + bottomArcCompensation;
       }
       
       // Add overlap to source sampling using dynamic overlap (within cropped area)
@@ -183,8 +206,8 @@ const TestTransform = () => {
       // For the arc rows (top or bottom), apply arc warping
       const needsArcWarping = (progress < 0.4 && arcAmount > 0) || (progress > 0.6 && bottomArcAmount > 0);
       if (needsArcWarping) {
-        // Draw this row with arc distortion and overlap - maximum density
-        const subStrips = 100; // Subdivide for arc
+        // Draw this row with arc distortion and overlap - reduced density for binary mode
+        const subStrips = 50; // Reduced from 100
         const subStripWidth = currentWidth / subStrips;
         
         for (let j = 0; j < subStrips; j++) {

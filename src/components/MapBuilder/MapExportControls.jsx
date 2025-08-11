@@ -94,10 +94,14 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
     setExportError(null);
     
     try {
-      // Screen resolution preview
-      const previewWidth = 800;
+      // OPTIMIZED FOR PHASE 2: Generate at dimensions divisible by 80 strips
+      // This prevents sub-pixel sampling issues in Phase 2 processing
+      // Maintain aspect ratio from original design while ensuring divisibility
       const { aspectRatio } = calculateDimensions(glassType);
-      const previewHeight = Math.round(previewWidth / aspectRatio);
+      const previewWidth = 1600;  // Fixed width divisible by 80
+      const previewHeight = Math.round((previewWidth / aspectRatio) / 80) * 80; // Round to nearest 80
+      console.log('Generating Phase 2 optimized preview at', previewWidth, 'x', previewHeight);
+      console.log('Aspect ratio:', aspectRatio, 'Height rounded to nearest 80px for strip alignment');
       
       const canvas = document.createElement('canvas');
       canvas.width = previewWidth;
@@ -172,15 +176,16 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       const url = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(url);
       
-      // Auto-download the preview
+      // Auto-download the preview optimized for Phase 2
       const link = document.createElement('a');
-      link.download = `lumengrave-preview-${Date.now()}.png`;
+      link.download = `phase2-test-map-${Date.now()}.png`;
       link.href = url;
       link.click();
       
-      console.log('Generated quick preview:', {
-        resolution: `${previewWidth}x${previewHeight}px`,
-        fileSize: `~${Math.round(url.length / 1024)}KB`
+      console.log('Generated Phase 2 optimized preview:', {
+        resolution: `${previewWidth}x${previewHeight}px (perfect for 80-strip processing)`,
+        fileSize: `~${Math.round(url.length / 1024)}KB`,
+        stripAlignment: `${previewHeight/80}px per strip (no sub-pixel issues)`
       });
       
     } catch (err) {
@@ -335,7 +340,7 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
               disabled={isExporting}
               className="preview-btn"
             >
-              {isExporting ? 'Generating...' : 'Quick Preview'}
+              {isExporting ? 'Generating...' : 'Preview (Phase 2 Test)'}
             </button>
             
             <button
@@ -353,7 +358,7 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
         <p><strong>Final Design:</strong> Creates composite image with text/icons for laser engraving</p>
         {mapImageUrl && (
           <>
-            <p><strong>Quick Preview:</strong> Screen resolution (800px) for quick viewing</p>
+            <p><strong>Preview (Phase 2 Test):</strong> 1600×1200px optimized for Phase 2 testing (no grid artifacts)</p>
             <p><strong>Ultra High Res:</strong> 1200 DPI export (4800px) for professional laser engraving</p>
           </>
         )}

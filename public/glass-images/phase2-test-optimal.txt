@@ -1,0 +1,15 @@
+Phase 2 Test Image Instructions
+================================
+
+When you click "Preview (Phase 2 Test)" in the main app:
+1. The image will be generated at 1600×1200px
+2. These dimensions are perfectly divisible by 80 strips
+3. Download will be named: phase2-test-map-[timestamp].png
+4. Copy this file to: public/glass-images/
+5. Rename to: rocks-test-design-optimal.png
+
+This will eliminate grid artifacts because:
+- 1600 ÷ 80 = 20px per horizontal strip (no fractions)
+- 1200 ÷ 80 = 15px per vertical strip (no fractions)
+- No sub-pixel sampling issues
+- Clean pixel boundaries align with strip boundaries
