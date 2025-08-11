@@ -23,6 +23,12 @@ const TestTransform = () => {
   const [blurAmount, setBlurAmount] = useState(0); // Post-processing blur amount
   const [blendOpacity, setBlendOpacity] = useState(0.85); // Overlap blending opacity
   
+  // Tab state
+  const [activeTab, setActiveTab] = useState('position');
+  
+  // Visual effects parameters
+  const [whiteTransparency, setWhiteTransparency] = useState(0.8); // 0 = no transparency, 1 = full white removal
+  
   // Load both images
   useEffect(() => {
     // Load map design (overlay)
@@ -42,27 +48,63 @@ const TestTransform = () => {
   
   // Apply arc/perspective transform with configurable overlap blending
   const applyArcTransform = (ctx, image, x, y, width, height) => {
-    // Pre-process: Create rounded corner version of source image if needed
+    // Pre-process: Apply white transparency first
     let processedImage = image;
+    if (whiteTransparency > 0) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = image.width;
+      tempCanvas.height = image.height;
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      // Draw original image
+      tempCtx.drawImage(image, 0, 0);
+      
+      // Get image data for pixel manipulation
+      const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+      const data = imageData.data;
+      
+      // Process each pixel to make white areas transparent
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        
+        // Calculate brightness (0-255)
+        const brightness = (r + g + b) / 3;
+        
+        // If pixel is bright (close to white), make it transparent
+        const whitenessThreshold = 200; // Adjust this to control what counts as "white"
+        if (brightness > whitenessThreshold) {
+          const transparency = ((brightness - whitenessThreshold) / (255 - whitenessThreshold)) * whiteTransparency;
+          data[i + 3] = Math.max(0, data[i + 3] * (1 - transparency)); // Reduce alpha
+        }
+      }
+      
+      // Put modified data back
+      tempCtx.putImageData(imageData, 0, 0);
+      processedImage = tempCanvas;
+    }
+    
+    // Pre-process: Create rounded corner version of source image if needed
     if (bottomCornerRadius > 0) {
       // Create a temporary canvas for rounded source image
       const roundedCanvas = document.createElement('canvas');
-      roundedCanvas.width = image.width;
-      roundedCanvas.height = image.height;
+      roundedCanvas.width = processedImage.width;
+      roundedCanvas.height = processedImage.height;
       const roundedCtx = roundedCanvas.getContext('2d');
       
       // Calculate corner radius relative to image size
-      const imageCornerRadius = bottomCornerRadius * (image.width / width); // Scale radius to source image
+      const imageCornerRadius = bottomCornerRadius * (processedImage.width / width); // Scale radius to source image
       
       // Draw rounded rectangle mask
       roundedCtx.beginPath();
       roundedCtx.moveTo(imageCornerRadius, 0);
-      roundedCtx.lineTo(image.width - imageCornerRadius, 0);
-      roundedCtx.arcTo(image.width, 0, image.width, imageCornerRadius, imageCornerRadius);
-      roundedCtx.lineTo(image.width, image.height - imageCornerRadius);
-      roundedCtx.arcTo(image.width, image.height, image.width - imageCornerRadius, image.height, imageCornerRadius);
-      roundedCtx.lineTo(imageCornerRadius, image.height);
-      roundedCtx.arcTo(0, image.height, 0, image.height - imageCornerRadius, imageCornerRadius);
+      roundedCtx.lineTo(processedImage.width - imageCornerRadius, 0);
+      roundedCtx.arcTo(processedImage.width, 0, processedImage.width, imageCornerRadius, imageCornerRadius);
+      roundedCtx.lineTo(processedImage.width, processedImage.height - imageCornerRadius);
+      roundedCtx.arcTo(processedImage.width, processedImage.height, processedImage.width - imageCornerRadius, processedImage.height, imageCornerRadius);
+      roundedCtx.lineTo(imageCornerRadius, processedImage.height);
+      roundedCtx.arcTo(0, processedImage.height, 0, processedImage.height - imageCornerRadius, imageCornerRadius);
       roundedCtx.lineTo(0, imageCornerRadius);
       roundedCtx.arcTo(0, 0, imageCornerRadius, 0, imageCornerRadius);
       roundedCtx.closePath();
@@ -70,8 +112,8 @@ const TestTransform = () => {
       // Use the path as a clipping mask
       roundedCtx.clip();
       
-      // Draw the original image within the rounded mask
-      roundedCtx.drawImage(image, 0, 0);
+      // Draw the processed image within the rounded mask
+      roundedCtx.drawImage(processedImage, 0, 0);
       
       processedImage = roundedCanvas;
     }
@@ -321,287 +363,325 @@ const TestTransform = () => {
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteTransparency]);
   
   return (
     <div style={{ padding: '20px' }}>
       <h1>Arc/Perspective Transform for Tilted Glass</h1>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '30px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '20px' }}>
         {/* Controls */}
-        <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '8px' }}>
-          <h3>Transform Controls</h3>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Top Arc Amount: {arcAmount.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={arcAmount}
-              onChange={(e) => setArcAmount(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Controls top rim curve (ellipse effect)</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Bottom Arc Amount: {bottomArcAmount.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={bottomArcAmount}
-              onChange={(e) => setBottomArcAmount(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Controls bottom rim curve (base distortion)</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Top Width: {topWidth}px
-            </label>
-            <input
-              type="range"
-              min="200"
-              max="600"
-              step="5"
-              value={topWidth}
-              onChange={(e) => setTopWidth(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Width at top edge of overlay</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Bottom Width: {bottomWidth}px
-            </label>
-            <input
-              type="range"
-              min="200"
-              max="600"
-              step="5"
-              value={bottomWidth}
-              onChange={(e) => setBottomWidth(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Width at bottom edge of overlay</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Vertical Position: {verticalPosition}px
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="300"
-              step="5"
-              value={verticalPosition}
-              onChange={(e) => setVerticalPosition(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Y position of top edge of overlay</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Map Height: {mapHeight}px
-            </label>
-            <input
-              type="range"
-              min="200"
-              max="600"
-              step="10"
-              value={mapHeight}
-              onChange={(e) => setMapHeight(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Height of overlay area (preserves image ratio)</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Bottom Corner Radius: {bottomCornerRadius}px
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="50"
-              step="2"
-              value={bottomCornerRadius}
-              onChange={(e) => setBottomCornerRadius(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Rounds bottom left/right corners to match glass shape</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Vertical Squash: {verticalSquash.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0.7"
-              max="1.3"
-              step="0.01"
-              value={verticalSquash}
-              onChange={(e) => setVerticalSquash(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Compress/stretch vertically</small>
-          </div>
-          
-          <hr style={{ margin: '20px 0', borderColor: '#ddd' }} />
-          <h4>Smoothing Controls</h4>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Horizontal Overlap: {horizontalOverlap}px
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="8"
-              step="1"
-              value={horizontalOverlap}
-              onChange={(e) => setHorizontalOverlap(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Overlap between horizontal strips</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Bottom Arc Compensation: {bottomArcCompensation.toFixed(1)}px
-            </label>
-            <input
-              type="range"
-              min="-8"
-              max="8"
-              step="0.5"
-              value={bottomArcCompensation}
-              onChange={(e) => setBottomArcCompensation(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Additional overlap adjustment for bottom arc area</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Vertical Overlap: {verticalOverlap}px
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="4"
-              step="1"
-              value={verticalOverlap}
-              onChange={(e) => setVerticalOverlap(parseInt(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Overlap between vertical slices (arc area)</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Blur Amount: {blurAmount.toFixed(1)}px
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="3"
-              step="0.1"
-              value={blurAmount}
-              onChange={(e) => setBlurAmount(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Post-processing blur to smooth seams</small>
-          </div>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-              Blend Opacity: {blendOpacity.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0.5"
-              max="1"
-              step="0.01"
-              value={blendOpacity}
-              onChange={(e) => setBlendOpacity(parseFloat(e.target.value))}
-              style={{ width: '100%' }}
-            />
-            <small>Opacity for overlap blending</small>
-          </div>
-          
-          <hr style={{ margin: '20px 0', borderColor: '#ddd' }} />
-          <h4>Settings Export/Import</h4>
-          
-          <div style={{ marginBottom: '20px' }}>
-            <button 
-              onClick={() => {
-                const settings = {
-                  arcAmount,
-                  bottomArcAmount,
-                  topWidth,
-                  bottomWidth,
-                  verticalPosition,
-                  mapHeight,
-                  bottomCornerRadius,
-                  verticalSquash,
-                  horizontalOverlap,
-                  bottomArcCompensation,
-                  verticalOverlap,
-                  blurAmount,
-                  blendOpacity
-                };
-                navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
-                alert('Settings copied to clipboard!');
-              }}
-              style={{ 
-                padding: '10px 15px', 
-                backgroundColor: '#007bff', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px',
+        <div style={{ background: '#f9f9f9', borderRadius: '8px', overflow: 'hidden' }}>
+          {/* Tab Navigation */}
+          <div style={{ display: 'flex', background: '#e9ecef' }}>
+            <button
+              onClick={() => setActiveTab('position')}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: 'none',
+                background: activeTab === 'position' ? '#007bff' : 'transparent',
+                color: activeTab === 'position' ? 'white' : '#666',
                 cursor: 'pointer',
-                marginRight: '10px'
+                fontSize: '14px',
+                fontWeight: 'bold'
               }}
             >
-              Copy Settings
+              Position
             </button>
-            
-            <button 
-              onClick={() => {
-                const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}`;
-                navigator.clipboard.writeText(settings);
-                alert('Settings copied as one-line format!');
-              }}
-              style={{ 
-                padding: '10px 15px', 
-                backgroundColor: '#28a745', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px',
-                cursor: 'pointer'
+            <button
+              onClick={() => setActiveTab('visual')}
+              style={{
+                flex: 1,
+                padding: '12px 16px',
+                border: 'none',
+                background: activeTab === 'visual' ? '#007bff' : 'transparent',
+                color: activeTab === 'visual' ? 'white' : '#666',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 'bold'
               }}
             >
-              Copy One-Line
+              Visual
             </button>
           </div>
           
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            <strong>Current Settings:</strong><br/>
-            arcAmount: {arcAmount}, bottomArcAmount: {bottomArcAmount}, topWidth: {topWidth}, bottomWidth: {bottomWidth}, verticalPosition: {verticalPosition}, mapHeight: {mapHeight}, bottomCornerRadius: {bottomCornerRadius}, verticalSquash: {verticalSquash}, horizontalOverlap: {horizontalOverlap}, bottomArcCompensation: {bottomArcCompensation}, verticalOverlap: {verticalOverlap}, blurAmount: {blurAmount}, blendOpacity: {blendOpacity}
+          {/* Tab Content */}
+          <div style={{ padding: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
+            {activeTab === 'position' && (
+              <>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Position Controls</h4>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Top Arc: {arcAmount.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={arcAmount}
+                    onChange={(e) => setArcAmount(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Bottom Arc: {bottomArcAmount.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={bottomArcAmount}
+                    onChange={(e) => setBottomArcAmount(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Top Width: {topWidth}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="5"
+                    value={topWidth}
+                    onChange={(e) => setTopWidth(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Bottom Width: {bottomWidth}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="5"
+                    value={bottomWidth}
+                    onChange={(e) => setBottomWidth(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Vertical Position: {verticalPosition}px
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="300"
+                    step="5"
+                    value={verticalPosition}
+                    onChange={(e) => setVerticalPosition(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Map Height: {mapHeight}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="10"
+                    value={mapHeight}
+                    onChange={(e) => setMapHeight(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Corner Radius: {bottomCornerRadius}px
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    step="2"
+                    value={bottomCornerRadius}
+                    onChange={(e) => setBottomCornerRadius(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Vertical Squash: {verticalSquash.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0.7"
+                    max="1.3"
+                    step="0.01"
+                    value={verticalSquash}
+                    onChange={(e) => setVerticalSquash(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
+                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Fine Tuning</h5>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      H-Overlap: {horizontalOverlap}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="8"
+                      step="1"
+                      value={horizontalOverlap}
+                      onChange={(e) => setHorizontalOverlap(parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Bottom Compensation: {bottomArcCompensation.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-8"
+                      max="8"
+                      step="0.5"
+                      value={bottomArcCompensation}
+                      onChange={(e) => setBottomArcCompensation(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      V-Overlap: {verticalOverlap}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="4"
+                      step="1"
+                      value={verticalOverlap}
+                      onChange={(e) => setVerticalOverlap(parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Blur: {blurAmount.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={blurAmount}
+                      onChange={(e) => setBlurAmount(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Blend: {blendOpacity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="1"
+                      step="0.01"
+                      value={blendOpacity}
+                      onChange={(e) => setBlendOpacity(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {activeTab === 'visual' && (
+              <>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Visual Effects</h4>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    White Transparency: {whiteTransparency.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={whiteTransparency}
+                    onChange={(e) => setWhiteTransparency(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
+                    0 = no transparency, 1 = full white removal
+                  </div>
+                </div>
+                
+                <div style={{ padding: '20px', textAlign: 'center', color: '#666', borderTop: '1px solid #eee', marginTop: '16px' }}>
+                  Additional visual effects coming next:
+                  <br />
+                  <small>Engraving depth, highlights, shadows, etc.</small>
+                </div>
+              </>
+            )}
+          </div>
+          
+          {/* Export/Import - Outside of tabs */}
+          <div style={{ borderTop: '1px solid #ddd', padding: '12px', background: '#f8f9fa' }}>
+            <h5 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>Export Settings</h5>
+          
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+              <button 
+                onClick={() => {
+                  const settings = {
+                    arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
+                    mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, 
+                    bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity,
+                    whiteTransparency
+                  };
+                  navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
+                  alert('Settings copied!');
+                }}
+                style={{ 
+                  flex: 1, padding: '6px 10px', backgroundColor: '#007bff', color: 'white', 
+                  border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
+                }}
+              >
+                Copy JSON
+              </button>
+              
+              <button 
+                onClick={() => {
+                  const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}, whiteTransparency: ${whiteTransparency}`;
+                  navigator.clipboard.writeText(settings);
+                  alert('One-line copied!');
+                }}
+                style={{ 
+                  flex: 1, padding: '6px 10px', backgroundColor: '#28a745', color: 'white', 
+                  border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
+                }}
+              >
+                Copy Line
+              </button>
+            </div>
           </div>
         </div>
         
