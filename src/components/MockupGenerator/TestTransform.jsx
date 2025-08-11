@@ -16,8 +16,8 @@ const TestTransform = () => {
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
   // Smoothing parameters - Optimized defaults for rocks glass mapping
-  const [horizontalOverlap, setHorizontalOverlap] = useState(3); // Horizontal strip overlap in pixels
-  const [bottomArcCompensation, setBottomArcCompensation] = useState(0); // Additional bottom arc compensation
+  const [horizontalOverlap, setHorizontalOverlap] = useState(1); // Horizontal strip overlap in pixels
+  const [bottomArcCompensation, setBottomArcCompensation] = useState(2); // Additional bottom arc compensation
   const [verticalOverlap, setVerticalOverlap] = useState(1); // Vertical slice overlap in pixels
   const [blurAmount, setBlurAmount] = useState(0); // Post-processing blur amount
   const [blendOpacity, setBlendOpacity] = useState(0.85); // Overlap blending opacity
@@ -64,8 +64,8 @@ const TestTransform = () => {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     
-    // Use horizontal strips with configurable overlap - maximum smoothness
-    const strips = 80;
+    // Use horizontal strips with configurable overlap - maximum density for perfect smoothness
+    const strips = 160;
     const stripHeight = height / strips;
     const sourceStripHeight = sourceHeight / strips;
     
@@ -132,8 +132,8 @@ const TestTransform = () => {
       // For the arc rows (top or bottom), apply arc warping
       const needsArcWarping = (progress < 0.4 && arcAmount > 0) || (progress > 0.6 && bottomArcAmount > 0);
       if (needsArcWarping) {
-        // Draw this row with arc distortion and overlap - maximum smoothness
-        const subStrips = 50; // Subdivide for arc
+        // Draw this row with arc distortion and overlap - maximum density
+        const subStrips = 100; // Subdivide for arc
         const subStripWidth = currentWidth / subStrips;
         
         for (let j = 0; j < subStrips; j++) {
@@ -244,11 +244,12 @@ const TestTransform = () => {
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     
-    // Draw arc guide at top using dynamic vertical position
+    // Draw arc guide at top using actual overlay dimensions
     ctx.beginPath();
     const steps = 20;
+    const topStartX = 200 + (400 - topWidth) / 2; // Center the top width within the 400px area
     for (let i = 0; i <= steps; i++) {
-      const x = 200 + (i / steps) * topWidth;
+      const x = topStartX + (i / steps) * topWidth;
       const normalizedX = i / steps;
       const centerOffset = Math.abs(normalizedX - 0.5) * 2;
       const arcOffset = arcAmount * mapHeight * 0.15 * (1 - centerOffset * centerOffset);
@@ -262,13 +263,13 @@ const TestTransform = () => {
     // Draw bottom arc guide using actual bottom width
     ctx.beginPath();
     const actualBottomWidth = bottomWidth;
-    const bottomX = 200 + (topWidth - actualBottomWidth) / 2;
+    const bottomStartX = 200 + (400 - actualBottomWidth) / 2; // Center the bottom width within the 400px area
     
     if (bottomArcAmount > 0) {
       // Draw bottom arc
       const steps = 20;
       for (let i = 0; i <= steps; i++) {
-        const x = bottomX + (i / steps) * actualBottomWidth;
+        const x = bottomStartX + (i / steps) * actualBottomWidth;
         const normalizedX = i / steps;
         const centerOffset = Math.abs(normalizedX - 0.5) * 2;
         const bottomArcOffset = bottomArcAmount * mapHeight * 0.1 * (1 - centerOffset * centerOffset);
@@ -279,8 +280,8 @@ const TestTransform = () => {
       }
     } else {
       // Draw straight bottom line
-      ctx.moveTo(bottomX, verticalPosition + mapHeight);
-      ctx.lineTo(bottomX + actualBottomWidth, verticalPosition + mapHeight);
+      ctx.moveTo(bottomStartX, verticalPosition + mapHeight);
+      ctx.lineTo(bottomStartX + actualBottomWidth, verticalPosition + mapHeight);
     }
     ctx.stroke();
     
