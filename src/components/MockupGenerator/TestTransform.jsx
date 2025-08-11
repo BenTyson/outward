@@ -26,8 +26,9 @@ const TestTransform = () => {
   // Tab state
   const [activeTab, setActiveTab] = useState('position');
   
-  // Visual effects parameters
-  const [whiteTransparency, setWhiteTransparency] = useState(0.8); // 0 = no transparency, 1 = full white removal
+  // Visual effects parameters - Simplified binary approach
+  const [whiteThreshold, setWhiteThreshold] = useState(240); // Brightness level that counts as "white" (0-255)
+  const [engravingOpacity, setEngravingOpacity] = useState(0.3); // 0 = fully transparent, 1 = fully opaque (for all non-white pixels)
   
   // Load both images
   useEffect(() => {
@@ -50,7 +51,11 @@ const TestTransform = () => {
   const applyArcTransform = (ctx, image, x, y, width, height) => {
     // Pre-process: Apply white transparency first
     let processedImage = image;
-    if (whiteTransparency > 0) {
+    
+    // Debug log to see if processing is happening
+    console.log('Visual processing:', { whiteThreshold, engravingOpacity });
+    
+    if (engravingOpacity < 1 || whiteThreshold < 255) {
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = image.width;
       tempCanvas.height = image.height;
@@ -63,7 +68,7 @@ const TestTransform = () => {
       const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
       const data = imageData.data;
       
-      // Process each pixel to make white areas transparent
+      // Process each pixel: Binary approach - white becomes transparent, everything else becomes black
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
@@ -72,11 +77,16 @@ const TestTransform = () => {
         // Calculate brightness (0-255)
         const brightness = (r + g + b) / 3;
         
-        // If pixel is bright (close to white), make it transparent
-        const whitenessThreshold = 200; // Adjust this to control what counts as "white"
-        if (brightness > whitenessThreshold) {
-          const transparency = ((brightness - whitenessThreshold) / (255 - whitenessThreshold)) * whiteTransparency;
-          data[i + 3] = Math.max(0, data[i + 3] * (1 - transparency)); // Reduce alpha
+        // Binary processing: white or black, no grays
+        if (brightness > whiteThreshold) {
+          // White pixels: make fully transparent
+          data[i + 3] = 0;
+        } else {
+          // Everything else: convert to pure black and apply engraving opacity
+          data[i] = 0;     // Red = 0 (black)
+          data[i + 1] = 0; // Green = 0 (black)  
+          data[i + 2] = 0; // Blue = 0 (black)
+          data[i + 3] = Math.round(data[i + 3] * engravingOpacity); // Apply opacity
         }
       }
       
@@ -137,9 +147,8 @@ const TestTransform = () => {
       sourceX = 0;
       sourceY = (processedImage.height - sourceHeight) / 2; // Center crop
     }
-    // Enable canvas smoothing for better blending
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
+    // Disable canvas smoothing to maintain pure binary pixels
+    ctx.imageSmoothingEnabled = false;
     
     // Use horizontal strips with configurable overlap - maximum density for perfect smoothness
     const strips = 160;
@@ -150,7 +159,8 @@ const TestTransform = () => {
       const progress = i / (strips - 1); // 0 to 1 from top to bottom
       
       // Calculate dynamic overlap based on arc distortion FIRST
-      let currentHorizontalOverlap = horizontalOverlap;
+      // Increase base overlap significantly for binary mode to eliminate strip boundaries
+      let currentHorizontalOverlap = horizontalOverlap + 3; // Add 3px base overlap for binary mode
       if (progress < 0.4 && arcAmount > 0) {
         const arcProgress = progress / 0.4;
         const distortionFactor = arcAmount * (1 - arcProgress);
@@ -363,7 +373,7 @@ const TestTransform = () => {
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteTransparency]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -619,19 +629,37 @@ const TestTransform = () => {
                 
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    White Transparency: {whiteTransparency.toFixed(2)}
+                    White Threshold: {whiteThreshold}
+                  </label>
+                  <input
+                    type="range"
+                    min="180"
+                    max="250"
+                    step="5"
+                    value={whiteThreshold}
+                    onChange={(e) => setWhiteThreshold(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
+                    Lower = more pixels become transparent (includes light grays)
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Engraving Opacity: {engravingOpacity.toFixed(2)}
                   </label>
                   <input
                     type="range"
                     min="0"
                     max="1"
                     step="0.01"
-                    value={whiteTransparency}
-                    onChange={(e) => setWhiteTransparency(parseFloat(e.target.value))}
+                    value={engravingOpacity}
+                    onChange={(e) => setEngravingOpacity(parseFloat(e.target.value))}
                     style={{ width: '100%' }}
                   />
                   <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
-                    0 = no transparency, 1 = full white removal
+                    0 = invisible engraving, 1 = solid black engraving
                   </div>
                 </div>
                 
@@ -655,7 +683,7 @@ const TestTransform = () => {
                     arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
                     mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, 
                     bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity,
-                    whiteTransparency
+                    whiteThreshold, engravingOpacity
                   };
                   navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
                   alert('Settings copied!');
@@ -670,7 +698,7 @@ const TestTransform = () => {
               
               <button 
                 onClick={() => {
-                  const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}, whiteTransparency: ${whiteTransparency}`;
+                  const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}, whiteThreshold: ${whiteThreshold}, engravingOpacity: ${engravingOpacity}`;
                   navigator.clipboard.writeText(settings);
                   alert('One-line copied!');
                 }}
