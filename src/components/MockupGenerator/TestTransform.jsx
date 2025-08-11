@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { processImageForEngraving } from './utils/imageProcessing';
+import VisualControls from './components/VisualControls';
+import SettingsExport from './components/SettingsExport';
 
 const TestTransform = () => {
   const canvasRef = useRef(null);
@@ -586,93 +588,22 @@ const TestTransform = () => {
             )}
             
             {activeTab === 'visual' && (
-              <>
-                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Visual Effects</h4>
-                
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    White Threshold: {whiteThreshold}
-                  </label>
-                  <input
-                    type="range"
-                    min="180"
-                    max="250"
-                    step="5"
-                    value={whiteThreshold}
-                    onChange={(e) => setWhiteThreshold(parseInt(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
-                    Lower = more pixels become transparent (includes light grays)
-                  </div>
-                </div>
-                
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    Engraving Opacity: {engravingOpacity.toFixed(2)}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={engravingOpacity}
-                    onChange={(e) => setEngravingOpacity(parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
-                  <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>
-                    0 = invisible engraving, 1 = solid black engraving
-                  </div>
-                </div>
-                
-                <div style={{ padding: '20px', textAlign: 'center', color: '#666', borderTop: '1px solid #eee', marginTop: '16px' }}>
-                  Additional visual effects coming next:
-                  <br />
-                  <small>Engraving depth, highlights, shadows, etc.</small>
-                </div>
-              </>
+              <VisualControls
+                whiteThreshold={whiteThreshold}
+                setWhiteThreshold={setWhiteThreshold}
+                engravingOpacity={engravingOpacity}
+                setEngravingOpacity={setEngravingOpacity}
+              />
             )}
           </div>
           
           {/* Export/Import - Outside of tabs */}
-          <div style={{ borderTop: '1px solid #ddd', padding: '12px', background: '#f8f9fa' }}>
-            <h5 style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>Export Settings</h5>
-          
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-              <button 
-                onClick={() => {
-                  const settings = {
-                    arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
-                    mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, 
-                    bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity,
-                    whiteThreshold, engravingOpacity
-                  };
-                  navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
-                  alert('Settings copied!');
-                }}
-                style={{ 
-                  flex: 1, padding: '6px 10px', backgroundColor: '#007bff', color: 'white', 
-                  border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
-                }}
-              >
-                Copy JSON
-              </button>
-              
-              <button 
-                onClick={() => {
-                  const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}, whiteThreshold: ${whiteThreshold}, engravingOpacity: ${engravingOpacity}`;
-                  navigator.clipboard.writeText(settings);
-                  alert('One-line copied!');
-                }}
-                style={{ 
-                  flex: 1, padding: '6px 10px', backgroundColor: '#28a745', color: 'white', 
-                  border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px'
-                }}
-              >
-                Copy Line
-              </button>
-            </div>
-          </div>
+          <SettingsExport settings={{
+            arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
+            mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, 
+            bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity,
+            whiteThreshold, engravingOpacity
+          }} />
         </div>
         
         {/* Canvas */}
