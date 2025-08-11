@@ -20,9 +20,9 @@ const GlassMockupWrap = ({ rotation = 0, frontLayer = {}, backLayer = {}, layerC
     img.src = '/glass-images/rocks-test-design.png';
   }, []);
 
-  // Function to create subtle barrel distortion that follows the glass curves
-  const createDistortedMap = (sourceMap, sourceX, visiblePortion, glassArea, outputWidth, outputHeight) => {
-    if (!sourceMap || !outputWidth || !outputHeight) {
+  // Clean, simple map preparation - no warping yet
+  const createSimpleMap = (sourceMap, sourceX, visiblePortion) => {
+    if (!sourceMap) {
       return null;
     }
     
@@ -33,72 +33,31 @@ const GlassMockupWrap = ({ rotation = 0, frontLayer = {}, backLayer = {}, layerC
       console.error('Could not get 2D context');
       return null;
     }
-    
-    tempCanvas.width = Math.floor(outputWidth);
-    tempCanvas.height = Math.floor(outputHeight);
 
     // Get source dimensions
     const mapWidth = sourceMap.width || 100;
     const mapHeight = sourceMap.height || 100;
     const drawWidth = mapWidth * visiblePortion;
+    
+    tempCanvas.width = Math.floor(drawWidth);
+    tempCanvas.height = Math.floor(mapHeight);
 
-    // Create source canvas for pixel sampling
-    const sourceCanvas = document.createElement('canvas');
-    const sourceCtx = sourceCanvas.getContext('2d');
-    sourceCanvas.width = mapWidth;
-    sourceCanvas.height = mapHeight;
-    sourceCtx.drawImage(sourceMap, 0, 0);
-
-    // Apply subtle distortion using transform
-    // Calculate curve amounts
-    const topCurveOffset = (glassArea.rimDipY - glassArea.topY) / outputHeight;
-    const bottomCurveOffset = (glassArea.bottomY - glassArea.bottomDipY) / outputHeight;
-
-    // Draw with subtle vertical strips that follow curves
-    const strips = 20; // Fewer strips to reduce artifacts
-    const stripWidth = outputWidth / strips;
-
-    for (let i = 0; i < strips; i++) {
-      const x = i * stripWidth;
-      const normalizedX = i / strips;
-      const distanceFromCenter = Math.abs(normalizedX - 0.5) * 2; // 0 at center, 1 at edges
-
-      // Calculate how much to curve this strip
-      const topCurve = topCurveOffset * (1 - distanceFromCenter) * 20; // Max curve at center
-      const bottomCurve = bottomCurveOffset * (1 - distanceFromCenter) * 20; // Max curve at center
-
-      // Apply transform for this strip
-      tempCtx.save();
-      tempCtx.beginPath();
-      tempCtx.rect(x, 0, stripWidth + 1, outputHeight); // +1 to avoid gaps
-      tempCtx.clip();
-
-      // Simple skew transform based on curves
-      const transform = [
-        1, 0,  // horizontal scaling and skewing
-        0, 1,  // vertical scaling and skewing  
-        0, topCurve - bottomCurve  // translation
-      ];
-      tempCtx.setTransform(...transform);
-
-      // Calculate source position with wrapping
-      let sourceMapX = sourceX + (normalizedX * drawWidth);
-      if (sourceMapX >= mapWidth) {
-        sourceMapX -= mapWidth;
-      }
-
-      // Draw this strip of the map
-      tempCtx.drawImage(
-        sourceCanvas,
-        Math.floor(sourceMapX), 0, Math.ceil(drawWidth / strips), mapHeight,
-        x, 0, stripWidth, outputHeight
-      );
-
-      tempCtx.restore();
+    // Calculate source position with wrapping
+    let sourceMapX = sourceX;
+    if (sourceMapX >= mapWidth) {
+      sourceMapX -= mapWidth;
     }
+
+    // Simple rectangular draw - no warping
+    tempCtx.drawImage(
+      sourceMap,
+      sourceMapX, 0, drawWidth, mapHeight,
+      0, 0, drawWidth, mapHeight
+    );
 
     return tempCanvas;
   };
+
 
   useEffect(() => {
     if (!canvasRef.current || !glassImage || !mapDesign) return;
@@ -159,25 +118,60 @@ const GlassMockupWrap = ({ rotation = 0, frontLayer = {}, backLayer = {}, layerC
       ctx.globalCompositeOperation = 'multiply';
 
       try {
-        const distortedMap = createDistortedMap(
+        const simpleMap = createSimpleMap(
           mapDesign,
           sourceX,
-          visiblePortion,
-          glassArea,
-          engravingWidth,
-          engravingHeight
+          visiblePortion
         );
         
-        if (distortedMap) {
-          ctx.drawImage(
-            distortedMap,
-            glassArea.centerX - engravingWidth / 2,
-            glassArea.topY,
-            engravingWidth,
-            engravingHeight
-          );
+        if (simpleMap) {
+          // Apply smooth trapezoid with gradual strips
+          ctx.save();
+          
+          const height = glassArea.bottomY - glassArea.topY;
+          const topWidth = glassArea.widthTop;
+          const bottomWidth = glassArea.widthBottom;
+          
+          // Use 10 thin strips for smooth transition
+          const strips = 10;
+          const stripHeight = height / strips;
+          const sourceStripHeight = simpleMap.height / strips;
+          
+          for (let i = 0; i < strips; i++) {
+            const progress = i / (strips - 1); // 0 to 1
+            
+            // Interpolate width from top to bottom
+            const currentWidth = topWidth + progress * (bottomWidth - topWidth);
+            
+            // Calculate Y position with rim curve
+            let destY = glassArea.topY + i * stripHeight;
+            
+            // Add rim curve for top strips (first 30% of strips)
+            if (progress < 0.3) {
+              const rimProgress = progress / 0.3; // 0 to 1 within rim area
+              const maxRimCurve = (glassArea.rimDipY - glassArea.topY);
+              
+              // Apply curve - strongest at center (50% of width), weaker at edges
+              // For each strip, calculate curve based on X position across the width
+              const curveAmount = maxRimCurve * (1 - rimProgress); // Fade curve as we go down
+              
+              // Apply the curve by shifting Y position down
+              destY += curveAmount;
+            }
+            
+            const sourceY = i * sourceStripHeight;
+            
+            ctx.drawImage(
+              simpleMap,
+              0, sourceY, simpleMap.width, sourceStripHeight,
+              glassArea.centerX - currentWidth / 2, destY,
+              currentWidth, stripHeight
+            );
+          }
+          
+          ctx.restore();
         } else {
-          throw new Error('Could not create distorted map');
+          throw new Error('Could not create simple map');
         }
       } catch (error) {
         console.error(`Error creating ${isBackLayer ? 'back' : 'front'} layer:`, error);

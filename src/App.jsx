@@ -4,6 +4,7 @@ import Step1 from './components/Steps/Step1'
 import Step2 from './components/Steps/Step2'
 import TestMockup from './components/MockupGenerator/TestMockup'
 import TestWrap from './components/MockupGenerator/TestWrap'
+import TestTransform from './components/MockupGenerator/TestTransform'
 import './App.css'
 
 const AppContent = () => {
@@ -38,6 +39,10 @@ function App() {
   
   if (testMode === 'wrap') {
     return <TestWrap />;
+  }
+  
+  if (testMode === 'transform') {
+    return <TestTransform />;
   }
   
   return (

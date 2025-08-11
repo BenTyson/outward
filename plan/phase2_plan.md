@@ -516,12 +516,21 @@ bottomDip: 1.057   // Bottom rim concave dip
 - **Visual debugging** with red trapezoid outline showing exact engraving area
 - **360° rotation simulation** for viewing different angles
 
-#### 🔄 Current Work: Dual-Layer System
-**Next Phase**: Implementing separate front and back layer controls for more realistic glass depth simulation:
+#### ✅ Completed: Dual-Layer System
+**Implemented**: Separate front and back layer controls for realistic glass depth simulation:
 - Front layer: Main visible engraving 
-- Back layer: Reversed view seen through glass
+- Back layer: Reversed view seen through glass (180° offset, dimmed, blurred)
 - Independent positioning controls for each layer
 - Layer visibility toggles for testing
+- Active layer selector for slider controls
+
+#### 🔄 Current Work: Advanced Arc/Perspective Transform System
+**New Development**: Built separate testing environment for sophisticated image warping:
+- **TestTransform component** (`?test=transform`) for isolated development
+- **Arc transformation** for tilted glass rim perspective 
+- **Perspective tapering** for realistic glass shape
+- **Horizontal strip-based rendering** with configurable overlap
+- **Post-processing blur** for seamless results
 
 ### Technical Architecture Shift
 **Original Plan**: Three.js 3D models with GLB files  
@@ -537,45 +546,82 @@ bottomDip: 1.057   // Bottom rim concave dip
 **File Structure** (2D Implementation):
 ```
 src/components/MockupGenerator/
-├── GlassMockupWrap.jsx       // Main glass rendering with distortion
-├── TestWrap.jsx              // Development interface with sliders  
-├── MockupViewer.jsx          // Production-ready viewer component
+├── GlassMockupWrap.jsx       // Main glass rendering with dual layers
+├── TestWrap.jsx              // Production interface with dual-layer controls
+├── TestTransform.jsx         // Advanced arc/perspective transform testing
+├── MockupViewer.jsx          // Production-ready viewer component (future)
 └── utils/
-    └── glassEffects.js       // Glass material effects utilities
+    └── glassEffects.js       // Glass material effects utilities (future)
+```
+
+**Transform Parameters** (TestTransform.jsx):
+```javascript
+// Arc/Perspective Controls
+arcAmount: 0.3           // Top rim curve (0=flat, 1=very curved)
+perspectiveTaper: 0.8    // Bottom width relative to top
+verticalSquash: 1.0      // Vertical compression
+
+// Smoothing Controls  
+horizontalOverlap: 2     // Overlap between horizontal strips (px)
+verticalOverlap: 1       // Overlap between vertical slices (px)
+blurAmount: 0           // Post-processing blur (px)
+blendOpacity: 0.85      // Overlap blending transparency
 ```
 
 ### Success Metrics - Current Status
-- ✅ Glass outline perfectly matches actual product curvature
-- ✅ Map height spans full engraveable area (lip to base)
-- ✅ Interactive parameter adjustment system working
-- ✅ 360° rotation support implemented
-- 🔄 Map distortion following glass curves (in progress)
-- ⏳ Dual-layer front/back rendering (next)
-- ⏳ Production integration with Phase 1 (pending)
+
+#### ✅ TestWrap.jsx (Dual-Layer System)
+- Glass outline perfectly matches actual product curvature
+- Map height spans full engraveable area (lip to base)
+- Interactive parameter adjustment system working
+- 360° rotation support implemented
+- Dual-layer front/back rendering with independent controls
+- Layer visibility toggles and active layer selection
+- Copy-to-clipboard functionality for parameter export
+
+#### 🔄 TestTransform.jsx (Arc/Perspective System)
+- **Arc transformation** working for tilted glass perspective
+- **Perspective tapering** creating realistic glass shape
+- **Horizontal strip rendering** avoiding vertical slice artifacts
+- **Configurable smoothing controls** for optimal quality
+- Real-time parameter adjustment with 7 slider controls
+- **Issues**: Strip boundaries still visible at close inspection
+- **Next**: Manual parameter tuning to find optimal smoothing settings
+
+#### ⏳ Integration Phase (Next Steps)  
+- Apply successful transform techniques to main TestWrap system
+- Combine dual-layer rendering with arc/perspective transforms
+- Production integration with Phase 1 map builder
+- Performance optimization for mobile devices
 
 ---
 
 ## Notes for Claude Code Agent
 
-### Build Priority
-1. Start with basic 3D scene setup and model loading
-2. Implement glass materials and lighting
-3. Add texture mapping from Phase 1 canvas
-4. Implement 3D controls and interactions
-5. Add high-quality export functionality
-6. Optimize performance for mobile
+### Current Development URLs
+- **Main System**: `http://localhost:5173/?test=wrap` (TestWrap.jsx - Dual-layer system)
+- **Transform Testing**: `http://localhost:5173/?test=transform` (TestTransform.jsx - Arc/perspective)
+- **Production**: `http://localhost:5173/` (Main app - Phase 1 integration pending)
 
-### Key Considerations
-- Model loading may require iterative optimization
-- Glass materials need fine-tuning for realism
-- UV mapping must be precise for proper engraving area mapping
-- Performance is critical for mobile experience
-- Memory management important for 3D scenes
+### Development Strategy (Updated)
+1. ✅ **2D Approach Proven**: Abandoned 3D models for photo-realistic 2D transforms
+2. ✅ **Dual-Layer System**: Front/back rendering with independent controls working
+3. 🔄 **Transform Refinement**: Arc/perspective system needs smoothing optimization
+4. ⏳ **Integration Phase**: Combine best techniques from both test environments
+5. ⏳ **Production Polish**: Mobile optimization and Phase 1 integration
 
-### Testing Data
-- Use completed Phase 1 configurations
-- Test with all three glass ratios
-- Validate against physical glass dimensions
+### Key Technical Insights
+- **Horizontal strips** work better than vertical for perspective transforms
+- **Strip boundaries** remain the biggest visual challenge
+- **Overlap + blur combination** shows promise but needs fine-tuning
+- **Interactive parameter controls** essential for finding optimal settings
+- **Canvas smoothing quality** affects final result significantly
+
+### Next Development Focus
+1. **Manual parameter optimization** using TestTransform sliders
+2. **Alternative smoothing techniques** if current approach insufficient
+3. **Integration planning** to combine dual-layer + arc transform systems
+4. **Performance testing** on mobile devices with final parameters
 
 ---
 
