@@ -12,6 +12,7 @@ const TestTransform = () => {
   const [bottomWidth, setBottomWidth] = useState(430); // Width at bottom of overlay  
   const [verticalPosition, setVerticalPosition] = useState(80); // Y position of top of overlay
   const [mapHeight, setMapHeight] = useState(460); // Height of overlay area (no distortion)
+  const [bottomCornerRadius, setBottomCornerRadius] = useState(0); // Radius for bottom left/right corners
   const [perspectiveTaper, setPerspectiveTaper] = useState(0.8); // Bottom width relative to top (1 = rectangle, 0.5 = strong taper) - LEGACY
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
@@ -41,24 +42,58 @@ const TestTransform = () => {
   
   // Apply arc/perspective transform with configurable overlap blending
   const applyArcTransform = (ctx, image, x, y, width, height) => {
+    // Pre-process: Create rounded corner version of source image if needed
+    let processedImage = image;
+    if (bottomCornerRadius > 0) {
+      // Create a temporary canvas for rounded source image
+      const roundedCanvas = document.createElement('canvas');
+      roundedCanvas.width = image.width;
+      roundedCanvas.height = image.height;
+      const roundedCtx = roundedCanvas.getContext('2d');
+      
+      // Calculate corner radius relative to image size
+      const imageCornerRadius = bottomCornerRadius * (image.width / width); // Scale radius to source image
+      
+      // Draw rounded rectangle mask
+      roundedCtx.beginPath();
+      roundedCtx.moveTo(imageCornerRadius, 0);
+      roundedCtx.lineTo(image.width - imageCornerRadius, 0);
+      roundedCtx.arcTo(image.width, 0, image.width, imageCornerRadius, imageCornerRadius);
+      roundedCtx.lineTo(image.width, image.height - imageCornerRadius);
+      roundedCtx.arcTo(image.width, image.height, image.width - imageCornerRadius, image.height, imageCornerRadius);
+      roundedCtx.lineTo(imageCornerRadius, image.height);
+      roundedCtx.arcTo(0, image.height, 0, image.height - imageCornerRadius, imageCornerRadius);
+      roundedCtx.lineTo(0, imageCornerRadius);
+      roundedCtx.arcTo(0, 0, imageCornerRadius, 0, imageCornerRadius);
+      roundedCtx.closePath();
+      
+      // Use the path as a clipping mask
+      roundedCtx.clip();
+      
+      // Draw the original image within the rounded mask
+      roundedCtx.drawImage(image, 0, 0);
+      
+      processedImage = roundedCanvas;
+    }
+    
     // Calculate source image cropping area based on height (maintain aspect ratio)
-    const sourceAspectRatio = image.width / image.height;
+    const sourceAspectRatio = processedImage.width / processedImage.height;
     const targetAspectRatio = width / height;
     
     let sourceWidth, sourceHeight, sourceX, sourceY;
     
     if (sourceAspectRatio > targetAspectRatio) {
       // Source is wider - crop horizontally, use full height
-      sourceHeight = image.height;
+      sourceHeight = processedImage.height;
       sourceWidth = sourceHeight * targetAspectRatio;
-      sourceX = (image.width - sourceWidth) / 2; // Center crop
+      sourceX = (processedImage.width - sourceWidth) / 2; // Center crop
       sourceY = 0;
     } else {
       // Source is taller - crop vertically, use full width  
-      sourceWidth = image.width;
+      sourceWidth = processedImage.width;
       sourceHeight = sourceWidth / targetAspectRatio;
       sourceX = 0;
-      sourceY = (image.height - sourceHeight) / 2; // Center crop
+      sourceY = (processedImage.height - sourceHeight) / 2; // Center crop
     }
     // Enable canvas smoothing for better blending
     ctx.imageSmoothingEnabled = true;
@@ -89,7 +124,7 @@ const TestTransform = () => {
       const cropSourceY = sourceY + Math.max(0, i * sourceStripHeight - currentHorizontalOverlap/2);
       const actualSourceHeight = Math.min(sourceStripHeight + currentHorizontalOverlap, sourceHeight - (cropSourceY - sourceY));
       
-      // Calculate width at this height using linear interpolation between top and bottom widths
+      // Calculate width at this height using linear interpolation (no per-strip corner radius)
       const currentWidth = topWidth + (bottomWidth - topWidth) * progress;
       
       // Calculate Y position with optional vertical squash and overlap
@@ -160,7 +195,7 @@ const TestTransform = () => {
           const subSourceWidth = Math.min(sourceWidth / subStrips + verticalOverlap, sourceWidth - (subSourceX - sourceX));
           
           ctx.drawImage(
-            image,
+            processedImage,
             subSourceX, cropSourceY, subSourceWidth, actualSourceHeight,
             destX + j * subStripWidth - (j > 0 ? verticalOverlap/2 : 0), destY + arcDip, 
             actualSubWidth, actualDestHeight
@@ -169,7 +204,7 @@ const TestTransform = () => {
       } else {
         // Draw normal horizontal strip with overlap (from cropped area)
         ctx.drawImage(
-          image,
+          processedImage,
           sourceX, cropSourceY, sourceWidth, actualSourceHeight,
           destX, destY, currentWidth, actualDestHeight
         );
@@ -220,22 +255,23 @@ const TestTransform = () => {
     // Apply arc transform over the glass background using dynamic positioning and height
     applyArcTransform(ctx, testImage, 200, verticalPosition, 400, mapHeight);
     
+    
     // Post-processing: Apply configurable blur to smooth seams
     if (blurAmount > 0) {
       // Create a temporary canvas for blur effect
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = 400;
-      tempCanvas.height = 400;
+      tempCanvas.height = mapHeight;
       const tempCtx = tempCanvas.getContext('2d');
       
       // Copy the transformed area to temp canvas
-      const transformedData = ctx.getImageData(200, 100, 400, 400);
+      const transformedData = ctx.getImageData(200, verticalPosition, 400, mapHeight);
       tempCtx.putImageData(transformedData, 0, 0);
       
       // Apply blur filter and draw back
       ctx.save();
       ctx.filter = `blur(${blurAmount}px)`;
-      ctx.drawImage(tempCanvas, 200, 100);
+      ctx.drawImage(tempCanvas, 200, verticalPosition);
       ctx.restore();
     }
     
@@ -285,7 +321,7 @@ const TestTransform = () => {
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -390,6 +426,22 @@ const TestTransform = () => {
               style={{ width: '100%' }}
             />
             <small>Height of overlay area (preserves image ratio)</small>
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+              Bottom Corner Radius: {bottomCornerRadius}px
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="50"
+              step="2"
+              value={bottomCornerRadius}
+              onChange={(e) => setBottomCornerRadius(parseInt(e.target.value))}
+              style={{ width: '100%' }}
+            />
+            <small>Rounds bottom left/right corners to match glass shape</small>
           </div>
           
           <div style={{ marginBottom: '20px' }}>
@@ -504,6 +556,7 @@ const TestTransform = () => {
                   bottomWidth,
                   verticalPosition,
                   mapHeight,
+                  bottomCornerRadius,
                   verticalSquash,
                   horizontalOverlap,
                   bottomArcCompensation,
@@ -529,7 +582,7 @@ const TestTransform = () => {
             
             <button 
               onClick={() => {
-                const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}`;
+                const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, bottomCornerRadius: ${bottomCornerRadius}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}`;
                 navigator.clipboard.writeText(settings);
                 alert('Settings copied as one-line format!');
               }}
@@ -548,7 +601,7 @@ const TestTransform = () => {
           
           <div style={{ fontSize: '12px', color: '#666' }}>
             <strong>Current Settings:</strong><br/>
-            arcAmount: {arcAmount}, bottomArcAmount: {bottomArcAmount}, topWidth: {topWidth}, bottomWidth: {bottomWidth}, verticalPosition: {verticalPosition}, mapHeight: {mapHeight}, verticalSquash: {verticalSquash}, horizontalOverlap: {horizontalOverlap}, bottomArcCompensation: {bottomArcCompensation}, verticalOverlap: {verticalOverlap}, blurAmount: {blurAmount}, blendOpacity: {blendOpacity}
+            arcAmount: {arcAmount}, bottomArcAmount: {bottomArcAmount}, topWidth: {topWidth}, bottomWidth: {bottomWidth}, verticalPosition: {verticalPosition}, mapHeight: {mapHeight}, bottomCornerRadius: {bottomCornerRadius}, verticalSquash: {verticalSquash}, horizontalOverlap: {horizontalOverlap}, bottomArcCompensation: {bottomArcCompensation}, verticalOverlap: {verticalOverlap}, blurAmount: {blurAmount}, blendOpacity: {blendOpacity}
           </div>
         </div>
         
