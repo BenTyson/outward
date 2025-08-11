@@ -5,18 +5,18 @@ const TestTransform = () => {
   const [testImage, setTestImage] = useState(null);
   const [glassImage, setGlassImage] = useState(null);
   
-  // Transform parameters
-  const [arcAmount, setArcAmount] = useState(0.3); // How much the top curves (0 = flat, 1 = very curved)
-  const [bottomArcAmount, setBottomArcAmount] = useState(0.0); // How much the bottom curves (0 = flat, 1 = very curved)
-  const [topWidth, setTopWidth] = useState(400); // Width at top of overlay
-  const [bottomWidth, setBottomWidth] = useState(320); // Width at bottom of overlay  
-  const [verticalPosition, setVerticalPosition] = useState(100); // Y position of top of overlay
-  const [mapHeight, setMapHeight] = useState(400); // Height of overlay area (no distortion)
+  // Transform parameters - Optimized defaults for rocks glass mapping
+  const [arcAmount, setArcAmount] = useState(0.64); // How much the top curves (0 = flat, 1 = very curved)
+  const [bottomArcAmount, setBottomArcAmount] = useState(1.0); // How much the bottom curves (0 = flat, 1 = very curved)
+  const [topWidth, setTopWidth] = useState(425); // Width at top of overlay
+  const [bottomWidth, setBottomWidth] = useState(430); // Width at bottom of overlay  
+  const [verticalPosition, setVerticalPosition] = useState(80); // Y position of top of overlay
+  const [mapHeight, setMapHeight] = useState(460); // Height of overlay area (no distortion)
   const [perspectiveTaper, setPerspectiveTaper] = useState(0.8); // Bottom width relative to top (1 = rectangle, 0.5 = strong taper) - LEGACY
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
-  // Smoothing parameters
-  const [horizontalOverlap, setHorizontalOverlap] = useState(2); // Horizontal strip overlap in pixels
+  // Smoothing parameters - Optimized defaults for rocks glass mapping
+  const [horizontalOverlap, setHorizontalOverlap] = useState(3); // Horizontal strip overlap in pixels
   const [bottomArcCompensation, setBottomArcCompensation] = useState(0); // Additional bottom arc compensation
   const [verticalOverlap, setVerticalOverlap] = useState(1); // Vertical slice overlap in pixels
   const [blurAmount, setBlurAmount] = useState(0); // Post-processing blur amount
@@ -41,6 +41,25 @@ const TestTransform = () => {
   
   // Apply arc/perspective transform with configurable overlap blending
   const applyArcTransform = (ctx, image, x, y, width, height) => {
+    // Calculate source image cropping area based on height (maintain aspect ratio)
+    const sourceAspectRatio = image.width / image.height;
+    const targetAspectRatio = width / height;
+    
+    let sourceWidth, sourceHeight, sourceX, sourceY;
+    
+    if (sourceAspectRatio > targetAspectRatio) {
+      // Source is wider - crop horizontally, use full height
+      sourceHeight = image.height;
+      sourceWidth = sourceHeight * targetAspectRatio;
+      sourceX = (image.width - sourceWidth) / 2; // Center crop
+      sourceY = 0;
+    } else {
+      // Source is taller - crop vertically, use full width  
+      sourceWidth = image.width;
+      sourceHeight = sourceWidth / targetAspectRatio;
+      sourceX = 0;
+      sourceY = (image.height - sourceHeight) / 2; // Center crop
+    }
     // Enable canvas smoothing for better blending
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
@@ -48,7 +67,7 @@ const TestTransform = () => {
     // Use horizontal strips with configurable overlap - maximum smoothness
     const strips = 80;
     const stripHeight = height / strips;
-    const sourceStripHeight = image.height / strips;
+    const sourceStripHeight = sourceHeight / strips;
     
     for (let i = 0; i < strips; i++) {
       const progress = i / (strips - 1); // 0 to 1 from top to bottom
@@ -66,9 +85,9 @@ const TestTransform = () => {
         currentHorizontalOverlap = horizontalOverlap + (bottomArcCompensation * bottomArcProgress);
       }
       
-      // Add overlap to source sampling using dynamic overlap
-      const sourceY = Math.max(0, i * sourceStripHeight - currentHorizontalOverlap/2);
-      const actualSourceHeight = Math.min(sourceStripHeight + currentHorizontalOverlap, image.height - sourceY);
+      // Add overlap to source sampling using dynamic overlap (within cropped area)
+      const cropSourceY = sourceY + Math.max(0, i * sourceStripHeight - currentHorizontalOverlap/2);
+      const actualSourceHeight = Math.min(sourceStripHeight + currentHorizontalOverlap, sourceHeight - (cropSourceY - sourceY));
       
       // Calculate width at this height using linear interpolation between top and bottom widths
       const currentWidth = topWidth + (bottomWidth - topWidth) * progress;
@@ -135,23 +154,23 @@ const TestTransform = () => {
             arcDip = bottomArcDistortion * (1 - centerOffset * centerOffset);
           }
           
-          // Add configurable horizontal overlap for vertical slices
+          // Add configurable horizontal overlap for vertical slices (within cropped area)
           const actualSubWidth = subStripWidth + (j > 0 ? verticalOverlap : 0);
-          const subSourceX = Math.max(0, (j / subStrips) * image.width - (j > 0 ? verticalOverlap/2 : 0));
-          const subSourceWidth = Math.min(image.width / subStrips + verticalOverlap, image.width - subSourceX);
+          const subSourceX = sourceX + Math.max(0, (j / subStrips) * sourceWidth - (j > 0 ? verticalOverlap/2 : 0));
+          const subSourceWidth = Math.min(sourceWidth / subStrips + verticalOverlap, sourceWidth - (subSourceX - sourceX));
           
           ctx.drawImage(
             image,
-            subSourceX, sourceY, subSourceWidth, actualSourceHeight,
+            subSourceX, cropSourceY, subSourceWidth, actualSourceHeight,
             destX + j * subStripWidth - (j > 0 ? verticalOverlap/2 : 0), destY + arcDip, 
             actualSubWidth, actualDestHeight
           );
         }
       } else {
-        // Draw normal horizontal strip with overlap
+        // Draw normal horizontal strip with overlap (from cropped area)
         ctx.drawImage(
           image,
-          0, sourceY, image.width, actualSourceHeight,
+          sourceX, cropSourceY, sourceWidth, actualSourceHeight,
           destX, destY, currentWidth, actualDestHeight
         );
       }
@@ -469,6 +488,66 @@ const TestTransform = () => {
               style={{ width: '100%' }}
             />
             <small>Opacity for overlap blending</small>
+          </div>
+          
+          <hr style={{ margin: '20px 0', borderColor: '#ddd' }} />
+          <h4>Settings Export/Import</h4>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <button 
+              onClick={() => {
+                const settings = {
+                  arcAmount,
+                  bottomArcAmount,
+                  topWidth,
+                  bottomWidth,
+                  verticalPosition,
+                  mapHeight,
+                  verticalSquash,
+                  horizontalOverlap,
+                  bottomArcCompensation,
+                  verticalOverlap,
+                  blurAmount,
+                  blendOpacity
+                };
+                navigator.clipboard.writeText(JSON.stringify(settings, null, 2));
+                alert('Settings copied to clipboard!');
+              }}
+              style={{ 
+                padding: '10px 15px', 
+                backgroundColor: '#007bff', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginRight: '10px'
+              }}
+            >
+              Copy Settings
+            </button>
+            
+            <button 
+              onClick={() => {
+                const settings = `arcAmount: ${arcAmount}, bottomArcAmount: ${bottomArcAmount}, topWidth: ${topWidth}, bottomWidth: ${bottomWidth}, verticalPosition: ${verticalPosition}, mapHeight: ${mapHeight}, verticalSquash: ${verticalSquash}, horizontalOverlap: ${horizontalOverlap}, bottomArcCompensation: ${bottomArcCompensation}, verticalOverlap: ${verticalOverlap}, blurAmount: ${blurAmount}, blendOpacity: ${blendOpacity}`;
+                navigator.clipboard.writeText(settings);
+                alert('Settings copied as one-line format!');
+              }}
+              style={{ 
+                padding: '10px 15px', 
+                backgroundColor: '#28a745', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Copy One-Line
+            </button>
+          </div>
+          
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            <strong>Current Settings:</strong><br/>
+            arcAmount: {arcAmount}, bottomArcAmount: {bottomArcAmount}, topWidth: {topWidth}, bottomWidth: {bottomWidth}, verticalPosition: {verticalPosition}, mapHeight: {mapHeight}, verticalSquash: {verticalSquash}, horizontalOverlap: {horizontalOverlap}, bottomArcCompensation: {bottomArcCompensation}, verticalOverlap: {verticalOverlap}, blurAmount: {blurAmount}, blendOpacity: {blendOpacity}
           </div>
         </div>
         
