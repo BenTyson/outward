@@ -92,6 +92,12 @@ const TestTransform = () => {
       
       // Put modified data back
       tempCtx.putImageData(imageData, 0, 0);
+      
+      // Apply slight blur to binary image to reduce harsh edges before strip processing
+      tempCtx.filter = 'blur(0.5px)';
+      tempCtx.drawImage(tempCanvas, 0, 0);
+      tempCtx.filter = 'none';
+      
       processedImage = tempCanvas;
     }
     
