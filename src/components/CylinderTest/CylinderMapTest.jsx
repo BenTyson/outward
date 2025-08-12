@@ -10,6 +10,7 @@ const CylinderMapTest = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [dimensions, setDimensions] = useState(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -23,13 +24,78 @@ const CylinderMapTest = () => {
 
     // 1. Create Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f0f0); // Light gray background for testing
     sceneRef.current = scene;
+    
+    // Load rocks glass background image first to get dimensions
+    const backgroundLoader = new THREE.TextureLoader();
+    console.log('🖼️ Loading rocks glass background to determine canvas size...');
+    
+    backgroundLoader.load(
+      '/glass-images/rocks-white.jpg',
+      (backgroundTexture) => {
+        const bgWidth = backgroundTexture.image.width;
+        const bgHeight = backgroundTexture.image.height;
+        const bgAspect = bgWidth / bgHeight;
+        
+        console.log(`✅ Background loaded: ${bgWidth}x${bgHeight} (aspect: ${bgAspect.toFixed(3)})`);
+        
+        // Calculate optimal canvas size based on background aspect ratio
+        const maxDisplayWidth = 800;  // Maximum width for UI
+        const maxDisplayHeight = 600; // Maximum height for UI
+        
+        let canvasWidth, canvasHeight;
+        
+        if (bgAspect > maxDisplayWidth / maxDisplayHeight) {
+          // Background is wider - fit to width
+          canvasWidth = maxDisplayWidth;
+          canvasHeight = maxDisplayWidth / bgAspect;
+        } else {
+          // Background is taller - fit to height
+          canvasHeight = maxDisplayHeight;
+          canvasWidth = maxDisplayHeight * bgAspect;
+        }
+        
+        console.log(`📐 Canvas sized to: ${canvasWidth.toFixed(0)}x${canvasHeight.toFixed(0)} (preserves ${bgAspect.toFixed(3)} aspect ratio)`);
+        
+        // Update canvas size state
+        setCanvasSize({ width: canvasWidth, height: canvasHeight });
+        
+        // Update renderer size
+        if (rendererRef.current) {
+          rendererRef.current.setSize(canvasWidth, canvasHeight);
+          console.log('🔧 Renderer resized to match background aspect ratio');
+        }
+        
+        // Update camera aspect ratio
+        if (camera) {
+          camera.aspect = canvasWidth / canvasHeight;
+          camera.updateProjectionMatrix();
+          console.log('📷 Camera aspect ratio updated');
+        }
+        
+        // Set background
+        scene.background = backgroundTexture;
+        
+        // Re-render with correct aspect ratio
+        if (rendererRef.current && camera) {
+          rendererRef.current.render(scene, camera);
+          console.log('🔄 Scene re-rendered with correct aspect ratio and background');
+        }
+      },
+      (progress) => {
+        console.log('📥 Background loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
+      },
+      (error) => {
+        console.error('❌ Failed to load background:', error);
+        // Fallback to default gray background
+        scene.background = new THREE.Color(0xf0f0f0);
+      }
+    );
 
-    // 2. Create Camera
+    // 2. Create Camera (aspect ratio will be updated when background loads)
     const camera = new THREE.PerspectiveCamera(
       75, // Field of view
-      800 / 600, // Aspect ratio (will be updated)
+      canvasSize.width / canvasSize.height, // Initial aspect ratio
       0.1, // Near clipping
       2000 // Far clipping - increased for large objects
     );
@@ -42,13 +108,13 @@ const CylinderMapTest = () => {
     console.log(`📷 Camera positioned at distance: ${cameraDistance.toFixed(2)}`);
     console.log(`🔍 Cylinder bounds: radius=${dims.radius.toFixed(2)}, height=${dims.height}, diameter=${(dims.radius * 2).toFixed(2)}`);
 
-    // 3. Create Renderer
+    // 3. Create Renderer (size will be updated when background loads)
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvasRef.current,
       alpha: true,
       antialias: true 
     });
-    renderer.setSize(800, 600);
+    renderer.setSize(canvasSize.width, canvasSize.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rendererRef.current = renderer;
 
@@ -210,7 +276,7 @@ const CylinderMapTest = () => {
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ marginBottom: '20px', color: '#333' }}>
-        Cylinder Map Test - Phase B
+        Cylinder Map Test - Phase C
       </h1>
       
       {isLoading && (
@@ -244,8 +310,8 @@ const CylinderMapTest = () => {
           ref={canvasRef}
           style={{ 
             display: 'block',
-            width: '800px',
-            height: '600px'
+            width: `${canvasSize.width}px`,
+            height: `${canvasSize.height}px`
           }}
         />
       </div>
@@ -255,12 +321,12 @@ const CylinderMapTest = () => {
         fontSize: '12px', 
         color: '#666' 
       }}>
-        <p>📊 <strong>Phase B Status:</strong> Texture mapping to cylinder surface</p>
-        <p>🔍 <strong>What you should see:</strong> Map image wrapped around cylinder</p>
-        <p>🖼️ <strong>Texture:</strong> rocks-test-design-optimal.png (1600×640)</p>
-        <p>🔄 <strong>Wrapping:</strong> RepeatWrapping (horizontal), ClampToEdge (vertical)</p>
-        <p>💡 <strong>Transparency:</strong> 80% opacity for realistic engraving effect</p>
-        <p>📐 <strong>Proportions:</strong> Height {dimensions?.height} vs Radius {dimensions?.radius.toFixed(1)} (rocks glass shape)</p>
+        <p>📊 <strong>Phase C Status:</strong> Glass background integration with cylinder overlay</p>
+        <p>🔍 <strong>What you should see:</strong> Real rocks glass photo with map cylinder overlaid</p>
+        <p>🖼️ <strong>Background:</strong> rocks-white.jpg (actual glass photograph)</p>
+        <p>🎨 <strong>Cylinder:</strong> Map texture with white pixels removed (transparent)</p>
+        <p>💡 <strong>Effect:</strong> Simulated laser engraving on real glass appearance</p>
+        <p>🎯 <strong>Goal:</strong> Align 3D cylinder with glass outline in background</p>
       </div>
     </div>
   );
