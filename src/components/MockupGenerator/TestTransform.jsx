@@ -8,9 +8,8 @@ const TestTransform = () => {
   const [testImage, setTestImage] = useState(null);
   const [glassImage, setGlassImage] = useState(null);
   
-  // Transform parameters - Optimized defaults for rocks glass mapping
-  const [arcAmount, setArcAmount] = useState(0.36); // How much the top curves (0 = flat, 1 = very curved)
-  const [bottomArcAmount, setBottomArcAmount] = useState(0.68); // How much the bottom curves (0 = flat, 1 = very curved)
+  // Transform parameters - Optimized defaults for rocks glass mapping  
+  const [arcAmount, setArcAmount] = useState(0.36); // Continuous parabolic arc across full height (0 = flat, 1 = very curved)
   const [topWidth, setTopWidth] = useState(425); // Width at top of overlay
   const [bottomWidth, setBottomWidth] = useState(430); // Width at bottom of overlay  
   const [verticalPosition, setVerticalPosition] = useState(60); // Y position of top of overlay
@@ -20,7 +19,7 @@ const TestTransform = () => {
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
   // New adaptive rendering parameters
-  const [renderQuality, setRenderQuality] = useState(1.0); // Overall strip density multiplier (0.5-2.0)
+  const [renderQuality, setRenderQuality] = useState(1.5); // Overall strip density multiplier (0.5-2.0) - Higher default
   const [adaptiveStrength, setAdaptiveStrength] = useState(0.5); // How much to concentrate strips in curves (0-1)
   const [overlapMultiplier, setOverlapMultiplier] = useState(1.0); // Fine-tune auto-calculated overlaps (0.5-2.0)
   
@@ -41,8 +40,7 @@ const TestTransform = () => {
   const [engravingOpacity, setEngravingOpacity] = useState(0.3); // 0 = fully transparent, 1 = fully opaque (for all non-white pixels)
   
   // BACK LAYER: Transform parameters - Optimized defaults for back layer
-  const [backArcAmount, setBackArcAmount] = useState(0.47);
-  const [backBottomArcAmount, setBackBottomArcAmount] = useState(1.0);
+  const [backArcAmount, setBackArcAmount] = useState(0.47); // Continuous parabolic arc across full height
   const [backTopWidth, setBackTopWidth] = useState(425);
   const [backBottomWidth, setBackBottomWidth] = useState(430);
   const [backVerticalPosition, setBackVerticalPosition] = useState(100);
@@ -51,7 +49,7 @@ const TestTransform = () => {
   const [backVerticalSquash, setBackVerticalSquash] = useState(1.0);
   
   // BACK LAYER: Adaptive rendering parameters
-  const [backRenderQuality, setBackRenderQuality] = useState(1.0);
+  const [backRenderQuality, setBackRenderQuality] = useState(1.5);
   const [backAdaptiveStrength, setBackAdaptiveStrength] = useState(0.5);
   const [backOverlapMultiplier, setBackOverlapMultiplier] = useState(1.0);
   
@@ -104,42 +102,125 @@ const TestTransform = () => {
   };
   
   // Apply arc/perspective transform with configurable overlap blending
-  // Adaptive strip distribution for eliminating visible seams
-  const getAdaptiveStrips = (quality, adaptiveStrength, height) => {
-    const baseStrips = Math.floor(80 * quality); // Base strip count with quality multiplier
-    const totalStrips = Math.max(20, baseStrips); // Minimum 20 strips
+  // Calculate continuous arc distortion - single smooth curve across full height
+  const calculateDistortionFactor = (progress, arcAmount, arcProfile = 'parabolic') => {
+    if (arcAmount <= 0) return 0;
     
-    // Distribute strips based on curvature areas
-    const topCurveRatio = 0.35 * (1 + adaptiveStrength * 0.6); // More strips in curved areas when adaptive is high
-    const middleRatio = 0.3 * (1 - adaptiveStrength * 0.4);    // Fewer strips in flat areas when adaptive is high  
-    const bottomCurveRatio = 0.35 * (1 + adaptiveStrength * 0.6);
+    let distortionFactor = 0;
     
-    // Normalize ratios
-    const totalRatio = topCurveRatio + middleRatio + bottomCurveRatio;
-    const normalizedTop = topCurveRatio / totalRatio;
-    const normalizedMiddle = middleRatio / totalRatio;
-    const normalizedBottom = bottomCurveRatio / totalRatio;
+    switch (arcProfile) {
+      case 'parabolic':
+        // Inverted parabolic curve: maximum at edges (glass rim), minimum at center
+        // Formula: arcAmount * (1 - 4 * progress * (1 - progress))
+        // This curves the top and bottom edges outward to match glass rim curvature
+        distortionFactor = arcAmount * 0.15 * (1 - 4 * progress * (1 - progress));
+        break;
+        
+      case 'sinusoidal':
+        // Sinusoidal curve: smooth bell shape
+        distortionFactor = arcAmount * 0.15 * Math.sin(Math.PI * progress);
+        break;
+        
+      default:
+        // Parabolic as default
+        distortionFactor = arcAmount * 0.15 * 4 * progress * (1 - progress);
+        break;
+    }
+    
+    return distortionFactor;
+  };
+
+  // Generate precise strip distribution based on mathematical arc analysis
+  const getPreciseStripDistribution = (quality, adaptiveStrength, arcAmount, arcProfile, totalHeight) => {
+    const baseStripCount = Math.floor(200 * quality); // Much higher base count for precision
+    const samplePoints = 200; // Sample distortion at 200 points for precision
+    
+    // Calculate distortion factor at each sample point
+    const distortionProfile = [];
+    let totalDistortion = 0;
+    let maxDistortion = 0;
+    
+    for (let i = 0; i < samplePoints; i++) {
+      const progress = i / (samplePoints - 1);
+      const distortion = calculateDistortionFactor(progress, arcAmount, arcProfile);
+      
+      // Apply exponential adaptive strength for extreme concentration in distorted areas
+      const adaptedDistortion = distortion > 0 ? 
+        Math.pow(distortion * 3, 1 + adaptiveStrength * 2) : 0; // Much more aggressive concentration
+      
+      maxDistortion = Math.max(maxDistortion, distortion);
+      distortionProfile.push(adaptedDistortion);
+      totalDistortion += adaptedDistortion;
+    }
+    
+    console.log(`Distortion Debug - Max distortion: ${maxDistortion.toFixed(4)}, Total adapted: ${totalDistortion.toFixed(2)}, Arc amount: ${arcAmount}, Profile: ${arcProfile} (INVERTED - max at edges)`);
+    
+    // Distribute strips proportional to distortion, with minimum density for flat areas
+    const minStripDensity = 0.3; // Minimum 30% of average density even in flat areas
+    const averageDensity = baseStripCount / samplePoints;
+    const stripCounts = [];
+    let allocatedStrips = 0;
+    
+    for (let i = 0; i < samplePoints; i++) {
+      let density;
+      
+      if (totalDistortion > 0) {
+        // Proportional allocation based on distortion
+        const proportionalDensity = (distortionProfile[i] / totalDistortion) * baseStripCount;
+        density = Math.max(proportionalDensity, averageDensity * minStripDensity);
+      } else {
+        // Uniform distribution if no distortion
+        density = averageDensity;
+      }
+      
+      const strips = Math.max(1, Math.round(density));
+      stripCounts.push(strips);
+      allocatedStrips += strips;
+    }
+    
+    // Normalize to exact target count
+    const scaleFactor = baseStripCount / allocatedStrips;
+    for (let i = 0; i < stripCounts.length; i++) {
+      stripCounts[i] = Math.max(1, Math.round(stripCounts[i] * scaleFactor));
+    }
     
     return {
-      topCurve: Math.max(5, Math.floor(totalStrips * normalizedTop)),
-      middle: Math.max(5, Math.floor(totalStrips * normalizedMiddle)), 
-      bottomCurve: Math.max(5, Math.floor(totalStrips * normalizedBottom)),
-      total: totalStrips
+      stripCounts,
+      distortionProfile,
+      totalStrips: stripCounts.reduce((sum, count) => sum + count, 0)
     };
   };
   
-  // Auto-calculate overlap based on strip height and curvature
-  const calculateOverlap = (stripHeight, curvatureAmount, multiplier) => {
-    const baseOverlap = stripHeight * 0.08; // 8% of strip height as base
-    const curveBonus = curvatureAmount * stripHeight * 0.15; // Extra overlap in curved areas
-    return Math.max(0, (baseOverlap + curveBonus) * multiplier);
+  // Calculate precise overlap based on local distortion gradient
+  const calculatePreciseOverlap = (currentDistortion, nextDistortion, stripHeight, overlapMultiplier) => {
+    // Much more aggressive base overlap
+    const baseOverlap = stripHeight * 0.4; // Increased to 40% base overlap
+    
+    // Dramatic overlap increase based on distortion difference
+    const distortionGradient = Math.abs(nextDistortion - currentDistortion);
+    const gradientBonus = distortionGradient * stripHeight * 5.0; // Much stronger gradient compensation
+    
+    // Exponential overlap in high-distortion areas - much more aggressive for smaller distortions
+    const maxDistortion = Math.max(currentDistortion, nextDistortion);
+    // Scale up small distortions dramatically - anything above 0.01 gets massive bonus
+    const scaledDistortion = maxDistortion > 0.01 ? Math.pow(maxDistortion * 20, 2) : maxDistortion;
+    const distortionBonus = scaledDistortion * stripHeight * 8.0; // Much higher multiplier
+    
+    const totalOverlap = (baseOverlap + gradientBonus + distortionBonus) * overlapMultiplier;
+    const finalOverlap = Math.min(stripHeight * 1.5, Math.max(stripHeight * 0.2, totalOverlap)); // Min 20%, Max 150%
+    
+    // Debug high overlap areas
+    if (maxDistortion > 0.03) {
+      console.log(`High overlap: distortion=${maxDistortion.toFixed(4)}, overlap=${(finalOverlap/stripHeight).toFixed(2)}x strip height`);
+    }
+    
+    return finalOverlap;
   };
 
   const applyArcTransform = (ctx, image, x, y, width, height, isBackLayer = false) => {
     // Use back layer parameters if rendering back, otherwise use front
     const params = isBackLayer ? {
       arcAmount: backArcAmount,
-      bottomArcAmount: backBottomArcAmount,
       topWidth: backTopWidth,
       bottomWidth: backBottomWidth,
       verticalPosition: backVerticalPosition,
@@ -153,7 +234,6 @@ const TestTransform = () => {
       engravingOpacity: backEngravingOpacity
     } : {
       arcAmount,
-      bottomArcAmount,
       topWidth,
       bottomWidth,
       verticalPosition,
@@ -254,108 +334,106 @@ const TestTransform = () => {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     
-    // Get adaptive strip distribution
-    const stripDistribution = getAdaptiveStrips(params.renderQuality, params.adaptiveStrength, height);
+    // Generate precise strip distribution based on exact arc math
+    console.log(`Arc Debug - Arc Amount: ${params.arcAmount}, Quality: ${params.renderQuality}`);
+    const stripDistribution = getPreciseStripDistribution(
+      params.renderQuality, 
+      params.adaptiveStrength, 
+      params.arcAmount, 
+      'parabolic', // Start with parabolic profile
+      height
+    );
     
-    // Create strip regions with different densities
-    const regions = [
-      { name: 'topCurve', strips: stripDistribution.topCurve, startRatio: 0, endRatio: 0.35 },
-      { name: 'middle', strips: stripDistribution.middle, startRatio: 0.35, endRatio: 0.65 },
-      { name: 'bottomCurve', strips: stripDistribution.bottomCurve, startRatio: 0.65, endRatio: 1.0 }
-    ];
+    const { stripCounts, distortionProfile } = stripDistribution;
+    const samplePoints = stripCounts.length;
     
+    // Convert sample-based distribution to actual strips
+    let currentY = y;
+    let currentSourceY = sourceY;
     let stripIndex = 0;
     
-    // Process each region with its adaptive strip count
-    for (const region of regions) {
-      const regionHeight = height * (region.endRatio - region.startRatio);
-      const regionStripHeight = regionHeight / region.strips;
-      const regionSourceHeight = sourceHeight * (region.endRatio - region.startRatio);
-      const regionSourceStripHeight = regionSourceHeight / region.strips;
+    for (let sampleIndex = 0; sampleIndex < samplePoints; sampleIndex++) {
+      const stripsInSample = stripCounts[sampleIndex];
+      if (stripsInSample === 0) continue;
       
-      for (let i = 0; i < region.strips; i++) {
-        const localProgress = i / (region.strips - 1); // 0 to 1 within region
-        const globalProgress = region.startRatio + localProgress * (region.endRatio - region.startRatio); // 0 to 1 across entire height
+      const sampleProgress = sampleIndex / (samplePoints - 1);
+      const nextSampleProgress = Math.min(1, (sampleIndex + 1) / (samplePoints - 1));
+      
+      const sampleHeight = height * (nextSampleProgress - sampleProgress);
+      const sampleSourceHeight = sourceHeight * (nextSampleProgress - sampleProgress);
+      
+      const stripHeight = sampleHeight / stripsInSample;
+      const sourceStripHeight = sampleSourceHeight / stripsInSample;
+      
+      // Get distortion factors for overlap calculation
+      const currentDistortion = distortionProfile[sampleIndex];
+      const nextDistortion = sampleIndex < samplePoints - 1 ? 
+        distortionProfile[sampleIndex + 1] : currentDistortion;
+      
+      for (let stripInSample = 0; stripInSample < stripsInSample; stripInSample++) {
+        const stripProgress = sampleProgress + (stripInSample / stripsInSample) * (nextSampleProgress - sampleProgress);
         
-        // Calculate curvature at this position for overlap determination
-        let curvatureAmount = 0;
+        // Calculate precise overlap based on distortion analysis
+        const currentOverlap = calculatePreciseOverlap(
+          currentDistortion, 
+          nextDistortion, 
+          stripHeight, 
+          params.overlapMultiplier
+        );
         
-        if (region.name === 'topCurve') {
-          const arcProgress = localProgress; // 0 at top of region, 1 at bottom of region
-          curvatureAmount = params.arcAmount * (1 - arcProgress); // Max curvature at top
-        } else if (region.name === 'bottomCurve') {
-          const arcProgress = localProgress; // 0 at top of region, 1 at bottom of region  
-          curvatureAmount = params.bottomArcAmount * arcProgress; // Max curvature at bottom
-        }
-        
-        // Auto-calculate overlap based on strip height and curvature
-        const currentOverlap = calculateOverlap(regionStripHeight, curvatureAmount, params.overlapMultiplier);
-        
-        // Source sampling with overlap
-        const regionSourceStart = sourceY + sourceHeight * region.startRatio;
-        const cropSourceY = regionSourceStart + Math.max(0, i * regionSourceStripHeight - currentOverlap / 2);
-        const cropSourceHeight = Math.min(regionSourceStripHeight + currentOverlap, 
-                                         regionSourceHeight - (cropSourceY - regionSourceStart));
-        
-        // Calculate position and dimensions with transform applied
-        const currentY = y + height * region.startRatio + i * regionStripHeight;
+        // Source sampling with precise overlap
+        const cropSourceY = currentSourceY + Math.max(0, stripInSample * sourceStripHeight - currentOverlap / 2);
+        const cropSourceHeight = Math.min(
+          sourceStripHeight + currentOverlap,
+          sampleSourceHeight - (cropSourceY - currentSourceY)
+        );
         
         // Interpolate width based on top/bottom settings
-        const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * globalProgress;
+        const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * stripProgress;
         const centerOffsetX = x + (width - currentWidth) / 2;
         
-        // Arc distortion calculations
-        const centerDistance = Math.abs(globalProgress - 0.5) * 2; // 0 at center, 1 at edges
-        
-        let arcDip = 0;
-        if (region.name === 'topCurve') {
-          const arcProgress = 1 - localProgress; // 1 at top of region, 0 at bottom
-          const arcDirection = isBackLayer ? -1 : 1;
-          arcDip = params.arcAmount * height * 0.15 * arcProgress * arcDirection;
-        } else if (region.name === 'bottomCurve') {
-          const arcProgress = localProgress; // 0 at top of region, 1 at bottom
-          const arcDirection = isBackLayer ? -1 : 1;
-          arcDip = params.bottomArcAmount * height * 0.1 * arcProgress * arcDirection;
-        }
+        // Calculate continuous arc distortion using single smooth curve
+        const arcDirection = isBackLayer ? -1 : 1;
+        // Use inverted parabolic curve: maximum at edges, minimum at center
+        const arcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * arcDirection;
         
         // Apply vertical squash effect
-        const squashedStripHeight = regionStripHeight * params.verticalSquash;
-        const verticalSquashOffset = (regionStripHeight - squashedStripHeight) / 2;
+        const squashedStripHeight = stripHeight * params.verticalSquash;
+        const verticalSquashOffset = (stripHeight - squashedStripHeight) / 2;
         
         // Final destination calculations
         const destX = centerOffsetX;
-        const destY = currentY + arcDip + verticalSquashOffset;
+        const destY = currentY + stripInSample * stripHeight + arcDip + verticalSquashOffset;
         const destWidth = currentWidth;
         const destHeight = squashedStripHeight;
         
-        // Apply gentle blending for smooth transitions
-        if (currentOverlap > 0 && stripIndex > 0) {
+        // Apply aggressive blending based on overlap and distortion
+        if (currentOverlap > stripHeight * 0.2 && stripIndex > 0) {
           ctx.globalCompositeOperation = 'source-over';
-          ctx.globalAlpha = 0.9; // Subtle blending
+          // Much more aggressive alpha scaling based on overlap amount
+          const overlapRatio = Math.min(1.0, currentOverlap / stripHeight);
+          ctx.globalAlpha = Math.max(0.3, 1.0 - overlapRatio * 0.7); // Alpha from 30% to 100%
+        } else if (currentDistortion > 0.01 && stripIndex > 0) {
+          // Even in low overlap, use blending in distorted areas
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 0.7;
         } else {
           ctx.globalCompositeOperation = 'source-over';
           ctx.globalAlpha = 1.0;
         }
         
-        // High-precision horizontal subdivision for arc areas
-        const subStrips = region.name !== 'middle' ? 80 : 20; // More subdivisions in curved areas
+        // Ultra-high precision horizontal subdivision based on distortion level
+        const subStrips = currentDistortion > 0.05 ? 200 : 
+                         currentDistortion > 0.01 ? 120 : 40; // Much more subdivisions in highly distorted areas
         const subStripWidth = destWidth / subStrips;
         
         for (let j = 0; j < subStrips; j++) {
-          const subHorizontalNormalized = j / (subStrips - 1); // 0 to 1 left to right
-          const subCenterDistance = Math.abs(subHorizontalNormalized - 0.5) * 2; // 0 at center, 1 at edges
+          const subHorizontalNormalized = j / (subStrips - 1);
+          const subCenterDistance = Math.abs(subHorizontalNormalized - 0.5) * 2;
           
-          // Calculate precise arc effects for this sub-strip
-          let subArcDip = 0;
-          if (region.name === 'topCurve') {
-            const arcProgress = 1 - localProgress;
-            const arcDirection = isBackLayer ? -1 : 1;
-            subArcDip = params.arcAmount * height * 0.15 * arcProgress * (1 - subCenterDistance * subCenterDistance) * arcDirection;
-          } else if (region.name === 'bottomCurve') {
-            const arcProgress = localProgress;
-            const arcDirection = isBackLayer ? -1 : 1;
-            subArcDip = params.bottomArcAmount * height * 0.1 * arcProgress * (1 - subCenterDistance * subCenterDistance) * arcDirection;
-          }
+          // Calculate continuous sub-arc effects
+          const subArcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * 
+                           (1 - subCenterDistance * subCenterDistance) * arcDirection;
           
           // Source sampling for sub-strip
           const subSourceX = sourceX + (j / subStrips) * sourceWidth;
@@ -364,13 +442,17 @@ const TestTransform = () => {
           ctx.drawImage(
             processedImage,
             subSourceX, cropSourceY, subSourceWidth, cropSourceHeight,
-            destX + j * subStripWidth, destY + subArcDip, 
+            destX + j * subStripWidth, destY + subArcDip,
             subStripWidth, destHeight
           );
         }
         
         stripIndex++;
       }
+      
+      // Advance Y positions for next sample
+      currentY += sampleHeight;
+      currentSourceY += sampleSourceHeight;
     }
     
     // Reset blending
@@ -431,10 +513,9 @@ const TestTransform = () => {
     
     // Draw reference bounds for active side
     const activeParams = activeSide === 'front' ? {
-      arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight
+      arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight
     } : {
-      arcAmount: backArcAmount, bottomArcAmount: backBottomArcAmount, 
-      topWidth: backTopWidth, bottomWidth: backBottomWidth, 
+      arcAmount: backArcAmount, topWidth: backTopWidth, bottomWidth: backBottomWidth, 
       verticalPosition: backVerticalPosition, mapHeight: backMapHeight
     };
     
@@ -442,48 +523,44 @@ const TestTransform = () => {
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     
-    // Draw arc guide at top using actual overlay dimensions
+    // Draw continuous parabolic arc guide across full height
     ctx.beginPath();
-    const steps = 20;
-    const topStartX = 200 + (400 - activeParams.topWidth) / 2; // Center the top width within the 400px area
+    const steps = 40; // More steps for smooth parabolic curve
+    const topStartX = 200 + (400 - activeParams.topWidth) / 2;
+    
     for (let i = 0; i <= steps; i++) {
-      const x = topStartX + (i / steps) * activeParams.topWidth;
-      const normalizedX = i / steps;
-      const centerOffset = Math.abs(normalizedX - 0.5) * 2;
-      const arcOffset = activeParams.arcAmount * activeParams.mapHeight * 0.15 * (1 - centerOffset * centerOffset);
-      const y = activeParams.verticalPosition + arcOffset;
+      const progress = i / steps; // 0 to 1 from top to bottom
+      
+      // Interpolate X position based on width change
+      const currentWidth = activeParams.topWidth + (activeParams.bottomWidth - activeParams.topWidth) * progress;
+      const currentStartX = 200 + (400 - currentWidth) / 2;
+      const x = currentStartX + (i / steps) * currentWidth;
+      
+      // Calculate inverted parabolic arc offset: maximum at edges (glass rim style)
+      const arcOffset = activeParams.arcAmount * activeParams.mapHeight * 0.15 * (1 - 4 * progress * (1 - progress));
+      const y = activeParams.verticalPosition + progress * activeParams.mapHeight + arcOffset;
       
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }
     ctx.stroke();
     
-    // Draw bottom arc guide using actual bottom width
+    // Draw straight boundary lines (top and bottom of glass area)
+    ctx.setLineDash([2, 2]); // Dotted lines for boundaries
+    // Top boundary
     ctx.beginPath();
-    const actualBottomWidth = activeParams.bottomWidth;
-    const bottomStartX = 200 + (400 - actualBottomWidth) / 2; // Center the bottom width within the 400px area
-    
-    if (activeParams.bottomArcAmount > 0) {
-      // Draw bottom arc
-      const steps = 20;
-      for (let i = 0; i <= steps; i++) {
-        const x = bottomStartX + (i / steps) * actualBottomWidth;
-        const normalizedX = i / steps;
-        const centerOffset = Math.abs(normalizedX - 0.5) * 2;
-        const bottomArcOffset = activeParams.bottomArcAmount * activeParams.mapHeight * 0.1 * (1 - centerOffset * centerOffset);
-        const y = (activeParams.verticalPosition + activeParams.mapHeight) + bottomArcOffset; // Add to curve downward (glass bottom shape)
-        
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-    } else {
-      // Draw straight bottom line
-      ctx.moveTo(bottomStartX, activeParams.verticalPosition + activeParams.mapHeight);
-      ctx.lineTo(bottomStartX + actualBottomWidth, activeParams.verticalPosition + activeParams.mapHeight);
-    }
+    ctx.moveTo(topStartX, activeParams.verticalPosition);
+    ctx.lineTo(topStartX + activeParams.topWidth, activeParams.verticalPosition);
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backAdaptiveStrength, backOverlapMultiplier, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
+    // Bottom boundary  
+    const bottomStartX = 200 + (400 - activeParams.bottomWidth) / 2;
+    ctx.beginPath();
+    ctx.moveTo(bottomStartX, activeParams.verticalPosition + activeParams.mapHeight);
+    ctx.lineTo(bottomStartX + activeParams.bottomWidth, activeParams.verticalPosition + activeParams.mapHeight);
+    ctx.stroke();
+    
+  }, [testImage, glassImage, arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backAdaptiveStrength, backOverlapMultiplier, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -583,7 +660,7 @@ const TestTransform = () => {
           
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    Top Arc: {arcAmount.toFixed(2)}
+                    Arc Amount: {arcAmount.toFixed(2)}
                   </label>
                   <input
                     type="range"
@@ -594,21 +671,9 @@ const TestTransform = () => {
                     onChange={(e) => setArcAmount(parseFloat(e.target.value))}
                     style={{ width: '100%' }}
                   />
-                </div>
-          
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    Bottom Arc: {bottomArcAmount.toFixed(2)}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={bottomArcAmount}
-                    onChange={(e) => setBottomArcAmount(parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
+                  <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                    Curves top/bottom edges outward (glass rim style)
+                  </div>
                 </div>
                 
                 <div style={{ marginBottom: '12px' }}>
@@ -820,7 +885,7 @@ const TestTransform = () => {
           
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    Top Arc: {backArcAmount.toFixed(2)}
+                    Arc Amount: {backArcAmount.toFixed(2)}
                   </label>
                   <input
                     type="range"
@@ -831,21 +896,9 @@ const TestTransform = () => {
                     onChange={(e) => setBackArcAmount(parseFloat(e.target.value))}
                     style={{ width: '100%' }}
                   />
-                </div>
-          
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
-                    Bottom Arc: {backBottomArcAmount.toFixed(2)}
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={backBottomArcAmount}
-                    onChange={(e) => setBackBottomArcAmount(parseFloat(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
+                  <div style={{ fontSize: '11px', color: '#666', marginTop: '2px' }}>
+                    Curves top/bottom edges outward (glass rim style)
+                  </div>
                 </div>
                 
                 <div style={{ marginBottom: '12px' }}>
@@ -1055,14 +1108,13 @@ const TestTransform = () => {
           <SettingsExport settings={{
             // Front layer parameters
             front: {
-              arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
+              arcAmount, topWidth, bottomWidth, verticalPosition, 
               mapHeight, bottomCornerRadius, verticalSquash, renderQuality, 
               adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity
             },
             // Back layer parameters  
             back: {
-              arcAmount: backArcAmount, bottomArcAmount: backBottomArcAmount, 
-              topWidth: backTopWidth, bottomWidth: backBottomWidth, 
+              arcAmount: backArcAmount, topWidth: backTopWidth, bottomWidth: backBottomWidth, 
               verticalPosition: backVerticalPosition, mapHeight: backMapHeight, 
               bottomCornerRadius: backBottomCornerRadius, verticalSquash: backVerticalSquash, 
               renderQuality: backRenderQuality, adaptiveStrength: backAdaptiveStrength, 
