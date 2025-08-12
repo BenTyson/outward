@@ -153,7 +153,7 @@ const CylinderMapTest = () => {
       dims.height,  // Height
       32,          // Radial segments (smooth)
       1,           // Height segments
-      false        // Not open-ended
+      true         // Open-ended (no top/bottom faces)
     );
 
     console.log('🔶 Cylinder geometry created:', {
@@ -257,6 +257,8 @@ const CylinderMapTest = () => {
         // Put processed data back
         ctx.putImageData(imageData, 0, 0);
         
+        // No masking on front face - show full cylindrical wrap
+        
         console.log(`🎨 Front: ${processedPixels} pixels transparent, ${darkenedPixels} pixels darkened, blur: ${frontBlur}px, grain: ${frontGrain}`);
         
         // Create new texture from processed canvas
@@ -305,6 +307,17 @@ const CylinderMapTest = () => {
         
         // Apply reverse blur
         applyBlur(reverseCtx, reverseCanvas, reverseBlur);
+        
+        // Mask out the bottom area that corresponds to the bottom face of the cylinder
+        // The bottom portion of the texture should be completely transparent on reverse side
+        const imageHeight = reverseCanvas.height;
+        const bottomMaskHeight = imageHeight * 0.25; // Bottom 25% represents the bottom face area
+        
+        // Create solid mask for bottom area - NO GRADIENTS, complete removal
+        reverseCtx.globalCompositeOperation = 'destination-out'; // Remove pixels
+        reverseCtx.fillStyle = 'rgba(0,0,0,1)'; // Solid black = complete removal
+        reverseCtx.fillRect(0, imageHeight - bottomMaskHeight, reverseCanvas.width, bottomMaskHeight);
+        reverseCtx.globalCompositeOperation = 'source-over'; // Reset to normal
         
         // Get image data for reverse processing
         const reverseImageData = reverseCtx.getImageData(0, 0, reverseCanvas.width, reverseCanvas.height);
@@ -358,7 +371,7 @@ const CylinderMapTest = () => {
           map: reverseTexture,
           transparent: true,
           opacity: reverseOpacity,
-          side: THREE.DoubleSide    // Both sides visible
+          side: THREE.BackSide    // Only back-facing surfaces (inside of cylinder)
         });
 
         // Create material array for front and back
@@ -541,6 +554,18 @@ const CylinderMapTest = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(tempCanvas, 0, 0);
     }
+
+    // Only mask reverse side, not front side
+    if (isReverse) {
+      const imageHeight = canvas.height;
+      const bottomMaskHeight = imageHeight * 0.25; // Bottom 25% represents the bottom face area
+      
+      // Create solid mask for bottom area - complete removal
+      ctx.globalCompositeOperation = 'destination-out'; // Remove pixels
+      ctx.fillStyle = 'rgba(0,0,0,1)'; // Solid black = complete removal
+      ctx.fillRect(0, imageHeight - bottomMaskHeight, canvas.width, bottomMaskHeight);
+      ctx.globalCompositeOperation = 'source-over'; // Reset to normal
+    }
     
     // Get image data and process pixels
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -647,7 +672,7 @@ const CylinderMapTest = () => {
           dimensions.height,
           32,
           1,
-          false
+          true          // Open-ended (no top/bottom faces)
         );
         cylinderRef.current.geometry = newGeometry;
         geometryRef.current = newGeometry;
@@ -660,7 +685,7 @@ const CylinderMapTest = () => {
           dimensions.height,
           32,
           1,
-          false
+          true          // Open-ended (no top/bottom faces)
         );
         topEdgeRef.current.geometry = newRimGeometry;
         rimGeometryRef.current = newRimGeometry;
