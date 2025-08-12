@@ -7,10 +7,15 @@ const CylinderMapTest = () => {
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
   const cylinderRef = useRef(null);
+  const topEdgeRef = useRef(null);
+  const bottomEdgeRef = useRef(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [dimensions, setDimensions] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [scaleX, setScaleX] = useState(1.0);
+  const [scaleY, setScaleY] = useState(1.0);
+  const [tiltX, setTiltX] = useState(0.0); // Forward/backward tilt in radians
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -246,9 +251,36 @@ const CylinderMapTest = () => {
     scene.add(cylinder);
     cylinderRef.current = cylinder;
 
-    console.log('✅ Cylinder added to scene');
+    // 7. Create Rim Border Wireframes (actual cylinder edge)
+    // Use wireframe cylinder to show the exact edges
+    const rimGeometry = new THREE.CylinderGeometry(
+      dims.radius,  // Same radius as main cylinder
+      dims.radius,  
+      dims.height,  // Same height
+      32,          // Same segments
+      1,           
+      false        
+    );
+    
+    // Wireframe material for rim visualization
+    const rimMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0xff0000, 
+      wireframe: true,
+      transparent: true, 
+      opacity: 0.6
+    });
+    
+    // Create rim wireframe mesh
+    const rimWireframe = new THREE.Mesh(rimGeometry, rimMaterial);
+    
+    // Add rim to scene and store reference
+    scene.add(rimWireframe);
+    topEdgeRef.current = rimWireframe; // Reuse ref for rim wireframe
+    bottomEdgeRef.current = null; // Not needed anymore
 
-    // 7. Render the scene
+    console.log('✅ Cylinder added to scene with edge wireframes');
+
+    // 8. Render the scene
     const render = () => {
       renderer.render(scene, camera);
     };
@@ -272,6 +304,33 @@ const CylinderMapTest = () => {
     };
 
   }, []);
+
+  // Scale and tilt change effect
+  useEffect(() => {
+    if (cylinderRef.current && rendererRef.current && sceneRef.current) {
+      // Apply scale and rotation to cylinder
+      cylinderRef.current.scale.set(scaleX, scaleY, 1);
+      cylinderRef.current.rotation.x = tiltX;
+      
+      // Apply same transformations to rim wireframe
+      if (topEdgeRef.current) {
+        topEdgeRef.current.scale.set(scaleX, scaleY, 1);
+        topEdgeRef.current.rotation.x = tiltX;
+      }
+      
+      // Log current values for easy copying
+      console.log(`🔧 Transform updated: scaleX=${scaleX.toFixed(3)}, scaleY=${scaleY.toFixed(3)}, tiltX=${tiltX.toFixed(3)} rad (${(tiltX * 180/Math.PI).toFixed(1)}°)`);
+      console.log(`📋 Copy for defaults: const defaultScaleX = ${scaleX.toFixed(3)}; const defaultScaleY = ${scaleY.toFixed(3)}; const defaultTiltX = ${tiltX.toFixed(3)};`);
+      
+      // Re-render
+      const camera = new THREE.PerspectiveCamera(75, canvasSize.width / canvasSize.height, 0.1, 2000);
+      const cameraDistance = calculateCameraDistance(dimensions?.radius || 50);
+      camera.position.set(0, 0, cameraDistance);
+      camera.lookAt(0, 0, 0);
+      
+      rendererRef.current.render(sceneRef.current, camera);
+    }
+  }, [scaleX, scaleY, tiltX, canvasSize.width, canvasSize.height, dimensions]);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -298,6 +357,82 @@ const CylinderMapTest = () => {
           Aspect Ratio: {dimensions.aspectRatio.toFixed(3)} (9.92:3.46)
         </div>
       )}
+
+      {/* Scale Controls */}
+      <div style={{ 
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#fff3cd', 
+        borderRadius: '4px',
+        border: '1px solid #ffeaa7'
+      }}>
+        <h3 style={{ margin: '0 0 15px 0', color: '#856404' }}>🎯 Cylinder Scale Controls</h3>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Width Scale (X): {scaleX.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min="0.1"
+            max="3.0"
+            step="0.01"
+            value={scaleX}
+            onChange={(e) => setScaleX(parseFloat(e.target.value))}
+            style={{ width: '300px' }}
+          />
+          <span style={{ marginLeft: '10px', fontSize: '12px', color: '#666' }}>
+            (0.1 - 3.0)
+          </span>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Height Scale (Y): {scaleY.toFixed(3)}
+          </label>
+          <input
+            type="range"
+            min="0.1"
+            max="3.0"
+            step="0.01"
+            value={scaleY}
+            onChange={(e) => setScaleY(parseFloat(e.target.value))}
+            style={{ width: '300px' }}
+          />
+          <span style={{ marginLeft: '10px', fontSize: '12px', color: '#666' }}>
+            (0.1 - 3.0)
+          </span>
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+            Forward Tilt: {(tiltX * 180/Math.PI).toFixed(1)}° ({tiltX.toFixed(3)} rad)
+          </label>
+          <input
+            type="range"
+            min="-0.785"
+            max="0.785"
+            step="0.01"
+            value={tiltX}
+            onChange={(e) => setTiltX(parseFloat(e.target.value))}
+            style={{ width: '300px' }}
+          />
+          <span style={{ marginLeft: '10px', fontSize: '12px', color: '#666' }}>
+            (-45° to +45°)
+          </span>
+        </div>
+
+        <div style={{ fontSize: '12px', color: '#856404' }}>
+          <p><strong>Instructions:</strong></p>
+          <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
+            <li>Adjust <strong>Width/Height scales</strong> to match cylinder size with glass outline</li>
+            <li>Adjust <strong>Forward Tilt</strong> to match the glass perspective angle</li>
+            <li><strong>Red wireframe</strong> shows exact cylinder rim edges aligned with texture</li>
+            <li>Check browser console for exact values to copy for new defaults</li>
+            <li>All transformations apply to both cylinder and rim wireframe together</li>
+          </ul>
+        </div>
+      </div>
       
       <div style={{ 
         border: '2px solid #ddd',
