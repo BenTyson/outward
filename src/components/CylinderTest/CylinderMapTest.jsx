@@ -28,6 +28,16 @@ const CylinderMapTest = () => {
   const [cameraY, setCameraY] = useState(-47.0); // Camera Y-axis movement (up/down along Y-axis)
   const [taperRatio, setTaperRatio] = useState(0.940); // Bottom radius as ratio of top radius (1.0 = no taper, >1.0 = wider base)
   const [baseWidth, setBaseWidth] = useState(1.020); // Base width scale independent of taper
+  
+  // Front side engraving controls
+  const [frontOpacity, setFrontOpacity] = useState(0.8);
+  const [frontBlur, setFrontBlur] = useState(0.0);
+  const [frontGrain, setFrontGrain] = useState(0.0);
+  
+  // Reverse side engraving controls
+  const [reverseOpacity, setReverseOpacity] = useState(0.6);
+  const [reverseBlur, setReverseBlur] = useState(1.0);
+  const [reverseGrain, setReverseGrain] = useState(0.5);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -162,7 +172,38 @@ const CylinderMapTest = () => {
       (texture) => {
         console.log('✅ Texture loaded successfully:', texture.image.width, 'x', texture.image.height);
         
-        // Process image to remove white pixels
+        // Store original texture for reprocessing
+        originalTextureRef.current = texture;
+        
+        // Helper function to apply grain effect
+        const applyGrain = (imageData, grainAmount) => {
+          if (grainAmount === 0) return;
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] > 0) { // Only apply to non-transparent pixels
+              const grain = (Math.random() - 0.5) * grainAmount * 50;
+              data[i] = Math.max(0, Math.min(255, data[i] + grain));
+              data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grain));
+              data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grain));
+            }
+          }
+        };
+
+        // Helper function to apply blur effect
+        const applyBlur = (ctx, canvas, blurAmount) => {
+          if (blurAmount === 0) return;
+          ctx.filter = `blur(${blurAmount}px)`;
+          const tempCanvas = document.createElement('canvas');
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+          tempCtx.drawImage(canvas, 0, 0);
+          ctx.filter = 'none';
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(tempCanvas, 0, 0);
+        };
+
+        // Process image for front side
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = texture.image.width;
@@ -171,12 +212,18 @@ const CylinderMapTest = () => {
         // Draw original image
         ctx.drawImage(texture.image, 0, 0);
         
+        // Apply blur if needed
+        applyBlur(ctx, canvas, frontBlur);
+        
         // Get image data and process pixels
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         
         let processedPixels = 0;
-        const whiteThreshold = 240; // Pixels brighter than this become transparent
+        let darkenedPixels = 0;
+        const whiteThreshold = 220; // Lower threshold to remove more light grays
+        const grayThreshold = 180;  // Threshold for grayscale noise removal
+        const darkenFactor = 0.4;   // Factor to darken existing lines (0.4 = 60% darker)
         
         // Process each pixel
         for (let i = 0; i < data.length; i += 4) {
@@ -188,16 +235,29 @@ const CylinderMapTest = () => {
           const brightness = (r + g + b) / 3;
           
           if (brightness > whiteThreshold) {
-            // Make white pixels transparent
+            // Make white/light pixels transparent
             data[i + 3] = 0; // Set alpha to 0
             processedPixels++;
+          } else if (brightness > grayThreshold) {
+            // Remove grayscale noise (medium grays become transparent)
+            data[i + 3] = 0; // Set alpha to 0
+            processedPixels++;
+          } else {
+            // Darken remaining pixels for stronger engraving effect
+            data[i] = Math.floor(r * darkenFactor);     // Darken red
+            data[i + 1] = Math.floor(g * darkenFactor); // Darken green
+            data[i + 2] = Math.floor(b * darkenFactor); // Darken blue
+            darkenedPixels++;
           }
         }
+        
+        // Apply grain effect
+        applyGrain(imageData, frontGrain);
         
         // Put processed data back
         ctx.putImageData(imageData, 0, 0);
         
-        console.log(`🎨 Processed ${processedPixels} white pixels to transparent`);
+        console.log(`🎨 Front: ${processedPixels} pixels transparent, ${darkenedPixels} pixels darkened, blur: ${frontBlur}px, grain: ${frontGrain}`);
         
         // Create new texture from processed canvas
         const processedTexture = new THREE.CanvasTexture(canvas);
@@ -210,26 +270,140 @@ const CylinderMapTest = () => {
         
         console.log('🔧 Processed texture configured for cylindrical mapping');
         
-        // Create material with processed texture
-        const material = new THREE.MeshBasicMaterial({ 
+        // Create front side material with dynamic opacity
+        const frontMaterial = new THREE.MeshBasicMaterial({ 
           map: processedTexture,
           transparent: true,
-          opacity: 0.8,           // Realistic engraving transparency
-          side: THREE.DoubleSide   // Visible from inside and outside
+          opacity: frontOpacity,
+          side: THREE.FrontSide   // Only front-facing surfaces
         });
+
+        // Process image for reverse side - show the back portion that wraps around
+        const reverseCanvas = document.createElement('canvas');
+        const reverseCtx = reverseCanvas.getContext('2d');
+        reverseCanvas.width = texture.image.width;
+        reverseCanvas.height = texture.image.height;
+        
+        // Calculate what portion of texture is visible on back side
+        // When cylinder rotates, different portions become visible on front vs back
+        const textureWidth = texture.image.width;
+        const halfWidth = textureWidth / 2;
+        
+        // Draw the back half of the texture, horizontally flipped
+        reverseCtx.scale(-1, 1); // Flip horizontally 
+        reverseCtx.drawImage(
+          texture.image, 
+          halfWidth, 0, halfWidth, texture.image.height, // Source: right half of texture
+          -halfWidth, 0, halfWidth, texture.image.height  // Dest: left half, flipped
+        );
+        reverseCtx.drawImage(
+          texture.image,
+          0, 0, halfWidth, texture.image.height, // Source: left half of texture  
+          -textureWidth, 0, halfWidth, texture.image.height // Dest: right half, flipped
+        );
+        reverseCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        
+        // Apply reverse blur
+        applyBlur(reverseCtx, reverseCanvas, reverseBlur);
+        
+        // Get image data for reverse processing
+        const reverseImageData = reverseCtx.getImageData(0, 0, reverseCanvas.width, reverseCanvas.height);
+        const reverseData = reverseImageData.data;
+        
+        // Reverse side processing (lighter, more subtle effect)
+        const reverseWhiteThreshold = 200; // Higher threshold (more aggressive removal)
+        const reverseGrayThreshold = 160;  // Higher threshold (remove more grays)
+        const reverseDarkenFactor = 0.6;   // Less darkening (40% vs 60%)
+        
+        let reverseProcessedPixels = 0;
+        let reverseDarkenedPixels = 0;
+        
+        for (let i = 0; i < reverseData.length; i += 4) {
+          const r = reverseData[i];
+          const g = reverseData[i + 1];
+          const b = reverseData[i + 2];
+          
+          const brightness = (r + g + b) / 3;
+          
+          if (brightness > reverseWhiteThreshold) {
+            reverseData[i + 3] = 0; // Transparent
+            reverseProcessedPixels++;
+          } else if (brightness > reverseGrayThreshold) {
+            reverseData[i + 3] = 0; // Transparent
+            reverseProcessedPixels++;
+          } else {
+            // Less darkening for reverse side (more subtle)
+            reverseData[i] = Math.floor(r * reverseDarkenFactor);
+            reverseData[i + 1] = Math.floor(g * reverseDarkenFactor);
+            reverseData[i + 2] = Math.floor(b * reverseDarkenFactor);
+            reverseDarkenedPixels++;
+          }
+        }
+        
+        // Apply grain to reverse side
+        applyGrain(reverseImageData, reverseGrain);
+        
+        reverseCtx.putImageData(reverseImageData, 0, 0);
+        
+        console.log(`🔄 Reverse: ${reverseProcessedPixels} pixels transparent, ${reverseDarkenedPixels} pixels darkened, blur: ${reverseBlur}px, grain: ${reverseGrain}`);
+        
+        // Create reverse side texture and material
+        const reverseTexture = new THREE.CanvasTexture(reverseCanvas);
+        reverseTexture.wrapS = THREE.RepeatWrapping;
+        reverseTexture.wrapT = THREE.ClampToEdgeWrapping;
+        reverseTexture.minFilter = THREE.LinearFilter;
+        reverseTexture.magFilter = THREE.LinearFilter;
+        
+        const reverseMaterial = new THREE.MeshBasicMaterial({
+          map: reverseTexture,
+          transparent: true,
+          opacity: reverseOpacity,
+          side: THREE.DoubleSide    // Both sides visible
+        });
+
+        // Create material array for front and back
+        const materials = [frontMaterial, reverseMaterial];
         
         console.log('✅ Material created with white pixels removed');
         
-        // Apply material to cylinder
-        if (cylinderRef.current) {
-          cylinderRef.current.material = material;
-          console.log('🎨 Texture applied to cylinder');
+        // Apply dual materials to cylinder using a group approach
+        if (geometryRef.current && cylinderRef.current) {
+          // Remove old cylinder
+          sceneRef.current.remove(cylinderRef.current);
+          
+          // Create front cylinder (outside faces)
+          const frontCylinder = new THREE.Mesh(geometryRef.current.clone(), frontMaterial);
+          frontCylinder.scale.copy(cylinderRef.current.scale);
+          frontCylinder.rotation.copy(cylinderRef.current.rotation);
+          frontCylinder.position.copy(cylinderRef.current.position);
+          
+          // Create reverse cylinder - same position, showing back portion of texture
+          const reverseCylinder = new THREE.Mesh(geometryRef.current.clone(), reverseMaterial);
+          reverseCylinder.scale.copy(cylinderRef.current.scale);
+          reverseCylinder.rotation.copy(cylinderRef.current.rotation);
+          reverseCylinder.position.copy(cylinderRef.current.position);
+          reverseCylinder.position.z -= 0.01; // Slightly behind to avoid z-fighting
+          
+          // Create group to hold both
+          const cylinderGroup = new THREE.Group();
+          cylinderGroup.add(frontCylinder);
+          cylinderGroup.add(reverseCylinder);
+          
+          // Add group to scene
+          sceneRef.current.add(cylinderGroup);
+          cylinderRef.current = cylinderGroup; // Update reference
+          
+          console.log('🎨 Dual-sided texture applied to cylinder (front + reverse)');
           
           // Re-render with texture
           if (rendererRef.current && sceneRef.current && camera) {
             rendererRef.current.render(sceneRef.current, camera);
-            console.log('🔄 Scene re-rendered with texture');
+            console.log('🔄 Scene re-rendered with dual-sided texture');
           }
+        } else {
+          console.error('❌ Cannot apply texture: geometryRef.current or cylinderRef.current is undefined');
+          console.log('🔍 Debug - geometryRef.current:', geometryRef.current);
+          console.log('🔍 Debug - cylinderRef.current:', cylinderRef.current);
         }
       },
       (progress) => {
@@ -320,6 +494,143 @@ const CylinderMapTest = () => {
 
   }, []);
 
+  // Store original texture for reprocessing
+  const originalTextureRef = useRef(null);
+
+  // Function to reprocess texture with current blur/grain settings
+  const reprocessTexture = (isReverse = false) => {
+    if (!originalTextureRef.current) return null;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = originalTextureRef.current.image.width;
+    canvas.height = originalTextureRef.current.image.height;
+    
+    if (isReverse) {
+      // For reverse side, show the back portion of the texture, horizontally flipped
+      const textureWidth = originalTextureRef.current.image.width;
+      const halfWidth = textureWidth / 2;
+      
+      ctx.scale(-1, 1); // Flip horizontally 
+      ctx.drawImage(
+        originalTextureRef.current.image, 
+        halfWidth, 0, halfWidth, originalTextureRef.current.image.height, // Source: right half
+        -halfWidth, 0, halfWidth, originalTextureRef.current.image.height  // Dest: left half, flipped
+      );
+      ctx.drawImage(
+        originalTextureRef.current.image,
+        0, 0, halfWidth, originalTextureRef.current.image.height, // Source: left half
+        -textureWidth, 0, halfWidth, originalTextureRef.current.image.height // Dest: right half, flipped
+      );
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+    } else {
+      // Draw original image for front side
+      ctx.drawImage(originalTextureRef.current.image, 0, 0);
+    }
+    
+    // Apply blur
+    const blur = isReverse ? reverseBlur : frontBlur;
+    if (blur > 0) {
+      ctx.filter = `blur(${blur}px)`;
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      tempCtx.drawImage(canvas, 0, 0);
+      ctx.filter = 'none';
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(tempCanvas, 0, 0);
+    }
+    
+    // Get image data and process pixels
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    const whiteThreshold = isReverse ? 200 : 220;
+    const grayThreshold = isReverse ? 160 : 180;
+    const darkenFactor = isReverse ? 0.6 : 0.4;
+    const grain = isReverse ? reverseGrain : frontGrain;
+    
+    // Process pixels
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const brightness = (r + g + b) / 3;
+      
+      if (brightness > whiteThreshold) {
+        data[i + 3] = 0; // Transparent
+      } else if (brightness > grayThreshold) {
+        data[i + 3] = 0; // Transparent
+      } else {
+        data[i] = Math.floor(r * darkenFactor);
+        data[i + 1] = Math.floor(g * darkenFactor);
+        data[i + 2] = Math.floor(b * darkenFactor);
+      }
+    }
+    
+    // Apply grain
+    if (grain > 0) {
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] > 0) {
+          const grainValue = (Math.random() - 0.5) * grain * 50;
+          data[i] = Math.max(0, Math.min(255, data[i] + grainValue));
+          data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + grainValue));
+          data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + grainValue));
+        }
+      }
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+    
+    // Create new texture
+    const newTexture = new THREE.CanvasTexture(canvas);
+    newTexture.wrapS = THREE.RepeatWrapping;
+    newTexture.wrapT = THREE.ClampToEdgeWrapping;
+    newTexture.minFilter = THREE.LinearFilter;
+    newTexture.magFilter = THREE.LinearFilter;
+    
+    return newTexture;
+  };
+
+  // Function to update materials with current settings
+  const updateMaterials = () => {
+    if (cylinderRef.current && cylinderRef.current.isGroup) {
+      const frontCylinder = cylinderRef.current.children[0];
+      const backCylinder = cylinderRef.current.children[1];
+      
+      if (frontCylinder && frontCylinder.material) {
+        frontCylinder.material.opacity = frontOpacity;
+        
+        // Update front texture with current blur/grain
+        const newFrontTexture = reprocessTexture(false);
+        if (newFrontTexture) {
+          if (frontCylinder.material.map) {
+            frontCylinder.material.map.dispose();
+          }
+          frontCylinder.material.map = newFrontTexture;
+          frontCylinder.material.needsUpdate = true;
+        }
+      }
+      
+      if (backCylinder && backCylinder.material) {
+        backCylinder.material.opacity = reverseOpacity;
+        
+        // Update reverse texture with current blur/grain
+        const newReverseTexture = reprocessTexture(true);
+        if (newReverseTexture) {
+          if (backCylinder.material.map) {
+            backCylinder.material.map.dispose();
+          }
+          backCylinder.material.map = newReverseTexture;
+          backCylinder.material.needsUpdate = true;
+        }
+      }
+      
+      console.log(`🎨 Materials updated: front(opacity=${frontOpacity}, blur=${frontBlur}, grain=${frontGrain}), reverse(opacity=${reverseOpacity}, blur=${reverseBlur}, grain=${reverseGrain})`);
+    }
+  };
+
   // Transform and camera change effect
   useEffect(() => {
     if (cylinderRef.current && rendererRef.current && sceneRef.current && dimensions) {
@@ -355,17 +666,28 @@ const CylinderMapTest = () => {
         rimGeometryRef.current = newRimGeometry;
       }
       
-      // Apply scale, rotation, and position to cylinder
-      cylinderRef.current.scale.set(scaleX, scaleY, 1);
-      cylinderRef.current.rotation.x = tiltX;
-      cylinderRef.current.rotation.y = rotateY; // Add Y-axis rotation
-      cylinderRef.current.position.set(modelX, modelY, 0);
+      // Apply scale, rotation, and position to cylinder (now a group)
+      if (cylinderRef.current) {
+        cylinderRef.current.scale.set(scaleX, scaleY, 1);
+        cylinderRef.current.rotation.x = tiltX;
+        cylinderRef.current.rotation.y = rotateY;
+        cylinderRef.current.position.set(modelX, modelY, 0);
+        
+        // If it's a group, update children geometries
+        if (cylinderRef.current.isGroup) {
+          cylinderRef.current.children.forEach(child => {
+            if (child.geometry && geometryRef.current) {
+              child.geometry = geometryRef.current.clone();
+            }
+          });
+        }
+      }
       
       // Apply same transformations to rim wireframe
       if (topEdgeRef.current) {
         topEdgeRef.current.scale.set(scaleX, scaleY, 1);
         topEdgeRef.current.rotation.x = tiltX;
-        topEdgeRef.current.rotation.y = rotateY; // Add Y-axis rotation
+        topEdgeRef.current.rotation.y = rotateY;
         topEdgeRef.current.position.set(modelX, modelY, 0);
       }
       
@@ -386,9 +708,12 @@ const CylinderMapTest = () => {
       camera.position.set(finalCameraX, finalCameraY, finalCameraZ);
       camera.lookAt(modelX + canvasX, modelY + canvasY, 0); // Look at model center adjusted for canvas position
       
+      // Update material opacities
+      updateMaterials();
+      
       rendererRef.current.render(sceneRef.current, camera);
     }
-  }, [scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth, modelX, modelY, canvasX, canvasY, cameraY, cameraZ, cameraFOV, canvasSize.width, canvasSize.height, dimensions]);
+  }, [scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth, modelX, modelY, canvasX, canvasY, cameraY, cameraZ, cameraFOV, frontOpacity, frontBlur, frontGrain, reverseOpacity, reverseBlur, reverseGrain, canvasSize.width, canvasSize.height, dimensions]);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -401,7 +726,8 @@ const CylinderMapTest = () => {
         <div style={{ 
           border: '1px solid #ddd',
           borderRadius: '4px',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          flex: '0 0 auto'
         }}>
           <canvas 
             ref={canvasRef}
@@ -414,7 +740,16 @@ const CylinderMapTest = () => {
         </div>
         
         {/* Controls */}
-        <div style={{ minWidth: '250px' }}>
+        <div style={{ 
+          minWidth: '250px',
+          maxWidth: '300px',
+          maxHeight: `${canvasSize.height}px`,
+          overflowY: 'auto',
+          padding: '10px',
+          border: '1px solid #eee',
+          borderRadius: '4px',
+          backgroundColor: '#fafafa'
+        }}>
           {/* Scale Controls */}
           <div style={{ marginBottom: '30px' }}>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Scale</h3>
@@ -625,6 +960,106 @@ const CylinderMapTest = () => {
                 step="1"
                 value={cameraZ}
                 onChange={(e) => setCameraZ(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Front Side Engraving Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Front Side</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Opacity: {frontOpacity.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={frontOpacity}
+                onChange={(e) => setFrontOpacity(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Blur: {frontBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="5.0"
+                step="0.1"
+                value={frontBlur}
+                onChange={(e) => setFrontBlur(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Grain: {frontGrain.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={frontGrain}
+                onChange={(e) => setFrontGrain(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Reverse Side Engraving Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Reverse Side</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Opacity: {reverseOpacity.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={reverseOpacity}
+                onChange={(e) => setReverseOpacity(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Blur: {reverseBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="5.0"
+                step="0.1"
+                value={reverseBlur}
+                onChange={(e) => setReverseBlur(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Grain: {reverseGrain.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={reverseGrain}
+                onChange={(e) => setReverseGrain(parseFloat(e.target.value))}
                 style={{ width: '220px' }}
               />
             </div>
