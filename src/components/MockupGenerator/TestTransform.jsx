@@ -33,6 +33,11 @@ const TestTransform = () => {
   const [showFront, setShowFront] = useState(true);
   const [showBack, setShowBack] = useState(true);
   
+  // Cylindrical image portion controls
+  const [frontPortionSize, setFrontPortionSize] = useState(0.4); // 40% of image width
+  const [sideGapSize, setSideGapSize] = useState(0.1); // 10% gap on each side
+  const [backPortionSize, setBackPortionSize] = useState(0.4); // 40% of image width
+  
   // Visual effects parameters - Simplified binary approach
   const [whiteThreshold, setWhiteThreshold] = useState(240); // Brightness level that counts as "white" (0-255)
   const [engravingOpacity, setEngravingOpacity] = useState(0.3); // 0 = fully transparent, 1 = fully opaque (for all non-white pixels)
@@ -42,7 +47,7 @@ const TestTransform = () => {
   const [backBottomArcAmount, setBackBottomArcAmount] = useState(1.0);
   const [backTopWidth, setBackTopWidth] = useState(425);
   const [backBottomWidth, setBackBottomWidth] = useState(430);
-  const [backVerticalPosition, setBackVerticalPosition] = useState(80);
+  const [backVerticalPosition, setBackVerticalPosition] = useState(30);
   const [backMapHeight, setBackMapHeight] = useState(460);
   const [backBottomCornerRadius, setBackBottomCornerRadius] = useState(0);
   const [backVerticalSquash, setBackVerticalSquash] = useState(1.0);
@@ -78,6 +83,29 @@ const TestTransform = () => {
     glassImg.onerror = (e) => console.error('Failed to load glass image:', e);
     glassImg.src = '/glass-images/rocks-white.jpg';
   }, []);
+  
+  // Cylindrical image portion selection for glass wrapping effect
+  const getImagePortionForSide = (image, side) => {
+    const imageWidth = image.width;
+    
+    if (side === 'front') {
+      // Front side: shows leftmost portion (0% to frontPortionSize%)
+      return {
+        sourceX: 0,
+        sourceWidth: imageWidth * frontPortionSize,
+        flip: false
+      };
+    } else {
+      // Back side: shows portion after front + gap, flipped horizontally
+      // Calculation: skip front portion + left side gap, then take back portion
+      const backStartPosition = frontPortionSize + sideGapSize;
+      return {
+        sourceX: imageWidth * backStartPosition,
+        sourceWidth: imageWidth * backPortionSize,
+        flip: true // Flip horizontally since we're viewing through glass
+      };
+    }
+  };
   
   // Apply arc/perspective transform with configurable overlap blending
   const applyArcTransform = (ctx, image, x, y, width, height, isBackLayer = false) => {
@@ -115,11 +143,33 @@ const TestTransform = () => {
       whiteThreshold,
       engravingOpacity
     };
-    // Pre-process: Apply engraving effects if needed
-    let processedImage = image;
     
+    // Get the correct image portion for this side and apply flipping if needed
+    const { sourceX: portionSourceX, sourceWidth: portionSourceWidth, flip } = getImagePortionForSide(image, isBackLayer ? 'back' : 'front');
+    
+    // Create a canvas with just the portion we need
+    const portionCanvas = document.createElement('canvas');
+    portionCanvas.width = portionSourceWidth;
+    portionCanvas.height = image.height;
+    const portionCtx = portionCanvas.getContext('2d');
+    
+    if (flip) {
+      // For back side: flip horizontally
+      portionCtx.scale(-1, 1);
+      portionCtx.drawImage(image, portionSourceX, 0, portionSourceWidth, image.height, 
+                          -portionSourceWidth, 0, portionSourceWidth, image.height);
+    } else {
+      // For front side: draw normally
+      portionCtx.drawImage(image, portionSourceX, 0, portionSourceWidth, image.height, 
+                          0, 0, portionSourceWidth, image.height);
+    }
+    
+    // Use the portion as our working image
+    let processedImage = portionCanvas;
+    
+    // Apply engraving effects if needed
     if (params.engravingOpacity < 1 || params.whiteThreshold < 255) {
-      processedImage = processImageForEngraving(image, params.whiteThreshold, params.engravingOpacity);
+      processedImage = processImageForEngraving(processedImage, params.whiteThreshold, params.engravingOpacity);
     }
     
     // Pre-process: Create rounded corner version of source image if needed
@@ -437,7 +487,7 @@ const TestTransform = () => {
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backHorizontalOverlap, backBottomArcCompensation, backVerticalOverlap, backBlurAmount, backBlendOpacity, backWhiteThreshold, backEngravingOpacity, activeSide]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backHorizontalOverlap, backBottomArcCompensation, backVerticalOverlap, backBlurAmount, backBlendOpacity, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -743,6 +793,56 @@ const TestTransform = () => {
                     engravingOpacity={engravingOpacity}
                     setEngravingOpacity={setEngravingOpacity}
                   />
+                  
+                  {/* Cylindrical Wrapping Controls */}
+                  <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
+                    <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Cylindrical Wrapping</h5>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Front Portion: {(frontPortionSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.6"
+                        step="0.05"
+                        value={frontPortionSize}
+                        onChange={(e) => setFrontPortionSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Side Gap: {(sideGapSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.2"
+                        step="0.01"
+                        value={sideGapSize}
+                        onChange={(e) => setSideGapSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Back Portion: {(backPortionSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.6"
+                        step="0.05"
+                        value={backPortionSize}
+                        onChange={(e) => setBackPortionSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -960,6 +1060,56 @@ const TestTransform = () => {
                     engravingOpacity={backEngravingOpacity}
                     setEngravingOpacity={setBackEngravingOpacity}
                   />
+                  
+                  {/* Cylindrical Wrapping Controls */}
+                  <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
+                    <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Cylindrical Wrapping</h5>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Front Portion: {(frontPortionSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.6"
+                        step="0.05"
+                        value={frontPortionSize}
+                        onChange={(e) => setFrontPortionSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Side Gap: {(sideGapSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.2"
+                        step="0.01"
+                        value={sideGapSize}
+                        onChange={(e) => setSideGapSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                    
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                        Back Portion: {(backPortionSize * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.6"
+                        step="0.05"
+                        value={backPortionSize}
+                        onChange={(e) => setBackPortionSize(parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </>
             )}
