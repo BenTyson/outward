@@ -18,10 +18,8 @@ const TestTransform = () => {
   const [perspectiveTaper, setPerspectiveTaper] = useState(0.8); // Bottom width relative to top (1 = rectangle, 0.5 = strong taper) - LEGACY
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
-  // New adaptive rendering parameters
+  // Zero-overlap rendering parameters
   const [renderQuality, setRenderQuality] = useState(1.5); // Overall strip density multiplier (0.5-2.0) - Higher default
-  const [adaptiveStrength, setAdaptiveStrength] = useState(0.5); // How much to concentrate strips in curves (0-1)
-  const [overlapMultiplier, setOverlapMultiplier] = useState(1.0); // Fine-tune auto-calculated overlaps (0.5-2.0)
   
   // Tab state
   const [activeSide, setActiveSide] = useState('front'); // Main side selector (front or back)
@@ -50,8 +48,6 @@ const TestTransform = () => {
   
   // BACK LAYER: Adaptive rendering parameters
   const [backRenderQuality, setBackRenderQuality] = useState(1.5);
-  const [backAdaptiveStrength, setBackAdaptiveStrength] = useState(0.5);
-  const [backOverlapMultiplier, setBackOverlapMultiplier] = useState(1.0);
   
   // BACK LAYER: Visual effects parameters
   const [backWhiteThreshold, setBackWhiteThreshold] = useState(240);
@@ -130,92 +126,24 @@ const TestTransform = () => {
     return distortionFactor;
   };
 
-  // Generate precise strip distribution based on mathematical arc analysis
-  const getPreciseStripDistribution = (quality, adaptiveStrength, arcAmount, arcProfile, totalHeight) => {
-    const baseStripCount = Math.floor(200 * quality); // Much higher base count for precision
-    const samplePoints = 200; // Sample distortion at 200 points for precision
+  // ZERO-OVERLAP SYSTEM: Even strip distribution with perfect mathematical placement
+  const getEvenStripDistribution = (quality, totalHeight) => {
+    // High strip count for smooth rendering without overlap compensation
+    const totalStripCount = Math.floor(500 * quality); // 500-1000 strips total
     
-    // Calculate distortion factor at each sample point
-    const distortionProfile = [];
-    let totalDistortion = 0;
-    let maxDistortion = 0;
+    // Perfect even distribution - each strip gets exact same height
+    const stripHeight = totalHeight / totalStripCount;
     
-    for (let i = 0; i < samplePoints; i++) {
-      const progress = i / (samplePoints - 1);
-      const distortion = calculateDistortionFactor(progress, arcAmount, arcProfile);
-      
-      // Apply exponential adaptive strength for extreme concentration in distorted areas
-      const adaptedDistortion = distortion > 0 ? 
-        Math.pow(distortion * 3, 1 + adaptiveStrength * 2) : 0; // Much more aggressive concentration
-      
-      maxDistortion = Math.max(maxDistortion, distortion);
-      distortionProfile.push(adaptedDistortion);
-      totalDistortion += adaptedDistortion;
-    }
-    
-    console.log(`Distortion Debug - Max distortion: ${maxDistortion.toFixed(4)}, Total adapted: ${totalDistortion.toFixed(2)}, Arc amount: ${arcAmount}, Profile: ${arcProfile} (INVERTED - max at edges)`);
-    
-    // Distribute strips proportional to distortion, with minimum density for flat areas
-    const minStripDensity = 0.3; // Minimum 30% of average density even in flat areas
-    const averageDensity = baseStripCount / samplePoints;
-    const stripCounts = [];
-    let allocatedStrips = 0;
-    
-    for (let i = 0; i < samplePoints; i++) {
-      let density;
-      
-      if (totalDistortion > 0) {
-        // Proportional allocation based on distortion
-        const proportionalDensity = (distortionProfile[i] / totalDistortion) * baseStripCount;
-        density = Math.max(proportionalDensity, averageDensity * minStripDensity);
-      } else {
-        // Uniform distribution if no distortion
-        density = averageDensity;
-      }
-      
-      const strips = Math.max(1, Math.round(density));
-      stripCounts.push(strips);
-      allocatedStrips += strips;
-    }
-    
-    // Normalize to exact target count
-    const scaleFactor = baseStripCount / allocatedStrips;
-    for (let i = 0; i < stripCounts.length; i++) {
-      stripCounts[i] = Math.max(1, Math.round(stripCounts[i] * scaleFactor));
-    }
+    console.log(`Zero-Overlap System - Total strips: ${totalStripCount}, Strip height: ${stripHeight.toFixed(3)}px, Quality: ${quality}x`);
     
     return {
-      stripCounts,
-      distortionProfile,
-      totalStrips: stripCounts.reduce((sum, count) => sum + count, 0)
+      totalStripCount,
+      stripHeight,
+      evenDistribution: true // Flag to indicate even distribution system
     };
   };
   
-  // Calculate precise overlap based on local distortion gradient
-  const calculatePreciseOverlap = (currentDistortion, nextDistortion, stripHeight, overlapMultiplier) => {
-    // Much more aggressive base overlap
-    const baseOverlap = stripHeight * 0.4; // Increased to 40% base overlap
-    
-    // Dramatic overlap increase based on distortion difference
-    const distortionGradient = Math.abs(nextDistortion - currentDistortion);
-    const gradientBonus = distortionGradient * stripHeight * 5.0; // Much stronger gradient compensation
-    
-    // Exponential overlap in high-distortion areas - much more aggressive for smaller distortions
-    const maxDistortion = Math.max(currentDistortion, nextDistortion);
-    // Scale up small distortions dramatically - anything above 0.01 gets massive bonus
-    const scaledDistortion = maxDistortion > 0.01 ? Math.pow(maxDistortion * 20, 2) : maxDistortion;
-    const distortionBonus = scaledDistortion * stripHeight * 8.0; // Much higher multiplier
-    
-    const totalOverlap = (baseOverlap + gradientBonus + distortionBonus) * overlapMultiplier;
-    const finalOverlap = Math.min(stripHeight * 1.5, Math.max(stripHeight * 0.2, totalOverlap)); // Min 20%, Max 150%
-    
-    // Debug high overlap areas
-    if (maxDistortion > 0.03) {
-      console.log(`High overlap: distortion=${maxDistortion.toFixed(4)}, overlap=${(finalOverlap/stripHeight).toFixed(2)}x strip height`);
-    }
-    
-    return finalOverlap;
-  };
+  // ZERO-OVERLAP SYSTEM: No overlap calculations needed
 
   const applyArcTransform = (ctx, image, x, y, width, height, isBackLayer = false) => {
     // Use back layer parameters if rendering back, otherwise use front
@@ -228,8 +156,6 @@ const TestTransform = () => {
       bottomCornerRadius: backBottomCornerRadius,
       verticalSquash: backVerticalSquash,
       renderQuality: backRenderQuality,
-      adaptiveStrength: backAdaptiveStrength,
-      overlapMultiplier: backOverlapMultiplier,
       whiteThreshold: backWhiteThreshold,
       engravingOpacity: backEngravingOpacity
     } : {
@@ -241,8 +167,6 @@ const TestTransform = () => {
       bottomCornerRadius,
       verticalSquash,
       renderQuality,
-      adaptiveStrength,
-      overlapMultiplier,
       whiteThreshold,
       engravingOpacity
     };
@@ -336,123 +260,67 @@ const TestTransform = () => {
     
     // Generate precise strip distribution based on exact arc math
     console.log(`Arc Debug - Arc Amount: ${params.arcAmount}, Quality: ${params.renderQuality}`);
-    const stripDistribution = getPreciseStripDistribution(
-      params.renderQuality, 
-      params.adaptiveStrength, 
-      params.arcAmount, 
-      'parabolic', // Start with parabolic profile
-      height
-    );
+    // Use zero-overlap even distribution system
+    const stripDistribution = getEvenStripDistribution(params.renderQuality, height);
+    const { totalStripCount, stripHeight } = stripDistribution;
     
-    const { stripCounts, distortionProfile } = stripDistribution;
-    const samplePoints = stripCounts.length;
+    // ZERO-OVERLAP SYSTEM: Simple even strip rendering
+    const sourceStripHeight = sourceHeight / totalStripCount;
     
-    // Convert sample-based distribution to actual strips
-    let currentY = y;
-    let currentSourceY = sourceY;
-    let stripIndex = 0;
-    
-    for (let sampleIndex = 0; sampleIndex < samplePoints; sampleIndex++) {
-      const stripsInSample = stripCounts[sampleIndex];
-      if (stripsInSample === 0) continue;
+    // Single loop through all strips with perfect mathematical placement
+    for (let stripIndex = 0; stripIndex < totalStripCount; stripIndex++) {
+      const stripProgress = stripIndex / (totalStripCount - 1);
       
-      const sampleProgress = sampleIndex / (samplePoints - 1);
-      const nextSampleProgress = Math.min(1, (sampleIndex + 1) / (samplePoints - 1));
+      // Perfect strip positioning - no overlap, no gaps
+      const destY = y + stripIndex * stripHeight;
+      const cropSourceY = sourceY + stripIndex * sourceStripHeight;
       
-      const sampleHeight = height * (nextSampleProgress - sampleProgress);
-      const sampleSourceHeight = sourceHeight * (nextSampleProgress - sampleProgress);
+      // Interpolate width based on top/bottom settings  
+      const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * stripProgress;
+      const centerOffsetX = x + (width - currentWidth) / 2;
       
-      const stripHeight = sampleHeight / stripsInSample;
-      const sourceStripHeight = sampleSourceHeight / stripsInSample;
+      // Calculate continuous arc distortion using single smooth curve
+      const arcDirection = isBackLayer ? -1 : 1;
+      // Use inverted parabolic curve: maximum at edges, minimum at center
+      const arcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * arcDirection;
       
-      // Get distortion factors for overlap calculation
-      const currentDistortion = distortionProfile[sampleIndex];
-      const nextDistortion = sampleIndex < samplePoints - 1 ? 
-        distortionProfile[sampleIndex + 1] : currentDistortion;
+      // Apply vertical squash effect
+      const squashedStripHeight = stripHeight * params.verticalSquash;
+      const verticalSquashOffset = (stripHeight - squashedStripHeight) / 2;
       
-      for (let stripInSample = 0; stripInSample < stripsInSample; stripInSample++) {
-        const stripProgress = sampleProgress + (stripInSample / stripsInSample) * (nextSampleProgress - sampleProgress);
+      // Final destination calculations with arc
+      const finalDestX = centerOffsetX;
+      const finalDestY = destY + arcDip + verticalSquashOffset;
+      const finalDestWidth = currentWidth;
+      const finalDestHeight = squashedStripHeight;
+      
+      // High precision horizontal subdivision for smooth arc curves
+      const subStrips = 100; // Consistent high subdivision
+      const subStripWidth = finalDestWidth / subStrips;
+      
+      for (let j = 0; j < subStrips; j++) {
+        const subHorizontalNormalized = j / (subStrips - 1);
+        const subCenterDistance = Math.abs(subHorizontalNormalized - 0.5) * 2;
         
-        // Calculate precise overlap based on distortion analysis
-        const currentOverlap = calculatePreciseOverlap(
-          currentDistortion, 
-          nextDistortion, 
-          stripHeight, 
-          params.overlapMultiplier
+        // Calculate continuous sub-arc effects
+        const subArcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * 
+                         (1 - subCenterDistance * subCenterDistance) * arcDirection;
+        
+        // Source sampling for sub-strip
+        const subSourceX = sourceX + (j / subStrips) * sourceWidth;
+        const subSourceWidth = sourceWidth / subStrips;
+        
+        // NO BLENDING/ALPHA - Perfect opaque strips with no overlap
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1.0;
+        
+        ctx.drawImage(
+          processedImage,
+          subSourceX, cropSourceY, subSourceWidth, sourceStripHeight,
+          finalDestX + j * subStripWidth, finalDestY + subArcDip,
+          subStripWidth, finalDestHeight
         );
-        
-        // Source sampling with precise overlap
-        const cropSourceY = currentSourceY + Math.max(0, stripInSample * sourceStripHeight - currentOverlap / 2);
-        const cropSourceHeight = Math.min(
-          sourceStripHeight + currentOverlap,
-          sampleSourceHeight - (cropSourceY - currentSourceY)
-        );
-        
-        // Interpolate width based on top/bottom settings
-        const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * stripProgress;
-        const centerOffsetX = x + (width - currentWidth) / 2;
-        
-        // Calculate continuous arc distortion using single smooth curve
-        const arcDirection = isBackLayer ? -1 : 1;
-        // Use inverted parabolic curve: maximum at edges, minimum at center
-        const arcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * arcDirection;
-        
-        // Apply vertical squash effect
-        const squashedStripHeight = stripHeight * params.verticalSquash;
-        const verticalSquashOffset = (stripHeight - squashedStripHeight) / 2;
-        
-        // Final destination calculations
-        const destX = centerOffsetX;
-        const destY = currentY + stripInSample * stripHeight + arcDip + verticalSquashOffset;
-        const destWidth = currentWidth;
-        const destHeight = squashedStripHeight;
-        
-        // Apply aggressive blending based on overlap and distortion
-        if (currentOverlap > stripHeight * 0.2 && stripIndex > 0) {
-          ctx.globalCompositeOperation = 'source-over';
-          // Much more aggressive alpha scaling based on overlap amount
-          const overlapRatio = Math.min(1.0, currentOverlap / stripHeight);
-          ctx.globalAlpha = Math.max(0.3, 1.0 - overlapRatio * 0.7); // Alpha from 30% to 100%
-        } else if (currentDistortion > 0.01 && stripIndex > 0) {
-          // Even in low overlap, use blending in distorted areas
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.globalAlpha = 0.7;
-        } else {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.globalAlpha = 1.0;
-        }
-        
-        // Ultra-high precision horizontal subdivision based on distortion level
-        const subStrips = currentDistortion > 0.05 ? 200 : 
-                         currentDistortion > 0.01 ? 120 : 40; // Much more subdivisions in highly distorted areas
-        const subStripWidth = destWidth / subStrips;
-        
-        for (let j = 0; j < subStrips; j++) {
-          const subHorizontalNormalized = j / (subStrips - 1);
-          const subCenterDistance = Math.abs(subHorizontalNormalized - 0.5) * 2;
-          
-          // Calculate continuous sub-arc effects
-          const subArcDip = params.arcAmount * height * 0.15 * (1 - 4 * stripProgress * (1 - stripProgress)) * 
-                           (1 - subCenterDistance * subCenterDistance) * arcDirection;
-          
-          // Source sampling for sub-strip
-          const subSourceX = sourceX + (j / subStrips) * sourceWidth;
-          const subSourceWidth = sourceWidth / subStrips;
-          
-          ctx.drawImage(
-            processedImage,
-            subSourceX, cropSourceY, subSourceWidth, cropSourceHeight,
-            destX + j * subStripWidth, destY + subArcDip,
-            subStripWidth, destHeight
-          );
-        }
-        
-        stripIndex++;
       }
-      
-      // Advance Y positions for next sample
-      currentY += sampleHeight;
-      currentSourceY += sampleSourceHeight;
     }
     
     // Reset blending
@@ -560,7 +428,7 @@ const TestTransform = () => {
     ctx.lineTo(bottomStartX + activeParams.bottomWidth, activeParams.verticalPosition + activeParams.mapHeight);
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backAdaptiveStrength, backOverlapMultiplier, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
+  }, [testImage, glassImage, arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -784,34 +652,13 @@ const TestTransform = () => {
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Adaptive Strength: {adaptiveStrength.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={adaptiveStrength}
-                      onChange={(e) => setAdaptiveStrength(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Overlap Multiplier: {overlapMultiplier.toFixed(2)}x
-                    </label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2.0"
-                      step="0.1"
-                      value={overlapMultiplier}
-                      onChange={(e) => setOverlapMultiplier(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
+                  <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                      Zero-Overlap System Active
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#888' }}>
+                      {Math.floor(750 * renderQuality)} strips with perfect mathematical placement
+                    </div>
                   </div>
                 </div>
                 
@@ -1009,34 +856,13 @@ const TestTransform = () => {
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Adaptive Strength: {backAdaptiveStrength.toFixed(2)}
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.05"
-                      value={backAdaptiveStrength}
-                      onChange={(e) => setBackAdaptiveStrength(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Overlap Multiplier: {backOverlapMultiplier.toFixed(2)}x
-                    </label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2.0"
-                      step="0.1"
-                      value={backOverlapMultiplier}
-                      onChange={(e) => setBackOverlapMultiplier(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
+                  <div style={{ marginBottom: '10px', padding: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '500', color: '#666' }}>
+                      Zero-Overlap System Active
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#888' }}>
+                      {Math.floor(750 * backRenderQuality)} strips with perfect mathematical placement
+                    </div>
                   </div>
                 </div>
                 
@@ -1110,15 +936,14 @@ const TestTransform = () => {
             front: {
               arcAmount, topWidth, bottomWidth, verticalPosition, 
               mapHeight, bottomCornerRadius, verticalSquash, renderQuality, 
-              adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity
+              whiteThreshold, engravingOpacity
             },
             // Back layer parameters  
             back: {
               arcAmount: backArcAmount, topWidth: backTopWidth, bottomWidth: backBottomWidth, 
               verticalPosition: backVerticalPosition, mapHeight: backMapHeight, 
               bottomCornerRadius: backBottomCornerRadius, verticalSquash: backVerticalSquash, 
-              renderQuality: backRenderQuality, adaptiveStrength: backAdaptiveStrength, 
-              overlapMultiplier: backOverlapMultiplier, whiteThreshold: backWhiteThreshold, 
+              renderQuality: backRenderQuality, whiteThreshold: backWhiteThreshold, 
               engravingOpacity: backEngravingOpacity
             },
             // Cylindrical wrapping parameters
