@@ -27,12 +27,36 @@ const TestTransform = () => {
   const [blendOpacity, setBlendOpacity] = useState(1.0); // Overlap blending opacity
   
   // Tab state
-  const [activeSide, setActiveSide] = useState('front'); // Main side selector
-  const [activeTab, setActiveTab] = useState('position'); // Sub-tab for current side
+  const [activeSide, setActiveSide] = useState('front'); // Main side selector (front or back)
+  
+  // Layer visibility states
+  const [showFront, setShowFront] = useState(true);
+  const [showBack, setShowBack] = useState(true);
   
   // Visual effects parameters - Simplified binary approach
   const [whiteThreshold, setWhiteThreshold] = useState(240); // Brightness level that counts as "white" (0-255)
   const [engravingOpacity, setEngravingOpacity] = useState(0.3); // 0 = fully transparent, 1 = fully opaque (for all non-white pixels)
+  
+  // BACK LAYER: Transform parameters - Starting with same defaults as front
+  const [backArcAmount, setBackArcAmount] = useState(0.64);
+  const [backBottomArcAmount, setBackBottomArcAmount] = useState(1.0);
+  const [backTopWidth, setBackTopWidth] = useState(425);
+  const [backBottomWidth, setBackBottomWidth] = useState(430);
+  const [backVerticalPosition, setBackVerticalPosition] = useState(80);
+  const [backMapHeight, setBackMapHeight] = useState(460);
+  const [backBottomCornerRadius, setBackBottomCornerRadius] = useState(0);
+  const [backVerticalSquash, setBackVerticalSquash] = useState(1.0);
+  
+  // BACK LAYER: Smoothing parameters
+  const [backHorizontalOverlap, setBackHorizontalOverlap] = useState(0);
+  const [backBottomArcCompensation, setBackBottomArcCompensation] = useState(0);
+  const [backVerticalOverlap, setBackVerticalOverlap] = useState(0);
+  const [backBlurAmount, setBackBlurAmount] = useState(0);
+  const [backBlendOpacity, setBackBlendOpacity] = useState(1.0);
+  
+  // BACK LAYER: Visual effects parameters
+  const [backWhiteThreshold, setBackWhiteThreshold] = useState(240);
+  const [backEngravingOpacity, setBackEngravingOpacity] = useState(0.2); // Slightly lighter for depth effect
   
   // Load both images
   useEffect(() => {
@@ -56,16 +80,50 @@ const TestTransform = () => {
   }, []);
   
   // Apply arc/perspective transform with configurable overlap blending
-  const applyArcTransform = (ctx, image, x, y, width, height) => {
+  const applyArcTransform = (ctx, image, x, y, width, height, isBackLayer = false) => {
+    // Use back layer parameters if rendering back, otherwise use front
+    const params = isBackLayer ? {
+      arcAmount: backArcAmount,
+      bottomArcAmount: backBottomArcAmount,
+      topWidth: backTopWidth,
+      bottomWidth: backBottomWidth,
+      verticalPosition: backVerticalPosition,
+      mapHeight: backMapHeight,
+      bottomCornerRadius: backBottomCornerRadius,
+      verticalSquash: backVerticalSquash,
+      horizontalOverlap: backHorizontalOverlap,
+      bottomArcCompensation: backBottomArcCompensation,
+      verticalOverlap: backVerticalOverlap,
+      blurAmount: backBlurAmount,
+      blendOpacity: backBlendOpacity,
+      whiteThreshold: backWhiteThreshold,
+      engravingOpacity: backEngravingOpacity
+    } : {
+      arcAmount,
+      bottomArcAmount,
+      topWidth,
+      bottomWidth,
+      verticalPosition,
+      mapHeight,
+      bottomCornerRadius,
+      verticalSquash,
+      horizontalOverlap,
+      bottomArcCompensation,
+      verticalOverlap,
+      blurAmount,
+      blendOpacity,
+      whiteThreshold,
+      engravingOpacity
+    };
     // Pre-process: Apply engraving effects if needed
     let processedImage = image;
     
-    if (engravingOpacity < 1 || whiteThreshold < 255) {
-      processedImage = processImageForEngraving(image, whiteThreshold, engravingOpacity);
+    if (params.engravingOpacity < 1 || params.whiteThreshold < 255) {
+      processedImage = processImageForEngraving(image, params.whiteThreshold, params.engravingOpacity);
     }
     
     // Pre-process: Create rounded corner version of source image if needed
-    if (bottomCornerRadius > 0) {
+    if (params.bottomCornerRadius > 0) {
       // Create a temporary canvas for rounded source image
       const roundedCanvas = document.createElement('canvas');
       roundedCanvas.width = processedImage.width;
@@ -73,7 +131,7 @@ const TestTransform = () => {
       const roundedCtx = roundedCanvas.getContext('2d');
       
       // Calculate corner radius relative to image size
-      const imageCornerRadius = bottomCornerRadius * (processedImage.width / width); // Scale radius to source image
+      const imageCornerRadius = params.bottomCornerRadius * (processedImage.width / width); // Scale radius to source image
       
       // Draw rounded rectangle mask
       roundedCtx.beginPath();
@@ -130,34 +188,34 @@ const TestTransform = () => {
       const progress = i / (strips - 1); // 0 to 1 from top to bottom
       
       // Smart overlap compensation: increase overlap in arc areas where strips get distorted
-      let currentHorizontalOverlap = horizontalOverlap;
+      let currentHorizontalOverlap = params.horizontalOverlap;
       
       // Top arc area compensation - mathematical precision  
-      if (progress < 0.4 && arcAmount > 0) {
+      if (progress < 0.4 && params.arcAmount > 0) {
         const arcProgress = progress / 0.4; // 0 at top, 1 at 40% down
         
         // Calculate exact gap created by top arc curvature
-        const arcCurvature = arcAmount * height * 0.1 * (1 - arcProgress); // Inverse of bottom arc
+        const arcCurvature = params.arcAmount * height * 0.1 * (1 - arcProgress); // Inverse of bottom arc
         
         // Gap expansion factor - strips spread more at the very top
         const gapExpansion = Math.pow((1 - arcProgress), 1.2); // Max expansion at top
         const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Same precision as bottom
         
-        currentHorizontalOverlap = horizontalOverlap + calculatedOverlap;
+        currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap;
       } 
       // Bottom arc area compensation - mathematical precision
-      else if (progress > 0.6 && bottomArcAmount > 0) {
+      else if (progress > 0.6 && params.bottomArcAmount > 0) {
         const bottomArcProgress = (progress - 0.6) / 0.4; // 0 at 60%, 1 at bottom
         
         // Calculate exact gap created by arc curvature
-        const arcCurvature = bottomArcAmount * height * 0.1 * bottomArcProgress;
+        const arcCurvature = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
         const stripSpacing = stripHeight;
         
         // Gap expansion factor - strips spread more as they curve
         const gapExpansion = Math.pow(bottomArcProgress, 1.2); // Less steep curve for more consistent compensation
         const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Much more aggressive compensation
         
-        currentHorizontalOverlap = horizontalOverlap + calculatedOverlap + bottomArcCompensation;
+        currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap + params.bottomArcCompensation;
       }
       
       // Add overlap to source sampling using dynamic overlap (within cropped area)
@@ -165,11 +223,11 @@ const TestTransform = () => {
       const actualSourceHeight = Math.min(sourceStripHeight + currentHorizontalOverlap, sourceHeight - (cropSourceY - sourceY));
       
       // Calculate width at this height using linear interpolation (no per-strip corner radius)
-      const currentWidth = topWidth + (bottomWidth - topWidth) * progress;
+      const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * progress;
       
       // Calculate Y position with optional vertical squash and overlap
-      const destY = y + (i * stripHeight * verticalSquash) - (i > 0 ? currentHorizontalOverlap/2 : 0);
-      const actualDestHeight = stripHeight * verticalSquash + (i > 0 ? currentHorizontalOverlap/2 : 0);
+      const destY = y + (i * stripHeight * params.verticalSquash) - (i > 0 ? currentHorizontalOverlap/2 : 0);
+      const actualDestHeight = stripHeight * params.verticalSquash + (i > 0 ? currentHorizontalOverlap/2 : 0);
       
       // Calculate arc offset for this row
       let arcOffsetForRow = 0;
@@ -177,13 +235,13 @@ const TestTransform = () => {
       // Top arc (affects top 40%)
       if (progress < 0.4) {
         const arcProgress = progress / 0.4;
-        arcOffsetForRow = arcAmount * height * 0.1 * (1 - arcProgress);
+        arcOffsetForRow = params.arcAmount * height * 0.1 * (1 - arcProgress);
       }
       
       // Bottom arc (affects bottom 40%) - negative offset to compress strips
       if (progress > 0.6) {
         const bottomArcProgress = (progress - 0.6) / 0.4;
-        const bottomArcOffset = bottomArcAmount * height * 0.1 * bottomArcProgress;
+        const bottomArcOffset = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
         arcOffsetForRow -= bottomArcOffset; // Subtract to bring strips closer together
       }
       
@@ -198,14 +256,14 @@ const TestTransform = () => {
         gradient.addColorStop(1, 'rgba(255,255,255,1)');   // Fully opaque
         
         ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = blendOpacity; // Configurable blending opacity
+        ctx.globalAlpha = params.blendOpacity; // Configurable blending opacity
       } else {
         ctx.globalAlpha = 1.0;
         ctx.globalCompositeOperation = 'source-over';
       }
       
       // For the arc rows (top or bottom), apply arc warping
-      const needsArcWarping = (progress < 0.4 && arcAmount > 0) || (progress > 0.6 && bottomArcAmount > 0);
+      const needsArcWarping = (progress < 0.4 && params.arcAmount > 0) || (progress > 0.6 && params.bottomArcAmount > 0);
       if (needsArcWarping) {
         // Draw this row with arc distortion and overlap - reduced density for binary mode
         const subStrips = 50; // Reduced from 100
@@ -220,24 +278,24 @@ const TestTransform = () => {
           if (progress < 0.4) {
             // Top arc: positive offset curves downward
             const arcProgress = progress / 0.4;
-            const topArcOffset = arcAmount * height * 0.1 * (1 - arcProgress);
+            const topArcOffset = params.arcAmount * height * 0.1 * (1 - arcProgress);
             arcDip = topArcOffset * (1 - centerOffset * centerOffset);
           } else if (progress > 0.6) {
             // Bottom arc: positive offset curves downward (like glass bottom)
             const bottomArcProgress = (progress - 0.6) / 0.4;
-            const bottomArcDistortion = bottomArcAmount * height * 0.1 * bottomArcProgress;
+            const bottomArcDistortion = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
             arcDip = bottomArcDistortion * (1 - centerOffset * centerOffset);
           }
           
           // Add configurable horizontal overlap for vertical slices (within cropped area)
-          const actualSubWidth = subStripWidth + (j > 0 ? verticalOverlap : 0);
-          const subSourceX = sourceX + Math.max(0, (j / subStrips) * sourceWidth - (j > 0 ? verticalOverlap/2 : 0));
-          const subSourceWidth = Math.min(sourceWidth / subStrips + verticalOverlap, sourceWidth - (subSourceX - sourceX));
+          const actualSubWidth = subStripWidth + (j > 0 ? params.verticalOverlap : 0);
+          const subSourceX = sourceX + Math.max(0, (j / subStrips) * sourceWidth - (j > 0 ? params.verticalOverlap/2 : 0));
+          const subSourceWidth = Math.min(sourceWidth / subStrips + params.verticalOverlap, sourceWidth - (subSourceX - sourceX));
           
           ctx.drawImage(
             processedImage,
             subSourceX, cropSourceY, subSourceWidth, actualSourceHeight,
-            destX + j * subStripWidth - (j > 0 ? verticalOverlap/2 : 0), destY + arcDip, 
+            destX + j * subStripWidth - (j > 0 ? params.verticalOverlap/2 : 0), destY + arcDip, 
             actualSubWidth, actualDestHeight
           );
         }
@@ -292,8 +350,18 @@ const TestTransform = () => {
     console.log('Drawing glass at:', glassX, glassY, 'scaled to:', drawWidth, 'x', drawHeight);
     ctx.drawImage(glassImage, glassX, glassY, drawWidth, drawHeight);
     
-    // Apply arc transform over the glass background using dynamic positioning and height
-    applyArcTransform(ctx, testImage, 200, verticalPosition, 400, mapHeight);
+    // Render back layer first (if visible) - using back parameters
+    if (showBack) {
+      ctx.save();
+      ctx.globalAlpha = 0.5; // Make back layer semi-transparent for depth effect
+      applyArcTransform(ctx, testImage, 200, backVerticalPosition, 400, backMapHeight, true);
+      ctx.restore();
+    }
+    
+    // Render front layer (if visible)
+    if (showFront) {
+      applyArcTransform(ctx, testImage, 200, verticalPosition, 400, mapHeight, false);
+    }
     
     
     // Post-processing: Apply configurable blur to smooth seams
@@ -315,21 +383,29 @@ const TestTransform = () => {
       ctx.restore();
     }
     
-    // Draw reference bounds (modified to show arc)
-    ctx.strokeStyle = 'red';
+    // Draw reference bounds for active side
+    const activeParams = activeSide === 'front' ? {
+      arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight
+    } : {
+      arcAmount: backArcAmount, bottomArcAmount: backBottomArcAmount, 
+      topWidth: backTopWidth, bottomWidth: backBottomWidth, 
+      verticalPosition: backVerticalPosition, mapHeight: backMapHeight
+    };
+    
+    ctx.strokeStyle = activeSide === 'front' ? 'red' : 'blue';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     
     // Draw arc guide at top using actual overlay dimensions
     ctx.beginPath();
     const steps = 20;
-    const topStartX = 200 + (400 - topWidth) / 2; // Center the top width within the 400px area
+    const topStartX = 200 + (400 - activeParams.topWidth) / 2; // Center the top width within the 400px area
     for (let i = 0; i <= steps; i++) {
-      const x = topStartX + (i / steps) * topWidth;
+      const x = topStartX + (i / steps) * activeParams.topWidth;
       const normalizedX = i / steps;
       const centerOffset = Math.abs(normalizedX - 0.5) * 2;
-      const arcOffset = arcAmount * mapHeight * 0.15 * (1 - centerOffset * centerOffset);
-      const y = verticalPosition + arcOffset;
+      const arcOffset = activeParams.arcAmount * activeParams.mapHeight * 0.15 * (1 - centerOffset * centerOffset);
+      const y = activeParams.verticalPosition + arcOffset;
       
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
@@ -338,30 +414,30 @@ const TestTransform = () => {
     
     // Draw bottom arc guide using actual bottom width
     ctx.beginPath();
-    const actualBottomWidth = bottomWidth;
+    const actualBottomWidth = activeParams.bottomWidth;
     const bottomStartX = 200 + (400 - actualBottomWidth) / 2; // Center the bottom width within the 400px area
     
-    if (bottomArcAmount > 0) {
+    if (activeParams.bottomArcAmount > 0) {
       // Draw bottom arc
       const steps = 20;
       for (let i = 0; i <= steps; i++) {
         const x = bottomStartX + (i / steps) * actualBottomWidth;
         const normalizedX = i / steps;
         const centerOffset = Math.abs(normalizedX - 0.5) * 2;
-        const bottomArcOffset = bottomArcAmount * mapHeight * 0.1 * (1 - centerOffset * centerOffset);
-        const y = (verticalPosition + mapHeight) + bottomArcOffset; // Add to curve downward (glass bottom shape)
+        const bottomArcOffset = activeParams.bottomArcAmount * activeParams.mapHeight * 0.1 * (1 - centerOffset * centerOffset);
+        const y = (activeParams.verticalPosition + activeParams.mapHeight) + bottomArcOffset; // Add to curve downward (glass bottom shape)
         
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
     } else {
       // Draw straight bottom line
-      ctx.moveTo(bottomStartX, verticalPosition + mapHeight);
-      ctx.lineTo(bottomStartX + actualBottomWidth, verticalPosition + mapHeight);
+      ctx.moveTo(bottomStartX, activeParams.verticalPosition + activeParams.mapHeight);
+      ctx.lineTo(bottomStartX + actualBottomWidth, activeParams.verticalPosition + activeParams.mapHeight);
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backHorizontalOverlap, backBottomArcCompensation, backVerticalOverlap, backBlurAmount, backBlendOpacity, backWhiteThreshold, backEngravingOpacity, activeSide]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -370,6 +446,50 @@ const TestTransform = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '20px' }}>
         {/* Controls */}
         <div style={{ background: '#f9f9f9', borderRadius: '8px', overflow: 'hidden' }}>
+          {/* Visibility Toggle Buttons */}
+          <div style={{ 
+            background: '#f8f9fa', 
+            padding: '10px 16px', 
+            borderBottom: '1px solid #dee2e6',
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#666', marginRight: '8px' }}>
+              Show:
+            </span>
+            <button
+              onClick={() => setShowFront(!showFront)}
+              style={{
+                padding: '5px 12px',
+                border: '1px solid #dee2e6',
+                borderRadius: '4px',
+                background: showFront ? '#28a745' : '#fff',
+                color: showFront ? 'white' : '#666',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}
+            >
+              {showFront ? '✓' : ''} Front
+            </button>
+            <button
+              onClick={() => setShowBack(!showBack)}
+              style={{
+                padding: '5px 12px',
+                border: '1px solid #dee2e6',
+                borderRadius: '4px',
+                background: showBack ? '#28a745' : '#fff',
+                color: showBack ? 'white' : '#666',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}
+            >
+              {showBack ? '✓' : ''} Back
+            </button>
+          </div>
+          
           {/* Main Side Navigation */}
           <div style={{ display: 'flex', background: '#d6d8db', borderBottom: '2px solid #bbb' }}>
             <button
@@ -384,52 +504,36 @@ const TestTransform = () => {
                 fontSize: '15px',
                 fontWeight: 'bold',
                 textTransform: 'uppercase',
-                letterSpacing: '0.5px'
+                letterSpacing: '0.5px',
+                borderRight: '1px solid #bbb'
               }}
             >
               FRONT
             </button>
-          </div>
-          
-          {/* Sub-Tab Navigation */}
-          <div style={{ display: 'flex', background: '#e9ecef' }}>
             <button
-              onClick={() => setActiveTab('position')}
+              onClick={() => setActiveSide('back')}
               style={{
                 flex: 1,
-                padding: '10px 14px',
+                padding: '14px 16px',
                 border: 'none',
-                background: activeTab === 'position' ? '#007bff' : 'transparent',
-                color: activeTab === 'position' ? 'white' : '#666',
+                background: activeSide === 'back' ? '#28a745' : 'transparent',
+                color: activeSide === 'back' ? 'white' : '#555',
                 cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '600'
+                fontSize: '15px',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
               }}
             >
-              Position Bk
-            </button>
-            <button
-              onClick={() => setActiveTab('visual')}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                border: 'none',
-                background: activeTab === 'visual' ? '#007bff' : 'transparent',
-                color: activeTab === 'visual' ? 'white' : '#666',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: '600'
-              }}
-            >
-              Visual Bk
+              BACK
             </button>
           </div>
           
           {/* Tab Content */}
           <div style={{ padding: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
-            {activeTab === 'position' && (
+            {activeSide === 'front' && (
               <>
-                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Front Side - Position Controls</h4>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Position Controls</h4>
           
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
@@ -629,16 +733,235 @@ const TestTransform = () => {
                     />
                   </div>
                 </div>
+                
+                {/* Visual Controls Section */}
+                <div style={{ borderTop: '2px solid #dee2e6', paddingTop: '16px', marginTop: '20px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Visual Effects</h4>
+                  <VisualControls
+                    whiteThreshold={whiteThreshold}
+                    setWhiteThreshold={setWhiteThreshold}
+                    engravingOpacity={engravingOpacity}
+                    setEngravingOpacity={setEngravingOpacity}
+                  />
+                </div>
               </>
             )}
             
-            {activeTab === 'visual' && (
-              <VisualControls
-                whiteThreshold={whiteThreshold}
-                setWhiteThreshold={setWhiteThreshold}
-                engravingOpacity={engravingOpacity}
-                setEngravingOpacity={setEngravingOpacity}
-              />
+            {/* BACK tab controls */}
+            {activeSide === 'back' && (
+              <>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Back Side - Position Controls</h4>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Top Arc: {backArcAmount.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={backArcAmount}
+                    onChange={(e) => setBackArcAmount(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Bottom Arc: {backBottomArcAmount.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={backBottomArcAmount}
+                    onChange={(e) => setBackBottomArcAmount(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Top Width: {backTopWidth}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="5"
+                    value={backTopWidth}
+                    onChange={(e) => setBackTopWidth(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Bottom Width: {backBottomWidth}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="5"
+                    value={backBottomWidth}
+                    onChange={(e) => setBackBottomWidth(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Vertical Position: {backVerticalPosition}px
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="300"
+                    step="5"
+                    value={backVerticalPosition}
+                    onChange={(e) => setBackVerticalPosition(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Map Height: {backMapHeight}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="10"
+                    value={backMapHeight}
+                    onChange={(e) => setBackMapHeight(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Corner Radius: {backBottomCornerRadius}px
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="50"
+                    step="2"
+                    value={backBottomCornerRadius}
+                    onChange={(e) => setBackBottomCornerRadius(parseInt(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+          
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
+                    Vertical Squash: {backVerticalSquash.toFixed(2)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0.7"
+                    max="1.3"
+                    step="0.01"
+                    value={backVerticalSquash}
+                    onChange={(e) => setBackVerticalSquash(parseFloat(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
+                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Fine Tuning</h5>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      H-Overlap: {backHorizontalOverlap}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="8"
+                      step="1"
+                      value={backHorizontalOverlap}
+                      onChange={(e) => setBackHorizontalOverlap(parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Bottom Compensation: {backBottomArcCompensation.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="-8"
+                      max="8"
+                      step="0.5"
+                      value={backBottomArcCompensation}
+                      onChange={(e) => setBackBottomArcCompensation(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      V-Overlap: {backVerticalOverlap}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="4"
+                      step="1"
+                      value={backVerticalOverlap}
+                      onChange={(e) => setBackVerticalOverlap(parseInt(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Blur: {backBlurAmount.toFixed(1)}px
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={backBlurAmount}
+                      onChange={(e) => setBackBlurAmount(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Blend: {backBlendOpacity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="1"
+                      step="0.01"
+                      value={backBlendOpacity}
+                      onChange={(e) => setBackBlendOpacity(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Visual Controls Section */}
+                <div style={{ borderTop: '2px solid #dee2e6', paddingTop: '16px', marginTop: '20px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Visual Effects</h4>
+                  <VisualControls
+                    whiteThreshold={backWhiteThreshold}
+                    setWhiteThreshold={setBackWhiteThreshold}
+                    engravingOpacity={backEngravingOpacity}
+                    setEngravingOpacity={setBackEngravingOpacity}
+                  />
+                </div>
+              </>
             )}
           </div>
           
