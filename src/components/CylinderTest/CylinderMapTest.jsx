@@ -9,16 +9,19 @@ const CylinderMapTest = () => {
   const cylinderRef = useRef(null);
   const topEdgeRef = useRef(null);
   const bottomEdgeRef = useRef(null);
+  const geometryRef = useRef(null);
+  const rimGeometryRef = useRef(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [dimensions, setDimensions] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
-  const [scaleX, setScaleX] = useState(1.0);
-  const [scaleY, setScaleY] = useState(1.0);
-  const [tiltX, setTiltX] = useState(0.0); // Forward/backward tilt in radians
-  const [cameraX, setCameraX] = useState(0.0); // Camera horizontal position
-  const [cameraY, setCameraY] = useState(0.0); // Camera vertical position  
-  const [cameraZ, setCameraZ] = useState(0.0); // Camera distance offset from calculated default
+  const [scaleX, setScaleX] = useState(0.780);
+  const [scaleY, setScaleY] = useState(1.260);
+  const [tiltX, setTiltX] = useState(0.675); // Forward/backward tilt in radians (38.7°)
+  const [cameraFOV, setCameraFOV] = useState(75); // Camera field of view in degrees (75 = wide angle, 15 = telephoto)
+  const [modelX, setModelX] = useState(0.0); // Model horizontal position on canvas
+  const [modelY, setModelY] = useState(0.0); // Model vertical position on canvas
+  const [taperRatio, setTaperRatio] = useState(1.0); // Bottom radius as ratio of top radius (1.0 = no taper, >1.0 = wider base)
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -77,8 +80,9 @@ const CylinderMapTest = () => {
         // Update camera aspect ratio
         if (camera) {
           camera.aspect = canvasWidth / canvasHeight;
+          camera.fov = cameraFOV;
           camera.updateProjectionMatrix();
-          console.log('📷 Camera aspect ratio updated');
+          console.log('📷 Camera aspect ratio and FOV updated');
         }
         
         // Set background
@@ -100,9 +104,9 @@ const CylinderMapTest = () => {
       }
     );
 
-    // 2. Create Camera (aspect ratio will be updated when background loads)
+    // 2. Create Camera (aspect ratio and FOV will be updated dynamically)
     const camera = new THREE.PerspectiveCamera(
-      75, // Field of view
+      cameraFOV, // Field of view (dynamic)
       canvasSize.width / canvasSize.height, // Initial aspect ratio
       0.1, // Near clipping
       2000 // Far clipping - increased for large objects
@@ -126,10 +130,10 @@ const CylinderMapTest = () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     rendererRef.current = renderer;
 
-    // 4. Create Cylinder Geometry
+    // 4. Create Cylinder Geometry (will be updated when taperRatio changes)
     const geometry = new THREE.CylinderGeometry(
       dims.radius,  // Top radius
-      dims.radius,  // Bottom radius
+      dims.radius,  // Bottom radius (will be updated)
       dims.height,  // Height
       32,          // Radial segments (smooth)
       1,           // Height segments
@@ -253,12 +257,13 @@ const CylinderMapTest = () => {
     const cylinder = new THREE.Mesh(geometry, loadingMaterial);
     scene.add(cylinder);
     cylinderRef.current = cylinder;
+    geometryRef.current = geometry;
 
     // 7. Create Rim Border Wireframes (actual cylinder edge)
-    // Use wireframe cylinder to show the exact edges
+    // Use wireframe cylinder to show the exact edges (will be updated when taperRatio changes)
     const rimGeometry = new THREE.CylinderGeometry(
       dims.radius,  // Same radius as main cylinder
-      dims.radius,  
+      dims.radius,  // Will be updated with taper
       dims.height,  // Same height
       32,          // Same segments
       1,           
@@ -276,10 +281,11 @@ const CylinderMapTest = () => {
     // Create rim wireframe mesh
     const rimWireframe = new THREE.Mesh(rimGeometry, rimMaterial);
     
-    // Add rim to scene and store reference
+    // Add rim to scene and store references
     scene.add(rimWireframe);
     topEdgeRef.current = rimWireframe; // Reuse ref for rim wireframe
     bottomEdgeRef.current = null; // Not needed anymore
+    rimGeometryRef.current = rimGeometry;
 
     console.log('✅ Cylinder added to scene with edge wireframes');
 
@@ -310,36 +316,71 @@ const CylinderMapTest = () => {
 
   // Transform and camera change effect
   useEffect(() => {
-    if (cylinderRef.current && rendererRef.current && sceneRef.current) {
-      // Apply scale and rotation to cylinder
+    if (cylinderRef.current && rendererRef.current && sceneRef.current && dimensions) {
+      // Update geometry for taper ratio
+      if (geometryRef.current && rimGeometryRef.current) {
+        const topRadius = dimensions.radius;
+        const bottomRadius = dimensions.radius * taperRatio;
+        
+        // Update main cylinder geometry
+        geometryRef.current.dispose(); // Clean up old geometry
+        const newGeometry = new THREE.CylinderGeometry(
+          bottomRadius,  // Bottom radius at top of cylinder
+          topRadius,     // Top radius at bottom of cylinder (flipped!)
+          dimensions.height,
+          32,
+          1,
+          false
+        );
+        cylinderRef.current.geometry = newGeometry;
+        geometryRef.current = newGeometry;
+        
+        // Update rim wireframe geometry
+        rimGeometryRef.current.dispose(); // Clean up old geometry
+        const newRimGeometry = new THREE.CylinderGeometry(
+          bottomRadius,  // Bottom radius at top of cylinder
+          topRadius,     // Top radius at bottom of cylinder (flipped!)
+          dimensions.height,
+          32,
+          1,
+          false
+        );
+        topEdgeRef.current.geometry = newRimGeometry;
+        rimGeometryRef.current = newRimGeometry;
+      }
+      
+      // Apply scale, rotation, and position to cylinder
       cylinderRef.current.scale.set(scaleX, scaleY, 1);
       cylinderRef.current.rotation.x = tiltX;
+      cylinderRef.current.position.set(modelX, modelY, 0);
       
       // Apply same transformations to rim wireframe
       if (topEdgeRef.current) {
         topEdgeRef.current.scale.set(scaleX, scaleY, 1);
         topEdgeRef.current.rotation.x = tiltX;
+        topEdgeRef.current.position.set(modelX, modelY, 0);
       }
       
-      // Calculate camera position
-      const baseCameraDistance = calculateCameraDistance(dimensions?.radius || 50);
-      const finalCameraX = cameraX;
-      const finalCameraY = cameraY;
-      const finalCameraZ = baseCameraDistance + cameraZ;
+      // Calculate camera position (fixed position, no manual offset)
+      const baseCameraDistance = calculateCameraDistance(dimensions.radius);
+      const finalCameraX = 0;
+      const finalCameraY = 0;
+      const finalCameraZ = baseCameraDistance;
       
       // Log current values for easy copying
-      console.log(`🔧 Transform updated: scaleX=${scaleX.toFixed(3)}, scaleY=${scaleY.toFixed(3)}, tiltX=${tiltX.toFixed(3)} rad (${(tiltX * 180/Math.PI).toFixed(1)}°)`);
-      console.log(`📷 Camera position: X=${finalCameraX.toFixed(3)}, Y=${finalCameraY.toFixed(3)}, Z=${finalCameraZ.toFixed(3)} (base=${baseCameraDistance.toFixed(3)} + offset=${cameraZ.toFixed(3)})`);
-      console.log(`📋 Copy for defaults: const defaultScaleX = ${scaleX.toFixed(3)}; const defaultScaleY = ${scaleY.toFixed(3)}; const defaultTiltX = ${tiltX.toFixed(3)}; const defaultCameraX = ${cameraX.toFixed(3)}; const defaultCameraY = ${cameraY.toFixed(3)}; const defaultCameraZ = ${cameraZ.toFixed(3)};`);
+      console.log(`🔧 Transform updated: scaleX=${scaleX.toFixed(3)}, scaleY=${scaleY.toFixed(3)}, tiltX=${tiltX.toFixed(3)} rad (${(tiltX * 180/Math.PI).toFixed(1)}°), taperRatio=${taperRatio.toFixed(3)}`);
+      console.log(`📍 Model position: X=${modelX.toFixed(3)}, Y=${modelY.toFixed(3)}`);
+      console.log(`📷 Camera: FOV=${cameraFOV}°, Distance=${finalCameraZ.toFixed(3)}`);
+      console.log(`📋 Copy for defaults: const defaultScaleX = ${scaleX.toFixed(3)}; const defaultScaleY = ${scaleY.toFixed(3)}; const defaultTiltX = ${tiltX.toFixed(3)}; const defaultTaperRatio = ${taperRatio.toFixed(3)}; const defaultModelX = ${modelX.toFixed(3)}; const defaultModelY = ${modelY.toFixed(3)}; const defaultCameraFOV = ${cameraFOV};`);
       
-      // Create and position camera
-      const camera = new THREE.PerspectiveCamera(75, canvasSize.width / canvasSize.height, 0.1, 2000);
+      // Create and position camera (fixed position, looks at model center)
+      const camera = new THREE.PerspectiveCamera(cameraFOV, canvasSize.width / canvasSize.height, 0.1, 2000);
       camera.position.set(finalCameraX, finalCameraY, finalCameraZ);
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(modelX, modelY, 0); // Look at model center
       
       rendererRef.current.render(sceneRef.current, camera);
     }
-  }, [scaleX, scaleY, tiltX, cameraX, cameraY, cameraZ, canvasSize.width, canvasSize.height, dimensions]);
+  }, [scaleX, scaleY, tiltX, taperRatio, modelX, modelY, cameraFOV, canvasSize.width, canvasSize.height, dimensions]);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -414,53 +455,73 @@ const CylinderMapTest = () => {
                 style={{ width: '220px' }}
               />
             </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Taper: {taperRatio.toFixed(3)}
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.01"
+                value={taperRatio}
+                onChange={(e) => setTaperRatio(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Position Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Position</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                X: {modelX.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={modelX}
+                onChange={(e) => setModelX(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Y: {modelY.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={modelY}
+                onChange={(e) => setModelY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
           </div>
 
           {/* Camera Controls */}
           <div>
             <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Camera</h3>
-            
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                X: {cameraX.toFixed(0)}
-              </label>
-              <input
-                type="range"
-                min="-200"
-                max="200"
-                step="1"
-                value={cameraX}
-                onChange={(e) => setCameraX(parseFloat(e.target.value))}
-                style={{ width: '220px' }}
-              />
-            </div>
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                Y: {cameraY.toFixed(0)}
+                FOV: {cameraFOV}°
               </label>
               <input
                 type="range"
-                min="-200"
-                max="200"
+                min="10"
+                max="90"
                 step="1"
-                value={cameraY}
-                onChange={(e) => setCameraY(parseFloat(e.target.value))}
-                style={{ width: '220px' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
-                Distance: {cameraZ.toFixed(0)}
-              </label>
-              <input
-                type="range"
-                min="-100"
-                max="200"
-                step="1"
-                value={cameraZ}
-                onChange={(e) => setCameraZ(parseFloat(e.target.value))}
+                value={cameraFOV}
+                onChange={(e) => setCameraFOV(parseFloat(e.target.value))}
                 style={{ width: '220px' }}
               />
             </div>
