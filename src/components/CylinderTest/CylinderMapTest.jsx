@@ -16,8 +16,8 @@ const CylinderMapTest = () => {
   const [dimensions, setDimensions] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [scaleX, setScaleX] = useState(1.000);
-  const [scaleY, setScaleY] = useState(0.910);
-  const [tiltX, setTiltX] = useState(0.574); // Forward/backward tilt in radians (32.9°)
+  const [scaleY, setScaleY] = useState(0.930);
+  const [tiltX, setTiltX] = useState(0.555); // Forward/backward tilt in radians (31.8°)
   const [rotateY, setRotateY] = useState(-0.785); // Left/right rotation around Y-axis in radians (-45.0°)
   const [cameraFOV, setCameraFOV] = useState(22); // Camera field of view in degrees (75 = wide angle, 15 = telephoto)
   const [modelX, setModelX] = useState(4.0); // Model 3D position X (rotation around origin)
@@ -25,9 +25,9 @@ const CylinderMapTest = () => {
   const [canvasX, setCanvasX] = useState(0.0); // Canvas position X (horizontal translation)
   const [canvasY, setCanvasY] = useState(-3.0); // Canvas position Y (vertical translation)
   const [cameraZ, setCameraZ] = useState(200.0); // Camera Z-axis position (up/down viewing angle)
-  const [cameraY, setCameraY] = useState(-35.0); // Camera Y-axis movement (up/down along Y-axis)
+  const [cameraY, setCameraY] = useState(-47.0); // Camera Y-axis movement (up/down along Y-axis)
   const [taperRatio, setTaperRatio] = useState(0.940); // Bottom radius as ratio of top radius (1.0 = no taper, >1.0 = wider base)
-  const [baseWidth, setBaseWidth] = useState(1.010); // Base width scale independent of taper
+  const [baseWidth, setBaseWidth] = useState(1.020); // Base width scale independent of taper
 
   useEffect(() => {
     if (!canvasRef.current) return;
