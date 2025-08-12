@@ -78,21 +78,63 @@ const CylinderMapTest = () => {
       (texture) => {
         console.log('✅ Texture loaded successfully:', texture.image.width, 'x', texture.image.height);
         
+        // Process image to remove white pixels
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = texture.image.width;
+        canvas.height = texture.image.height;
+        
+        // Draw original image
+        ctx.drawImage(texture.image, 0, 0);
+        
+        // Get image data and process pixels
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        let processedPixels = 0;
+        const whiteThreshold = 240; // Pixels brighter than this become transparent
+        
+        // Process each pixel
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Calculate brightness
+          const brightness = (r + g + b) / 3;
+          
+          if (brightness > whiteThreshold) {
+            // Make white pixels transparent
+            data[i + 3] = 0; // Set alpha to 0
+            processedPixels++;
+          }
+        }
+        
+        // Put processed data back
+        ctx.putImageData(imageData, 0, 0);
+        
+        console.log(`🎨 Processed ${processedPixels} white pixels to transparent`);
+        
+        // Create new texture from processed canvas
+        const processedTexture = new THREE.CanvasTexture(canvas);
+        
         // Configure texture for cylindrical wrapping
-        texture.wrapS = THREE.RepeatWrapping;      // Horizontal wrap around cylinder
-        texture.wrapT = THREE.ClampToEdgeWrapping; // Vertical clamp (top to bottom)
-        texture.minFilter = THREE.LinearFilter;    // Smooth scaling down
-        texture.magFilter = THREE.LinearFilter;    // Smooth scaling up
+        processedTexture.wrapS = THREE.RepeatWrapping;      // Horizontal wrap around cylinder
+        processedTexture.wrapT = THREE.ClampToEdgeWrapping; // Vertical clamp (top to bottom)
+        processedTexture.minFilter = THREE.LinearFilter;    // Smooth scaling down
+        processedTexture.magFilter = THREE.LinearFilter;    // Smooth scaling up
         
-        console.log('🔧 Texture configured for cylindrical mapping');
+        console.log('🔧 Processed texture configured for cylindrical mapping');
         
-        // Create material with texture
+        // Create material with processed texture
         const material = new THREE.MeshBasicMaterial({ 
-          map: texture,
+          map: processedTexture,
           transparent: true,
           opacity: 0.8,           // Realistic engraving transparency
           side: THREE.DoubleSide   // Visible from inside and outside
         });
+        
+        console.log('✅ Material created with white pixels removed');
         
         // Apply material to cylinder
         if (cylinderRef.current) {
@@ -131,20 +173,7 @@ const CylinderMapTest = () => {
       wireframe: false
     });
 
-    // Add reference objects for scale comparison
-    // Red cube to show scale
-    const cubeGeometry = new THREE.BoxGeometry(dims.radius * 2, dims.radius * 2, dims.radius * 2);
-    const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    cube.position.x = dims.radius * 3; // Position to the side
-    scene.add(cube);
-
-    // Blue sphere to show radius
-    const sphereGeometry = new THREE.SphereGeometry(dims.radius, 16, 16);
-    const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff, wireframe: true });
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    sphere.position.x = -dims.radius * 3; // Position to the other side
-    scene.add(sphere);
+    // Reference objects removed for cleaner view
 
     // 6. Create Mesh with loading material and Add to Scene
     const cylinder = new THREE.Mesh(geometry, loadingMaterial);

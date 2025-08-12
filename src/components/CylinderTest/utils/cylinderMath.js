@@ -50,8 +50,8 @@ export const calculateCylinderDimensions = (height = 100) => {
  * @returns {number} Camera distance
  */
 export const calculateCameraDistance = (radius) => {
-  // Position camera much farther back for large radius cylinders
-  const distance = Math.max(radius * 5, 200); // Ensure minimum distance of 200
-  console.log(`📷 Camera distance calculated: ${distance.toFixed(2)} (radius: ${radius.toFixed(2)})`);
+  // Zoom in closer to the cylinder for detailed view
+  const distance = radius * 2.5; // Much closer for zoomed view
+  console.log(`📷 Camera distance calculated: ${distance.toFixed(2)} (radius: ${radius.toFixed(2)}) - ZOOMED IN`);
   return distance;
 };
