@@ -5,6 +5,8 @@ import Step2 from './components/Steps/Step2'
 import TestMockup from './components/MockupGenerator/TestMockup'
 import TestWrap from './components/MockupGenerator/TestWrap'
 import TestTransform from './components/MockupGenerator/TestTransform'
+import SimpleImageTest from './components/SimpleImageTest'
+import CylinderMapTest from './components/CylinderTest/CylinderMapTest'
 import './App.css'
 
 const AppContent = () => {
@@ -43,6 +45,14 @@ function App() {
   
   if (testMode === 'transform') {
     return <TestTransform />;
+  }
+  
+  if (testMode === 'image') {
+    return <SimpleImageTest />;
+  }
+  
+  if (testMode === 'cylinder') {
+    return <CylinderMapTest />;
   }
   
   return (
