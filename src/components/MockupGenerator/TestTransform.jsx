@@ -2,11 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import { processImageForEngraving } from './utils/imageProcessing';
 import VisualControls from './components/VisualControls';
 import SettingsExport from './components/SettingsExport';
+import BinaryImageProcessor from './components/BinaryImageProcessor';
+import { renderBinaryLayer } from './components/BinaryRenderer';
 
 const TestTransform = () => {
   const canvasRef = useRef(null);
   const [testImage, setTestImage] = useState(null);
   const [glassImage, setGlassImage] = useState(null);
+  
+  // Binary conversion state
+  const [frontBinaryImage, setFrontBinaryImage] = useState(null);
+  const [frontProcessedImage, setFrontProcessedImage] = useState(null);
   
   // Transform parameters - Optimized defaults for rocks glass mapping  
   const [arcAmount, setArcAmount] = useState(0.36); // Continuous parabolic arc across full height (0 = flat, 1 = very curved)
@@ -327,6 +333,22 @@ const TestTransform = () => {
     ctx.globalAlpha = 1.0;
     ctx.globalCompositeOperation = 'source-over';
   };  
+  // Create processed image for binary conversion
+  useEffect(() => {
+    if (!testImage) {
+      console.log('❌ No testImage available for processing');
+      return;
+    }
+    
+    console.log('🔄 Creating processed image for binary conversion...', testImage);
+    
+    // Process image with default white threshold for binary conversion
+    const processed = processImageForEngraving(testImage, whiteThreshold);
+    console.log('✅ Processed image created:', processed);
+    setFrontProcessedImage(processed);
+    
+  }, [testImage, whiteThreshold]);
+
   useEffect(() => {
     if (!canvasRef.current || !testImage || !glassImage) return;
     
@@ -371,9 +393,39 @@ const TestTransform = () => {
       ctx.restore();
     }
     
-    // Render front layer (if visible)
-    if (showFront) {
+    // Render front layer using BINARY CONVERSION APPROACH (if visible)
+    if (showFront && frontBinaryImage) {
+      console.log('✅ Rendering front layer with binary conversion...', frontBinaryImage);
+      
+      const frontParams = {
+        arcAmount,
+        topWidth,
+        bottomWidth,
+        verticalPosition,
+        mapHeight,
+        bottomCornerRadius,
+        verticalSquash,
+        renderQuality,
+        whiteThreshold,
+        engravingOpacity
+      };
+      
+      renderBinaryLayer(
+        ctx, 
+        frontBinaryImage, 
+        200, 
+        verticalPosition, 
+        400, 
+        mapHeight, 
+        frontParams, 
+        false // isBackLayer = false
+      );
+    } else if (showFront && !frontBinaryImage) {
+      // Fallback to traditional rendering while binary image is processing
+      console.log('🔄 Binary image not ready, using fallback rendering. frontProcessedImage:', frontProcessedImage);
       applyArcTransform(ctx, testImage, 200, verticalPosition, 400, mapHeight, false);
+    } else if (showFront) {
+      console.log('⚠️ Front layer enabled but conditions not met. frontBinaryImage:', frontBinaryImage);
     }
     
     
@@ -428,7 +480,7 @@ const TestTransform = () => {
     ctx.lineTo(bottomStartX + activeParams.bottomWidth, activeParams.verticalPosition + activeParams.mapHeight);
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
+  }, [testImage, glassImage, arcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize, frontBinaryImage || null]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -967,6 +1019,15 @@ const TestTransform = () => {
           </div>
         </div>
       </div>
+      
+      {/* Binary Image Processor - Converts original image to pure binary */}
+      <BinaryImageProcessor
+        processedImage={testImage}
+        width={400}
+        height={mapHeight}
+        whiteThreshold={whiteThreshold}
+        onBinaryImageReady={setFrontBinaryImage}
+      />
     </div>
   );
 };
