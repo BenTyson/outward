@@ -245,11 +245,13 @@ const TestTransform = () => {
         const arcProgress = progress / 0.4; // 0 at top, 1 at 40% down
         
         // Calculate exact gap created by top arc curvature
-        const arcCurvature = params.arcAmount * height * 0.1 * (1 - arcProgress); // Inverse of bottom arc
+        // For back layer, invert the arc direction (curves upward instead of downward)
+        const arcDirection = isBackLayer ? -1 : 1;
+        const arcCurvature = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection; // Inverse of bottom arc
         
         // Gap expansion factor - strips spread more at the very top
         const gapExpansion = Math.pow((1 - arcProgress), 1.2); // Max expansion at top
-        const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Same precision as bottom
+        const calculatedOverlap = Math.abs(arcCurvature) * gapExpansion * 0.8; // Use absolute value for overlap calculation
         
         currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap;
       } 
@@ -258,12 +260,14 @@ const TestTransform = () => {
         const bottomArcProgress = (progress - 0.6) / 0.4; // 0 at 60%, 1 at bottom
         
         // Calculate exact gap created by arc curvature
-        const arcCurvature = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
+        // For back layer, invert the arc direction (curves upward instead of downward)
+        const arcDirection = isBackLayer ? -1 : 1;
+        const arcCurvature = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
         const stripSpacing = stripHeight;
         
         // Gap expansion factor - strips spread more as they curve
         const gapExpansion = Math.pow(bottomArcProgress, 1.2); // Less steep curve for more consistent compensation
-        const calculatedOverlap = arcCurvature * gapExpansion * 0.8; // Much more aggressive compensation
+        const calculatedOverlap = Math.abs(arcCurvature) * gapExpansion * 0.8; // Use absolute value for overlap calculation
         
         currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap + params.bottomArcCompensation;
       }
@@ -285,13 +289,17 @@ const TestTransform = () => {
       // Top arc (affects top 40%)
       if (progress < 0.4) {
         const arcProgress = progress / 0.4;
-        arcOffsetForRow = params.arcAmount * height * 0.1 * (1 - arcProgress);
+        // For back layer, invert the arc direction
+        const arcDirection = isBackLayer ? -1 : 1;
+        arcOffsetForRow = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection;
       }
       
       // Bottom arc (affects bottom 40%) - negative offset to compress strips
       if (progress > 0.6) {
         const bottomArcProgress = (progress - 0.6) / 0.4;
-        const bottomArcOffset = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
+        // For back layer, invert the arc direction
+        const arcDirection = isBackLayer ? -1 : 1;
+        const bottomArcOffset = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
         arcOffsetForRow -= bottomArcOffset; // Subtract to bring strips closer together
       }
       
@@ -326,14 +334,16 @@ const TestTransform = () => {
           // Calculate arc distortion (separate from strip positioning)
           let arcDip = 0;
           if (progress < 0.4) {
-            // Top arc: positive offset curves downward
+            // Top arc: For back layer, invert direction (curves upward instead of downward)
             const arcProgress = progress / 0.4;
-            const topArcOffset = params.arcAmount * height * 0.1 * (1 - arcProgress);
+            const arcDirection = isBackLayer ? -1 : 1;
+            const topArcOffset = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection;
             arcDip = topArcOffset * (1 - centerOffset * centerOffset);
           } else if (progress > 0.6) {
-            // Bottom arc: positive offset curves downward (like glass bottom)
+            // Bottom arc: For back layer, invert direction (curves upward instead of downward)
             const bottomArcProgress = (progress - 0.6) / 0.4;
-            const bottomArcDistortion = params.bottomArcAmount * height * 0.1 * bottomArcProgress;
+            const arcDirection = isBackLayer ? -1 : 1;
+            const bottomArcDistortion = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
             arcDip = bottomArcDistortion * (1 - centerOffset * centerOffset);
           }
           
