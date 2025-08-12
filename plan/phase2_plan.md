@@ -554,58 +554,131 @@ src/components/MockupGenerator/
     └── glassEffects.js       // ⏳ Future visual effects
 ```
 
-### Success Metrics - ACHIEVED
+### Current Implementation Status
 
-#### ✅ TestTransform.jsx (Production System)
-- **Perfect glass mapping**: All 13 control parameters calibrated for rocks glass
-- **Artifact-free rendering**: Ultra-high strip density eliminates visible boundaries  
-- **Corner radius support**: Pre-transform rounded corners that distort naturally
-- **Compact UI**: Tabbed interface fits in viewport with canvas visibility
-- **Export system**: One-click settings sharing for development iteration
-- **Performance optimized**: 160×100 strip density with smooth real-time updates
+#### ✅ COMPLETED: Dual-Layer Glass Rendering System
+Successfully implemented front/back glass visualization with cylindrical image wrapping and independent controls.
 
-#### ✅ Ready for Integration
-- **Phase 1 handoff**: Map configuration object passes to transform system
-- **Glass background**: Real product photography as base layer (preserved aspect ratio)
-- **Position/Visual separation**: Clear organization for engraving vs positioning controls
-- **Settings persistence**: Export/import system for configuration management
+**Core Features Completed:**
+1. **Dual-layer rendering**: Front and back sides render independently with visibility toggles
+2. **Cylindrical image wrapping**: 
+   - Front shows left 40% of image
+   - Back shows opposite 40% portion (with 10% gaps on sides)
+   - Back layer horizontally flipped for through-glass viewing
+   - Adjustable portion ratios via sliders
+3. **Arc direction inversion**: Back layer arcs curve upward (opposite of front) for correct optical effect
+4. **Independent controls**: Full set of position/visual controls for each side
+5. **Color-coded bounds**: Red for front, blue for back
 
----
+**UI Structure:**
+- Visibility toggles (Show: Front/Back)
+- Main tabs: FRONT / BACK
+- Each tab contains all position and visual controls
+- Cylindrical wrapping controls in Visual section
 
-## Notes for Claude Code Agent
-
-### Current Development URLs
-- **Production Transform**: `http://localhost:5173/?test=transform` (TestTransform.jsx - Complete system)
-- **Legacy Dual-Layer**: `http://localhost:5173/?test=wrap` (TestWrap.jsx - Earlier prototype)  
-- **Main App Integration**: `http://localhost:5173/` (Phase 1 + Phase 2 integration pending)
-
-### Development Status (COMPLETED)
-1. ✅ **2D Approach Proven**: Photo-realistic transforms with real glass photography
-2. ✅ **Transform System Complete**: 160×100 strip ultra-high density rendering
-3. ✅ **UI System Complete**: Compact tabbed interface with Position/Visual separation
-4. ✅ **Glass Calibration Complete**: All 13 parameters optimized for rocks glass
-5. ✅ **Performance Optimized**: ~16k operations in <50ms real-time updates
-
-### Key Technical Achievements
-- **Pre-transform corner radius**: Rounded corners applied before distortion for natural results
-- **Cropping window**: Map height controls image viewing area without aspect ratio distortion
-- **Dynamic overlap**: Area-specific compensation (top/middle/bottom) for artifact elimination
-- **Export/import**: One-click settings sharing system for rapid iteration
-- **Canvas optimization**: willReadFrequently + high-quality smoothing for performance
-
-### Ready for Next Phase
-1. ✅ **Core transform engine**: Production-ready with calibrated defaults
-2. ✅ **Position controls**: Complete 13-parameter positioning system
-3. ⏳ **Visual effects tab**: Placeholder ready for engraving appearance controls
-4. ⏳ **Phase 1 integration**: Map configuration handoff to transform system
-5. ⏳ **Reverse side**: Dual-layer system ready for front/back glass rendering
-
-### Production Integration Notes
-- **TestTransform.jsx** is the production component - all others are prototypes
-- **Settings format**: Use JSON export for configuration persistence
-- **Glass images**: Must preserve aspect ratio - scale to fit, don't stretch
-- **Performance**: 160×100 density tested on modern hardware - reduce if needed for mobile
+**Current Parameters (per side):**
+- Position: arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, cornerRadius, verticalSquash
+- Fine-tuning: horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity
+- Visual: whiteThreshold, engravingOpacity
+- Cylindrical: frontPortionSize, sideGapSize, backPortionSize
 
 ---
 
-*This specification covers Phase 2 implementation. Proceed only after Phase 1 is complete and tested.*
+## ⚠️ CRITICAL ISSUE: Visible Strip Lines
+
+### Problem
+Horizontal strip boundaries are clearly visible in the rendered output, significantly degrading visual quality. Current uniform strip approach (80 horizontal strips) creates visible seams especially in curved areas.
+
+### Proposed Solution: Adaptive Strip Height System
+
+#### Remove These Obsolete Controls:
+1. **`horizontalOverlap`** - Will be auto-calculated
+2. **`verticalOverlap`** - Will be auto-calculated  
+3. **`bottomArcCompensation`** - Manual compensation incompatible with adaptive strips
+4. **`blurAmount`** - Band-aid solution no longer needed
+5. **`blendOpacity`** - Band-aid solution no longer needed
+
+#### Keep These Controls:
+- All position controls (arc amounts, widths, positions, etc.)
+- Visual controls (threshold, opacity)
+- Cylindrical wrapping controls
+
+#### Add New Adaptive Controls:
+1. **`renderQuality`** (0.5-2.0) - Overall strip density multiplier
+2. **`adaptiveStrength`** (0-1) - How much to concentrate strips in curves vs flat areas
+3. **`overlapMultiplier`** (0.5-2.0) - Fine-tune auto-calculated overlaps
+
+#### Implementation Strategy:
+```javascript
+// Adaptive strip distribution
+const getAdaptiveStrips = (quality, adaptiveStrength) => {
+  const baseStrips = 80 * quality;
+  return {
+    topCurve: Math.floor(baseStrips * 0.4 * (1 + adaptiveStrength)),    // More strips
+    middle: Math.floor(baseStrips * 0.2 * (1 - adaptiveStrength * 0.5)), // Fewer strips
+    bottomCurve: Math.floor(baseStrips * 0.4 * (1 + adaptiveStrength))   // More strips
+  };
+};
+
+// Auto-calculate overlap based on strip height
+const calculateOverlap = (stripHeight, curvature, multiplier) => {
+  const baseOverlap = stripHeight * 0.1;  // 10% of strip height
+  const curveBonus = curvature * 2;        // Extra in curved areas
+  return (baseOverlap + curveBonus) * multiplier;
+};
+```
+
+### Benefits:
+- Eliminates visible strip boundaries
+- Simplifies UI (removes 5 confusing sliders)
+- Better performance (fewer strips in flat areas)
+- More detail where needed (curves)
+- Maintains all core functionality
+
+---
+
+## Next Steps for Implementation
+
+1. **Implement adaptive strip height system**
+   - Variable strip density based on curvature
+   - Auto-calculated overlaps
+   - Replace manual overlap controls
+
+2. **Test and calibrate**
+   - Find optimal quality/performance balance
+   - Tune adaptive distribution algorithm
+   - Verify elimination of visible lines
+
+3. **Update UI**
+   - Remove obsolete sliders
+   - Add new quality/adaptive controls
+   - Simplify user experience
+
+---
+
+## Technical Notes
+
+### File Structure:
+```
+src/components/MockupGenerator/
+├── TestTransform.jsx       // Main production component
+├── utils/
+│   └── imageProcessing.js  // Binary conversion utilities
+└── components/
+    ├── VisualControls.jsx   // Reusable visual controls
+    └── SettingsExport.jsx   // Settings management
+```
+
+### Key Functions:
+- `getImagePortionForSide()` - Handles cylindrical image portion selection
+- `applyArcTransform()` - Core transform engine with front/back support
+- `processImageForEngraving()` - Binary image processing
+
+### Performance Considerations:
+- Current: 80 uniform strips = visible boundaries
+- Target: Variable strips (20-120) based on curvature
+- Optimization: Fewer operations in flat areas, more in curves
+
+---
+
+*Ready for adaptive strip implementation to eliminate visible boundaries and improve visual quality.*

@@ -9,22 +9,20 @@ const TestTransform = () => {
   const [glassImage, setGlassImage] = useState(null);
   
   // Transform parameters - Optimized defaults for rocks glass mapping
-  const [arcAmount, setArcAmount] = useState(0.64); // How much the top curves (0 = flat, 1 = very curved)
-  const [bottomArcAmount, setBottomArcAmount] = useState(1.0); // How much the bottom curves (0 = flat, 1 = very curved)
+  const [arcAmount, setArcAmount] = useState(0.36); // How much the top curves (0 = flat, 1 = very curved)
+  const [bottomArcAmount, setBottomArcAmount] = useState(0.68); // How much the bottom curves (0 = flat, 1 = very curved)
   const [topWidth, setTopWidth] = useState(425); // Width at top of overlay
   const [bottomWidth, setBottomWidth] = useState(430); // Width at bottom of overlay  
-  const [verticalPosition, setVerticalPosition] = useState(80); // Y position of top of overlay
+  const [verticalPosition, setVerticalPosition] = useState(60); // Y position of top of overlay
   const [mapHeight, setMapHeight] = useState(460); // Height of overlay area (no distortion)
   const [bottomCornerRadius, setBottomCornerRadius] = useState(0); // Radius for bottom left/right corners
   const [perspectiveTaper, setPerspectiveTaper] = useState(0.8); // Bottom width relative to top (1 = rectangle, 0.5 = strong taper) - LEGACY
   const [verticalSquash, setVerticalSquash] = useState(1.0); // Vertical compression for ellipse effect
   
-  // Smoothing parameters - Reset to defaults for clean rendering
-  const [horizontalOverlap, setHorizontalOverlap] = useState(0); // Horizontal strip overlap in pixels
-  const [bottomArcCompensation, setBottomArcCompensation] = useState(0); // Additional bottom arc compensation
-  const [verticalOverlap, setVerticalOverlap] = useState(0); // Vertical slice overlap in pixels
-  const [blurAmount, setBlurAmount] = useState(0); // Post-processing blur amount
-  const [blendOpacity, setBlendOpacity] = useState(1.0); // Overlap blending opacity
+  // New adaptive rendering parameters
+  const [renderQuality, setRenderQuality] = useState(1.0); // Overall strip density multiplier (0.5-2.0)
+  const [adaptiveStrength, setAdaptiveStrength] = useState(0.5); // How much to concentrate strips in curves (0-1)
+  const [overlapMultiplier, setOverlapMultiplier] = useState(1.0); // Fine-tune auto-calculated overlaps (0.5-2.0)
   
   // Tab state
   const [activeSide, setActiveSide] = useState('front'); // Main side selector (front or back)
@@ -42,26 +40,24 @@ const TestTransform = () => {
   const [whiteThreshold, setWhiteThreshold] = useState(240); // Brightness level that counts as "white" (0-255)
   const [engravingOpacity, setEngravingOpacity] = useState(0.3); // 0 = fully transparent, 1 = fully opaque (for all non-white pixels)
   
-  // BACK LAYER: Transform parameters - Starting with same defaults as front
-  const [backArcAmount, setBackArcAmount] = useState(0.64);
+  // BACK LAYER: Transform parameters - Optimized defaults for back layer
+  const [backArcAmount, setBackArcAmount] = useState(0.47);
   const [backBottomArcAmount, setBackBottomArcAmount] = useState(1.0);
   const [backTopWidth, setBackTopWidth] = useState(425);
   const [backBottomWidth, setBackBottomWidth] = useState(430);
-  const [backVerticalPosition, setBackVerticalPosition] = useState(30);
+  const [backVerticalPosition, setBackVerticalPosition] = useState(100);
   const [backMapHeight, setBackMapHeight] = useState(460);
   const [backBottomCornerRadius, setBackBottomCornerRadius] = useState(0);
   const [backVerticalSquash, setBackVerticalSquash] = useState(1.0);
   
-  // BACK LAYER: Smoothing parameters
-  const [backHorizontalOverlap, setBackHorizontalOverlap] = useState(0);
-  const [backBottomArcCompensation, setBackBottomArcCompensation] = useState(0);
-  const [backVerticalOverlap, setBackVerticalOverlap] = useState(0);
-  const [backBlurAmount, setBackBlurAmount] = useState(0);
-  const [backBlendOpacity, setBackBlendOpacity] = useState(1.0);
+  // BACK LAYER: Adaptive rendering parameters
+  const [backRenderQuality, setBackRenderQuality] = useState(1.0);
+  const [backAdaptiveStrength, setBackAdaptiveStrength] = useState(0.5);
+  const [backOverlapMultiplier, setBackOverlapMultiplier] = useState(1.0);
   
   // BACK LAYER: Visual effects parameters
   const [backWhiteThreshold, setBackWhiteThreshold] = useState(240);
-  const [backEngravingOpacity, setBackEngravingOpacity] = useState(0.2); // Slightly lighter for depth effect
+  const [backEngravingOpacity, setBackEngravingOpacity] = useState(0.10); // Much lighter for back layer depth effect
   
   // Load both images
   useEffect(() => {
@@ -108,6 +104,37 @@ const TestTransform = () => {
   };
   
   // Apply arc/perspective transform with configurable overlap blending
+  // Adaptive strip distribution for eliminating visible seams
+  const getAdaptiveStrips = (quality, adaptiveStrength, height) => {
+    const baseStrips = Math.floor(80 * quality); // Base strip count with quality multiplier
+    const totalStrips = Math.max(20, baseStrips); // Minimum 20 strips
+    
+    // Distribute strips based on curvature areas
+    const topCurveRatio = 0.35 * (1 + adaptiveStrength * 0.6); // More strips in curved areas when adaptive is high
+    const middleRatio = 0.3 * (1 - adaptiveStrength * 0.4);    // Fewer strips in flat areas when adaptive is high  
+    const bottomCurveRatio = 0.35 * (1 + adaptiveStrength * 0.6);
+    
+    // Normalize ratios
+    const totalRatio = topCurveRatio + middleRatio + bottomCurveRatio;
+    const normalizedTop = topCurveRatio / totalRatio;
+    const normalizedMiddle = middleRatio / totalRatio;
+    const normalizedBottom = bottomCurveRatio / totalRatio;
+    
+    return {
+      topCurve: Math.max(5, Math.floor(totalStrips * normalizedTop)),
+      middle: Math.max(5, Math.floor(totalStrips * normalizedMiddle)), 
+      bottomCurve: Math.max(5, Math.floor(totalStrips * normalizedBottom)),
+      total: totalStrips
+    };
+  };
+  
+  // Auto-calculate overlap based on strip height and curvature
+  const calculateOverlap = (stripHeight, curvatureAmount, multiplier) => {
+    const baseOverlap = stripHeight * 0.08; // 8% of strip height as base
+    const curveBonus = curvatureAmount * stripHeight * 0.15; // Extra overlap in curved areas
+    return Math.max(0, (baseOverlap + curveBonus) * multiplier);
+  };
+
   const applyArcTransform = (ctx, image, x, y, width, height, isBackLayer = false) => {
     // Use back layer parameters if rendering back, otherwise use front
     const params = isBackLayer ? {
@@ -119,11 +146,9 @@ const TestTransform = () => {
       mapHeight: backMapHeight,
       bottomCornerRadius: backBottomCornerRadius,
       verticalSquash: backVerticalSquash,
-      horizontalOverlap: backHorizontalOverlap,
-      bottomArcCompensation: backBottomArcCompensation,
-      verticalOverlap: backVerticalOverlap,
-      blurAmount: backBlurAmount,
-      blendOpacity: backBlendOpacity,
+      renderQuality: backRenderQuality,
+      adaptiveStrength: backAdaptiveStrength,
+      overlapMultiplier: backOverlapMultiplier,
       whiteThreshold: backWhiteThreshold,
       engravingOpacity: backEngravingOpacity
     } : {
@@ -135,26 +160,26 @@ const TestTransform = () => {
       mapHeight,
       bottomCornerRadius,
       verticalSquash,
-      horizontalOverlap,
-      bottomArcCompensation,
-      verticalOverlap,
-      blurAmount,
-      blendOpacity,
+      renderQuality,
+      adaptiveStrength,
+      overlapMultiplier,
       whiteThreshold,
       engravingOpacity
     };
     
-    // Get the correct image portion for this side and apply flipping if needed
-    const { sourceX: portionSourceX, sourceWidth: portionSourceWidth, flip } = getImagePortionForSide(image, isBackLayer ? 'back' : 'front');
-    
-    // Create a canvas with just the portion we need
+    // Extract portion of image for this layer (front/back cylindrical wrapping)
+    const portion = getImagePortionForSide(image, isBackLayer ? 'back' : 'front');
     const portionCanvas = document.createElement('canvas');
-    portionCanvas.width = portionSourceWidth;
+    portionCanvas.width = portion.sourceWidth;
     portionCanvas.height = image.height;
     const portionCtx = portionCanvas.getContext('2d');
     
-    if (flip) {
-      // For back side: flip horizontally
+    const portionSourceX = portion.sourceX;
+    const portionSourceWidth = portion.sourceWidth;
+    
+    // Handle horizontal flipping for back layer viewing through glass
+    if (portion.flip) {
+      // For back side: flip horizontally (viewed through glass)
       portionCtx.scale(-1, 1);
       portionCtx.drawImage(image, portionSourceX, 0, portionSourceWidth, image.height, 
                           -portionSourceWidth, 0, portionSourceWidth, image.height);
@@ -181,7 +206,7 @@ const TestTransform = () => {
       const roundedCtx = roundedCanvas.getContext('2d');
       
       // Calculate corner radius relative to image size
-      const imageCornerRadius = params.bottomCornerRadius * (processedImage.width / width); // Scale radius to source image
+      const imageCornerRadius = params.bottomCornerRadius * (processedImage.width / width);
       
       // Draw rounded rectangle mask
       roundedCtx.beginPath();
@@ -215,165 +240,143 @@ const TestTransform = () => {
       // Source is wider - crop horizontally, use full height
       sourceHeight = processedImage.height;
       sourceWidth = sourceHeight * targetAspectRatio;
-      sourceX = (processedImage.width - sourceWidth) / 2; // Center crop
+      sourceX = (processedImage.width - sourceWidth) / 2;
       sourceY = 0;
     } else {
       // Source is taller - crop vertically, use full width  
       sourceWidth = processedImage.width;
       sourceHeight = sourceWidth / targetAspectRatio;
       sourceX = 0;
-      sourceY = (processedImage.height - sourceHeight) / 2; // Center crop
+      sourceY = (processedImage.height - sourceHeight) / 2;
     }
-    // Enable minimal smoothing for binary images - helps blend strip boundaries without gray artifacts
+    
+    // Enable high-quality smoothing
     ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'low'; // Minimal smoothing
+    ctx.imageSmoothingQuality = 'high';
     
-    // Use strip count that evenly divides common resolutions
-    // For integration with Phase 1, we'll generate images at optimal sizes
-    const strips = 80; // Will work perfectly with 1600px height from Phase 1
-    const stripHeight = height / strips;
-    const sourceStripHeight = sourceHeight / strips;
+    // Get adaptive strip distribution
+    const stripDistribution = getAdaptiveStrips(params.renderQuality, params.adaptiveStrength, height);
     
-    for (let i = 0; i < strips; i++) {
-      const progress = i / (strips - 1); // 0 to 1 from top to bottom
+    // Create strip regions with different densities
+    const regions = [
+      { name: 'topCurve', strips: stripDistribution.topCurve, startRatio: 0, endRatio: 0.35 },
+      { name: 'middle', strips: stripDistribution.middle, startRatio: 0.35, endRatio: 0.65 },
+      { name: 'bottomCurve', strips: stripDistribution.bottomCurve, startRatio: 0.65, endRatio: 1.0 }
+    ];
+    
+    let stripIndex = 0;
+    
+    // Process each region with its adaptive strip count
+    for (const region of regions) {
+      const regionHeight = height * (region.endRatio - region.startRatio);
+      const regionStripHeight = regionHeight / region.strips;
+      const regionSourceHeight = sourceHeight * (region.endRatio - region.startRatio);
+      const regionSourceStripHeight = regionSourceHeight / region.strips;
       
-      // Smart overlap compensation: increase overlap in arc areas where strips get distorted
-      let currentHorizontalOverlap = params.horizontalOverlap;
-      
-      // Top arc area compensation - mathematical precision  
-      if (progress < 0.4 && params.arcAmount > 0) {
-        const arcProgress = progress / 0.4; // 0 at top, 1 at 40% down
+      for (let i = 0; i < region.strips; i++) {
+        const localProgress = i / (region.strips - 1); // 0 to 1 within region
+        const globalProgress = region.startRatio + localProgress * (region.endRatio - region.startRatio); // 0 to 1 across entire height
         
-        // Calculate exact gap created by top arc curvature
-        // For back layer, invert the arc direction (curves upward instead of downward)
-        const arcDirection = isBackLayer ? -1 : 1;
-        const arcCurvature = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection; // Inverse of bottom arc
+        // Calculate curvature at this position for overlap determination
+        let curvatureAmount = 0;
         
-        // Gap expansion factor - strips spread more at the very top
-        const gapExpansion = Math.pow((1 - arcProgress), 1.2); // Max expansion at top
-        const calculatedOverlap = Math.abs(arcCurvature) * gapExpansion * 0.8; // Use absolute value for overlap calculation
+        if (region.name === 'topCurve') {
+          const arcProgress = localProgress; // 0 at top of region, 1 at bottom of region
+          curvatureAmount = params.arcAmount * (1 - arcProgress); // Max curvature at top
+        } else if (region.name === 'bottomCurve') {
+          const arcProgress = localProgress; // 0 at top of region, 1 at bottom of region  
+          curvatureAmount = params.bottomArcAmount * arcProgress; // Max curvature at bottom
+        }
         
-        currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap;
-      } 
-      // Bottom arc area compensation - mathematical precision
-      else if (progress > 0.6 && params.bottomArcAmount > 0) {
-        const bottomArcProgress = (progress - 0.6) / 0.4; // 0 at 60%, 1 at bottom
+        // Auto-calculate overlap based on strip height and curvature
+        const currentOverlap = calculateOverlap(regionStripHeight, curvatureAmount, params.overlapMultiplier);
         
-        // Calculate exact gap created by arc curvature
-        // For back layer, invert the arc direction (curves upward instead of downward)
-        const arcDirection = isBackLayer ? -1 : 1;
-        const arcCurvature = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
-        const stripSpacing = stripHeight;
+        // Source sampling with overlap
+        const regionSourceStart = sourceY + sourceHeight * region.startRatio;
+        const cropSourceY = regionSourceStart + Math.max(0, i * regionSourceStripHeight - currentOverlap / 2);
+        const cropSourceHeight = Math.min(regionSourceStripHeight + currentOverlap, 
+                                         regionSourceHeight - (cropSourceY - regionSourceStart));
         
-        // Gap expansion factor - strips spread more as they curve
-        const gapExpansion = Math.pow(bottomArcProgress, 1.2); // Less steep curve for more consistent compensation
-        const calculatedOverlap = Math.abs(arcCurvature) * gapExpansion * 0.8; // Use absolute value for overlap calculation
+        // Calculate position and dimensions with transform applied
+        const currentY = y + height * region.startRatio + i * regionStripHeight;
         
-        currentHorizontalOverlap = params.horizontalOverlap + calculatedOverlap + params.bottomArcCompensation;
-      }
-      
-      // Add overlap to source sampling using dynamic overlap (within cropped area)
-      const cropSourceY = sourceY + Math.max(0, i * sourceStripHeight - currentHorizontalOverlap/2);
-      const actualSourceHeight = Math.min(sourceStripHeight + currentHorizontalOverlap, sourceHeight - (cropSourceY - sourceY));
-      
-      // Calculate width at this height using linear interpolation (no per-strip corner radius)
-      const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * progress;
-      
-      // Calculate Y position with optional vertical squash and overlap
-      const destY = y + (i * stripHeight * params.verticalSquash) - (i > 0 ? currentHorizontalOverlap/2 : 0);
-      const actualDestHeight = stripHeight * params.verticalSquash + (i > 0 ? currentHorizontalOverlap/2 : 0);
-      
-      // Calculate arc offset for this row
-      let arcOffsetForRow = 0;
-      
-      // Top arc (affects top 40%)
-      if (progress < 0.4) {
-        const arcProgress = progress / 0.4;
-        // For back layer, invert the arc direction
-        const arcDirection = isBackLayer ? -1 : 1;
-        arcOffsetForRow = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection;
-      }
-      
-      // Bottom arc (affects bottom 40%) - negative offset to compress strips
-      if (progress > 0.6) {
-        const bottomArcProgress = (progress - 0.6) / 0.4;
-        // For back layer, invert the arc direction
-        const arcDirection = isBackLayer ? -1 : 1;
-        const bottomArcOffset = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
-        arcOffsetForRow -= bottomArcOffset; // Subtract to bring strips closer together
-      }
-      
-      // Center the strip horizontally based on its width
-      const destX = x + (width - currentWidth) / 2;
-      
-      // Apply blending for overlapped areas
-      if (i > 0) {
-        // Create gradient mask for smooth blending using dynamic overlap
-        const gradient = ctx.createLinearGradient(0, destY, 0, destY + currentHorizontalOverlap);
-        gradient.addColorStop(0, 'rgba(255,255,255,0.5)'); // Semi-transparent at edge
-        gradient.addColorStop(1, 'rgba(255,255,255,1)');   // Fully opaque
+        // Interpolate width based on top/bottom settings
+        const currentWidth = params.topWidth + (params.bottomWidth - params.topWidth) * globalProgress;
+        const centerOffsetX = x + (width - currentWidth) / 2;
         
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = params.blendOpacity; // Configurable blending opacity
-      } else {
-        ctx.globalAlpha = 1.0;
-        ctx.globalCompositeOperation = 'source-over';
-      }
-      
-      // For the arc rows (top or bottom), apply arc warping
-      const needsArcWarping = (progress < 0.4 && params.arcAmount > 0) || (progress > 0.6 && params.bottomArcAmount > 0);
-      if (needsArcWarping) {
-        // Draw this row with arc distortion and overlap - reduced density for binary mode
-        const subStrips = 50; // Reduced from 100
-        const subStripWidth = currentWidth / subStrips;
+        // Arc distortion calculations
+        const centerDistance = Math.abs(globalProgress - 0.5) * 2; // 0 at center, 1 at edges
+        
+        let arcDip = 0;
+        if (region.name === 'topCurve') {
+          const arcProgress = 1 - localProgress; // 1 at top of region, 0 at bottom
+          const arcDirection = isBackLayer ? -1 : 1;
+          arcDip = params.arcAmount * height * 0.15 * arcProgress * arcDirection;
+        } else if (region.name === 'bottomCurve') {
+          const arcProgress = localProgress; // 0 at top of region, 1 at bottom
+          const arcDirection = isBackLayer ? -1 : 1;
+          arcDip = params.bottomArcAmount * height * 0.1 * arcProgress * arcDirection;
+        }
+        
+        // Apply vertical squash effect
+        const squashedStripHeight = regionStripHeight * params.verticalSquash;
+        const verticalSquashOffset = (regionStripHeight - squashedStripHeight) / 2;
+        
+        // Final destination calculations
+        const destX = centerOffsetX;
+        const destY = currentY + arcDip + verticalSquashOffset;
+        const destWidth = currentWidth;
+        const destHeight = squashedStripHeight;
+        
+        // Apply gentle blending for smooth transitions
+        if (currentOverlap > 0 && stripIndex > 0) {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 0.9; // Subtle blending
+        } else {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.globalAlpha = 1.0;
+        }
+        
+        // High-precision horizontal subdivision for arc areas
+        const subStrips = region.name !== 'middle' ? 80 : 20; // More subdivisions in curved areas
+        const subStripWidth = destWidth / subStrips;
         
         for (let j = 0; j < subStrips; j++) {
-          const subX = j / (subStrips - 1);
-          const centerOffset = Math.abs(subX - 0.5) * 2;
+          const subHorizontalNormalized = j / (subStrips - 1); // 0 to 1 left to right
+          const subCenterDistance = Math.abs(subHorizontalNormalized - 0.5) * 2; // 0 at center, 1 at edges
           
-          // Calculate arc distortion (separate from strip positioning)
-          let arcDip = 0;
-          if (progress < 0.4) {
-            // Top arc: For back layer, invert direction (curves upward instead of downward)
-            const arcProgress = progress / 0.4;
+          // Calculate precise arc effects for this sub-strip
+          let subArcDip = 0;
+          if (region.name === 'topCurve') {
+            const arcProgress = 1 - localProgress;
             const arcDirection = isBackLayer ? -1 : 1;
-            const topArcOffset = params.arcAmount * height * 0.1 * (1 - arcProgress) * arcDirection;
-            arcDip = topArcOffset * (1 - centerOffset * centerOffset);
-          } else if (progress > 0.6) {
-            // Bottom arc: For back layer, invert direction (curves upward instead of downward)
-            const bottomArcProgress = (progress - 0.6) / 0.4;
+            subArcDip = params.arcAmount * height * 0.15 * arcProgress * (1 - subCenterDistance * subCenterDistance) * arcDirection;
+          } else if (region.name === 'bottomCurve') {
+            const arcProgress = localProgress;
             const arcDirection = isBackLayer ? -1 : 1;
-            const bottomArcDistortion = params.bottomArcAmount * height * 0.1 * bottomArcProgress * arcDirection;
-            arcDip = bottomArcDistortion * (1 - centerOffset * centerOffset);
+            subArcDip = params.bottomArcAmount * height * 0.1 * arcProgress * (1 - subCenterDistance * subCenterDistance) * arcDirection;
           }
           
-          // Add configurable horizontal overlap for vertical slices (within cropped area)
-          const actualSubWidth = subStripWidth + (j > 0 ? params.verticalOverlap : 0);
-          const subSourceX = sourceX + Math.max(0, (j / subStrips) * sourceWidth - (j > 0 ? params.verticalOverlap/2 : 0));
-          const subSourceWidth = Math.min(sourceWidth / subStrips + params.verticalOverlap, sourceWidth - (subSourceX - sourceX));
+          // Source sampling for sub-strip
+          const subSourceX = sourceX + (j / subStrips) * sourceWidth;
+          const subSourceWidth = sourceWidth / subStrips;
           
           ctx.drawImage(
             processedImage,
-            subSourceX, cropSourceY, subSourceWidth, actualSourceHeight,
-            destX + j * subStripWidth - (j > 0 ? params.verticalOverlap/2 : 0), destY + arcDip, 
-            actualSubWidth, actualDestHeight
+            subSourceX, cropSourceY, subSourceWidth, cropSourceHeight,
+            destX + j * subStripWidth, destY + subArcDip, 
+            subStripWidth, destHeight
           );
         }
-      } else {
-        // Draw normal horizontal strip with overlap (from cropped area)
-        ctx.drawImage(
-          processedImage,
-          sourceX, cropSourceY, sourceWidth, actualSourceHeight,
-          destX, destY, currentWidth, actualDestHeight
-        );
+        
+        stripIndex++;
       }
     }
     
     // Reset blending
     ctx.globalAlpha = 1.0;
     ctx.globalCompositeOperation = 'source-over';
-  };
-  
+  };  
   useEffect(() => {
     if (!canvasRef.current || !testImage || !glassImage) return;
     
@@ -424,24 +427,7 @@ const TestTransform = () => {
     }
     
     
-    // Post-processing: Apply configurable blur to smooth seams
-    if (blurAmount > 0) {
-      // Create a temporary canvas for blur effect
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = 400;
-      tempCanvas.height = mapHeight;
-      const tempCtx = tempCanvas.getContext('2d');
-      
-      // Copy the transformed area to temp canvas
-      const transformedData = ctx.getImageData(200, verticalPosition, 400, mapHeight);
-      tempCtx.putImageData(transformedData, 0, 0);
-      
-      // Apply blur filter and draw back
-      ctx.save();
-      ctx.filter = `blur(${blurAmount}px)`;
-      ctx.drawImage(tempCanvas, 200, verticalPosition);
-      ctx.restore();
-    }
+    // Adaptive strip rendering eliminates the need for manual blur post-processing
     
     // Draw reference bounds for active side
     const activeParams = activeSide === 'front' ? {
@@ -497,7 +483,7 @@ const TestTransform = () => {
     }
     ctx.stroke();
     
-  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backHorizontalOverlap, backBottomArcCompensation, backVerticalOverlap, backBlurAmount, backBlendOpacity, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
+  }, [testImage, glassImage, arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, mapHeight, bottomCornerRadius, verticalSquash, renderQuality, adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity, showFront, showBack, backArcAmount, backBottomArcAmount, backTopWidth, backBottomWidth, backVerticalPosition, backMapHeight, backBottomCornerRadius, backVerticalSquash, backRenderQuality, backAdaptiveStrength, backOverlapMultiplier, backWhiteThreshold, backEngravingOpacity, activeSide, frontPortionSize, sideGapSize, backPortionSize]);
   
   return (
     <div style={{ padding: '20px' }}>
@@ -716,79 +702,49 @@ const TestTransform = () => {
                 </div>
                 
                 <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
-                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Fine Tuning</h5>
+                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Adaptive Rendering</h5>
                   
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      H-Overlap: {horizontalOverlap}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="8"
-                      step="1"
-                      value={horizontalOverlap}
-                      onChange={(e) => setHorizontalOverlap(parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Bottom Compensation: {bottomArcCompensation.toFixed(1)}px
-                    </label>
-                    <input
-                      type="range"
-                      min="-8"
-                      max="8"
-                      step="0.5"
-                      value={bottomArcCompensation}
-                      onChange={(e) => setBottomArcCompensation(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      V-Overlap: {verticalOverlap}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="4"
-                      step="1"
-                      value={verticalOverlap}
-                      onChange={(e) => setVerticalOverlap(parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Blur: {blurAmount.toFixed(1)}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="3"
-                      step="0.1"
-                      value={blurAmount}
-                      onChange={(e) => setBlurAmount(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Blend: {blendOpacity.toFixed(2)}
+                      Render Quality: {renderQuality.toFixed(1)}x
                     </label>
                     <input
                       type="range"
                       min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={renderQuality}
+                      onChange={(e) => setRenderQuality(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Adaptive Strength: {adaptiveStrength.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
                       max="1"
-                      step="0.01"
-                      value={blendOpacity}
-                      onChange={(e) => setBlendOpacity(parseFloat(e.target.value))}
+                      step="0.05"
+                      value={adaptiveStrength}
+                      onChange={(e) => setAdaptiveStrength(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Overlap Multiplier: {overlapMultiplier.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={overlapMultiplier}
+                      onChange={(e) => setOverlapMultiplier(parseFloat(e.target.value))}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -983,79 +939,49 @@ const TestTransform = () => {
                 </div>
                 
                 <div style={{ borderTop: '1px solid #ddd', paddingTop: '12px', marginTop: '16px' }}>
-                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Fine Tuning</h5>
+                  <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', color: '#666' }}>Adaptive Rendering</h5>
                   
                   <div style={{ marginBottom: '10px' }}>
                     <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      H-Overlap: {backHorizontalOverlap}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="8"
-                      step="1"
-                      value={backHorizontalOverlap}
-                      onChange={(e) => setBackHorizontalOverlap(parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Bottom Compensation: {backBottomArcCompensation.toFixed(1)}px
-                    </label>
-                    <input
-                      type="range"
-                      min="-8"
-                      max="8"
-                      step="0.5"
-                      value={backBottomArcCompensation}
-                      onChange={(e) => setBackBottomArcCompensation(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      V-Overlap: {backVerticalOverlap}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="4"
-                      step="1"
-                      value={backVerticalOverlap}
-                      onChange={(e) => setBackVerticalOverlap(parseInt(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Blur: {backBlurAmount.toFixed(1)}px
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="3"
-                      step="0.1"
-                      value={backBlurAmount}
-                      onChange={(e) => setBackBlurAmount(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  </div>
-                  
-                  <div style={{ marginBottom: '10px' }}>
-                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
-                      Blend: {backBlendOpacity.toFixed(2)}
+                      Render Quality: {backRenderQuality.toFixed(1)}x
                     </label>
                     <input
                       type="range"
                       min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={backRenderQuality}
+                      onChange={(e) => setBackRenderQuality(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Adaptive Strength: {backAdaptiveStrength.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
                       max="1"
-                      step="0.01"
-                      value={backBlendOpacity}
-                      onChange={(e) => setBackBlendOpacity(parseFloat(e.target.value))}
+                      step="0.05"
+                      value={backAdaptiveStrength}
+                      onChange={(e) => setBackAdaptiveStrength(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', fontWeight: '500' }}>
+                      Overlap Multiplier: {backOverlapMultiplier.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.0"
+                      step="0.1"
+                      value={backOverlapMultiplier}
+                      onChange={(e) => setBackOverlapMultiplier(parseFloat(e.target.value))}
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -1127,10 +1053,26 @@ const TestTransform = () => {
           
           {/* Export/Import - Outside of tabs */}
           <SettingsExport settings={{
-            arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
-            mapHeight, bottomCornerRadius, verticalSquash, horizontalOverlap, 
-            bottomArcCompensation, verticalOverlap, blurAmount, blendOpacity,
-            whiteThreshold, engravingOpacity
+            // Front layer parameters
+            front: {
+              arcAmount, bottomArcAmount, topWidth, bottomWidth, verticalPosition, 
+              mapHeight, bottomCornerRadius, verticalSquash, renderQuality, 
+              adaptiveStrength, overlapMultiplier, whiteThreshold, engravingOpacity
+            },
+            // Back layer parameters  
+            back: {
+              arcAmount: backArcAmount, bottomArcAmount: backBottomArcAmount, 
+              topWidth: backTopWidth, bottomWidth: backBottomWidth, 
+              verticalPosition: backVerticalPosition, mapHeight: backMapHeight, 
+              bottomCornerRadius: backBottomCornerRadius, verticalSquash: backVerticalSquash, 
+              renderQuality: backRenderQuality, adaptiveStrength: backAdaptiveStrength, 
+              overlapMultiplier: backOverlapMultiplier, whiteThreshold: backWhiteThreshold, 
+              engravingOpacity: backEngravingOpacity
+            },
+            // Cylindrical wrapping parameters
+            cylindrical: {
+              frontPortionSize, sideGapSize, backPortionSize
+            }
           }} />
         </div>
         
