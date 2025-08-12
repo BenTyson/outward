@@ -27,7 +27,8 @@ const TestTransform = () => {
   const [blendOpacity, setBlendOpacity] = useState(1.0); // Overlap blending opacity
   
   // Tab state
-  const [activeTab, setActiveTab] = useState('position');
+  const [activeSide, setActiveSide] = useState('front'); // Main side selector
+  const [activeTab, setActiveTab] = useState('position'); // Sub-tab for current side
   
   // Visual effects parameters - Simplified binary approach
   const [whiteThreshold, setWhiteThreshold] = useState(240); // Brightness level that counts as "white" (0-255)
@@ -369,37 +370,58 @@ const TestTransform = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '20px' }}>
         {/* Controls */}
         <div style={{ background: '#f9f9f9', borderRadius: '8px', overflow: 'hidden' }}>
-          {/* Tab Navigation */}
+          {/* Main Side Navigation */}
+          <div style={{ display: 'flex', background: '#d6d8db', borderBottom: '2px solid #bbb' }}>
+            <button
+              onClick={() => setActiveSide('front')}
+              style={{
+                flex: 1,
+                padding: '14px 16px',
+                border: 'none',
+                background: activeSide === 'front' ? '#28a745' : 'transparent',
+                color: activeSide === 'front' ? 'white' : '#555',
+                cursor: 'pointer',
+                fontSize: '15px',
+                fontWeight: 'bold',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}
+            >
+              FRONT
+            </button>
+          </div>
+          
+          {/* Sub-Tab Navigation */}
           <div style={{ display: 'flex', background: '#e9ecef' }}>
             <button
               onClick={() => setActiveTab('position')}
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '10px 14px',
                 border: 'none',
                 background: activeTab === 'position' ? '#007bff' : 'transparent',
                 color: activeTab === 'position' ? 'white' : '#666',
                 cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold'
+                fontSize: '13px',
+                fontWeight: '600'
               }}
             >
-              Position
+              Position Bk
             </button>
             <button
               onClick={() => setActiveTab('visual')}
               style={{
                 flex: 1,
-                padding: '12px 16px',
+                padding: '10px 14px',
                 border: 'none',
                 background: activeTab === 'visual' ? '#007bff' : 'transparent',
                 color: activeTab === 'visual' ? 'white' : '#666',
                 cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 'bold'
+                fontSize: '13px',
+                fontWeight: '600'
               }}
             >
-              Visual
+              Visual Bk
             </button>
           </div>
           
@@ -407,7 +429,7 @@ const TestTransform = () => {
           <div style={{ padding: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
             {activeTab === 'position' && (
               <>
-                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Position Controls</h4>
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#333' }}>Front Side - Position Controls</h4>
           
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ display: 'block', marginBottom: '3px', fontSize: '13px', fontWeight: '500' }}>
