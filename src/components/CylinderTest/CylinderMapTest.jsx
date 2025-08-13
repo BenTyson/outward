@@ -30,12 +30,12 @@ const CylinderMapTest = () => {
   const [baseWidth, setBaseWidth] = useState(1.020); // Base width scale independent of taper
   
   // Front side engraving controls
-  const [frontOpacity, setFrontOpacity] = useState(0.8);
+  const [frontOpacity, setFrontOpacity] = useState(0.44);
   const [frontBlur, setFrontBlur] = useState(0.0);
   const [frontGrain, setFrontGrain] = useState(0.0);
   
   // Reverse side engraving controls
-  const [reverseOpacity, setReverseOpacity] = useState(0.6);
+  const [reverseOpacity, setReverseOpacity] = useState(0.19);
   const [reverseBlur, setReverseBlur] = useState(1.0);
   const [reverseGrain, setReverseGrain] = useState(0.5);
 
@@ -311,7 +311,7 @@ const CylinderMapTest = () => {
         // Mask out the bottom area that corresponds to the bottom face of the cylinder
         // The bottom portion of the texture should be completely transparent on reverse side
         const imageHeight = reverseCanvas.height;
-        const bottomMaskHeight = imageHeight * 0.25; // Bottom 25% represents the bottom face area
+        const bottomMaskHeight = imageHeight * 0.05; // Bottom 5% represents the bottom face area
         
         // Create solid mask for bottom area - NO GRADIENTS, complete removal
         reverseCtx.globalCompositeOperation = 'destination-out'; // Remove pixels
@@ -452,33 +452,10 @@ const CylinderMapTest = () => {
     cylinderRef.current = cylinder;
     geometryRef.current = geometry;
 
-    // 7. Create Rim Border Wireframes (actual cylinder edge)
-    // Use wireframe cylinder to show the exact edges (will be updated when taperRatio changes)
-    const rimGeometry = new THREE.CylinderGeometry(
-      dims.radius,  // Same radius as main cylinder
-      dims.radius,  // Will be updated with taper
-      dims.height,  // Same height
-      32,          // Same segments
-      1,           
-      false        
-    );
-    
-    // Wireframe material for rim visualization
-    const rimMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xff0000, 
-      wireframe: true,
-      transparent: true, 
-      opacity: 0.6
-    });
-    
-    // Create rim wireframe mesh
-    const rimWireframe = new THREE.Mesh(rimGeometry, rimMaterial);
-    
-    // Add rim to scene and store references
-    scene.add(rimWireframe);
-    topEdgeRef.current = rimWireframe; // Reuse ref for rim wireframe
-    bottomEdgeRef.current = null; // Not needed anymore
-    rimGeometryRef.current = rimGeometry;
+    // 7. No rim wireframes - clean view
+    topEdgeRef.current = null;
+    bottomEdgeRef.current = null;
+    rimGeometryRef.current = null;
 
     console.log('✅ Cylinder added to scene with edge wireframes');
 
@@ -558,7 +535,7 @@ const CylinderMapTest = () => {
     // Only mask reverse side, not front side
     if (isReverse) {
       const imageHeight = canvas.height;
-      const bottomMaskHeight = imageHeight * 0.25; // Bottom 25% represents the bottom face area
+      const bottomMaskHeight = imageHeight * 0.05; // Bottom 5% represents the bottom face area
       
       // Create solid mask for bottom area - complete removal
       ctx.globalCompositeOperation = 'destination-out'; // Remove pixels
@@ -660,7 +637,7 @@ const CylinderMapTest = () => {
   useEffect(() => {
     if (cylinderRef.current && rendererRef.current && sceneRef.current && dimensions) {
       // Update geometry for taper ratio and base width
-      if (geometryRef.current && rimGeometryRef.current) {
+      if (geometryRef.current) {
         const topRadius = dimensions.radius * taperRatio;  // Taper affects top
         const bottomRadius = dimensions.radius * baseWidth; // Base width affects bottom
         
@@ -677,18 +654,7 @@ const CylinderMapTest = () => {
         cylinderRef.current.geometry = newGeometry;
         geometryRef.current = newGeometry;
         
-        // Update rim wireframe geometry
-        rimGeometryRef.current.dispose(); // Clean up old geometry
-        const newRimGeometry = new THREE.CylinderGeometry(
-          topRadius,     // Top radius (narrower for rocks glass)
-          bottomRadius,  // Bottom radius (wider for rocks glass)
-          dimensions.height,
-          32,
-          1,
-          true          // Open-ended (no top/bottom faces)
-        );
-        topEdgeRef.current.geometry = newRimGeometry;
-        rimGeometryRef.current = newRimGeometry;
+        // No rim wireframe updates needed
       }
       
       // Apply scale, rotation, and position to cylinder (now a group)
@@ -708,13 +674,7 @@ const CylinderMapTest = () => {
         }
       }
       
-      // Apply same transformations to rim wireframe
-      if (topEdgeRef.current) {
-        topEdgeRef.current.scale.set(scaleX, scaleY, 1);
-        topEdgeRef.current.rotation.x = tiltX;
-        topEdgeRef.current.rotation.y = rotateY;
-        topEdgeRef.current.position.set(modelX, modelY, 0);
-      }
+      // No rim wireframe to update
       
       // Calculate camera position (canvas offset + camera axis movements for viewing angles)
       const baseCameraDistance = calculateCameraDistance(dimensions.radius);
