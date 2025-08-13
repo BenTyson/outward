@@ -7,7 +7,7 @@ import MapExportControls from './MapExportControls';
 import './MapRenderer.css';
 
 const MapRenderer = () => {
-  const { location, glassType, texts, icons, updateText, updateIcon, setMapImage, setLoading, setError } = useMapConfig();
+  const { location, glassType, texts, icons, updateText, updateIcon, setMapImage, setLoading, setError, setModelImage, setModelPreviewAvailable } = useMapConfig();
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [hasInitiallyGenerated, setHasInitiallyGenerated] = useState(false);
@@ -413,8 +413,16 @@ const MapRenderer = () => {
     
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     setMapImage(dataUrl); // This is the final export image
+    
+    // Enable 3D preview for rocks glass immediately after generating final image
+    if (glassType === 'rocks') {
+      setModelImage(dataUrl);
+      setModelPreviewAvailable(true);
+      console.log('🎯 Rocks glass detected - 3D preview enabled in Step 2 after final image generation');
+    }
+    
     return dataUrl;
-  }, [localImageUrl, glassType, text1, text2, icon1, getPixelPosition, setMapImage]);
+  }, [localImageUrl, glassType, text1, text2, icon1, getPixelPosition, setMapImage, setModelImage, setModelPreviewAvailable]);
 
   // Initial generation when component mounts
   useEffect(() => {

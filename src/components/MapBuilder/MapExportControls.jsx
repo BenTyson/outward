@@ -149,17 +149,8 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       const url = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(url);
       
-      // NEW: Check if rocks glass and enable 3D preview
-      if (glassType === 'rocks') {
-        setModelImage(url);
-        setModelPreviewAvailable(true);
-        console.log('🎯 Rocks glass detected - 3D preview enabled in Step 2');
-        console.log('📍 Model image stored for embedded 3D preview:', url.substring(0, 50) + '...');
-      } else {
-        // Ensure 3D preview is disabled for other glass types
-        setModelPreviewAvailable(false);
-        console.log('📍 Glass type:', glassType, '- no 3D preview');
-      }
+      // Note: 3D preview logic moved to generateFinalImage() in MapRenderer.jsx
+      // This generatePreview() function is now just for downloading phase 2 test images
       
       // Auto-download the preview optimized for Phase 2
       const link = document.createElement('a');
