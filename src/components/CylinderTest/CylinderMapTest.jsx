@@ -221,9 +221,15 @@ const CylinderMapTest = () => {
         
         let processedPixels = 0;
         let darkenedPixels = 0;
-        const whiteThreshold = 220; // Lower threshold to remove more light grays
-        const grayThreshold = 180;  // Threshold for grayscale noise removal
+        const whiteThreshold = 253; // Very close to pure white only
+        const grayThreshold = 245;  // Above average brightness to preserve more lines
+        
+        console.log('🎨 Processing with thresholds - White:', whiteThreshold, 'Gray:', grayThreshold);
+        console.log('🔍 Image dimensions:', canvas.width, 'x', canvas.height, 'Total pixels:', data.length / 4);
         const darkenFactor = 0.4;   // Factor to darken existing lines (0.4 = 60% darker)
+        
+        let sampleCount = 0;
+        let brightnessSum = 0;
         
         // Process each pixel
         for (let i = 0; i < data.length; i += 4) {
@@ -233,6 +239,12 @@ const CylinderMapTest = () => {
           
           // Calculate brightness
           const brightness = (r + g + b) / 3;
+          
+          // Sample first 100 pixels for debugging
+          if (sampleCount < 100) {
+            brightnessSum += brightness;
+            sampleCount++;
+          }
           
           if (brightness > whiteThreshold) {
             // Make white/light pixels transparent
@@ -259,6 +271,8 @@ const CylinderMapTest = () => {
         
         // No masking on front face - show full cylindrical wrap
         
+        const avgBrightness = brightnessSum / sampleCount;
+        console.log(`🔍 Sample brightness analysis: Average: ${avgBrightness.toFixed(1)}, Threshold comparison: White(${whiteThreshold}) Gray(${grayThreshold})`);
         console.log(`🎨 Front: ${processedPixels} pixels transparent, ${darkenedPixels} pixels darkened, blur: ${frontBlur}px, grain: ${frontGrain}`);
         
         // Create new texture from processed canvas
@@ -548,8 +562,8 @@ const CylinderMapTest = () => {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     
-    const whiteThreshold = isReverse ? 200 : 220;
-    const grayThreshold = isReverse ? 160 : 180;
+    const whiteThreshold = isReverse ? 248 : 248;  // Same for both front and reverse
+    const grayThreshold = isReverse ? 235 : 235;   // Same for both front and reverse
     const darkenFactor = isReverse ? 0.6 : 0.4;
     const grain = isReverse ? reverseGrain : frontGrain;
     
