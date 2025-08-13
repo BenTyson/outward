@@ -27,8 +27,9 @@ import ControlPanel from './components/ControlPanel';
  * @param {string|null} textureSource - Optional texture source (data URL or file path)
  *                                    - If null, uses ASSET_PATHS.TEXTURE_IMAGE default
  *                                    - Supports Phase 1 generated images (data URLs)
+ * @param {boolean} hideControls - If true, hides control panel and debug elements (for Step 3)
  */
-const CylinderMapTest = ({ textureSource = null }) => {
+const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -890,6 +891,33 @@ const CylinderMapTest = ({ textureSource = null }) => {
     }
   }, [scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth, modelX, modelY, canvasX, canvasY, cameraY, cameraZ, cameraFOV, frontOpacity, frontBlur, frontGrain, reverseOpacity, reverseBlur, reverseGrain, canvasSize.width, canvasSize.height, dimensions]);
 
+  // Simplified view for Step 3 integration
+  if (hideControls) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        width: '100%',
+        height: '100%',
+        minHeight: '400px'
+      }}>
+        {isLoading && <p style={{ color: '#666' }}>Loading 3D preview...</p>}
+        <canvas 
+          ref={canvasRef}
+          style={{ 
+            display: 'block',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }}
+        />
+      </div>
+    );
+  }
+
+  // Full development view for ?test=cylinder
   return (
     <div style={{ padding: '20px' }}>
       <h1 style={{ marginBottom: '20px' }}>Cylinder Map Test - Phase C</h1>

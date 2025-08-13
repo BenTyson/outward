@@ -153,14 +153,12 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       if (glassType === 'rocks') {
         setModelImage(url);
         setModelPreviewAvailable(true);
-        updateTotalSteps(3);
-        console.log('🎯 Rocks glass detected - 3D preview enabled');
-        console.log('📍 Model image stored for Step 3:', url.substring(0, 50) + '...');
+        console.log('🎯 Rocks glass detected - 3D preview enabled in Step 2');
+        console.log('📍 Model image stored for embedded 3D preview:', url.substring(0, 50) + '...');
       } else {
         // Ensure 3D preview is disabled for other glass types
         setModelPreviewAvailable(false);
-        updateTotalSteps(2);
-        console.log('📍 Glass type:', glassType, '- keeping 2-step workflow');
+        console.log('📍 Glass type:', glassType, '- no 3D preview');
       }
       
       // Auto-download the preview optimized for Phase 2

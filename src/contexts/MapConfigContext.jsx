@@ -15,7 +15,7 @@ const initialState = {
   isLoading: false,
   error: null,
   currentStep: 1,
-  totalSteps: 2 // Dynamic: 2 for most glasses, 3 for rocks glass with 3D preview
+  totalSteps: 2 // Always 2 steps: 1=Location, 2=Design+3DPreview
 };
 
 const actionTypes = {

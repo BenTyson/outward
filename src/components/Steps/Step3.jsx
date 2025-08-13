@@ -53,13 +53,13 @@ const Step3 = () => {
       </div>
       
       <div className="step3-content">
-        <CylinderMapTest textureSource={modelImageUrl} />
+        <CylinderMapTest textureSource={modelImageUrl} hideControls={true} />
       </div>
       
       <div className="step3-footer">
         <p className="footer-note">
-          Use the controls on the right to adjust the 3D model positioning and appearance.
           This preview shows how your design will look when laser engraved on the glass.
+          The 3D model is automatically positioned for optimal viewing.
         </p>
       </div>
     </div>

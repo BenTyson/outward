@@ -31,7 +31,7 @@ const Wizard = ({ children }) => {
       case 1:
         return 'Choose your location and glass type';
       case 2:
-        return 'Add text and icons to your map design';
+        return 'Add text and icons to your map design, see 3D preview';
       case 3:
         return 'See your design on a realistic 3D glass';
       default:
