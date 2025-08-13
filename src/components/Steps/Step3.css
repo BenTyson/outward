@@ -1,0 +1,150 @@
+/* Step3 - 3D Glass Preview Styling */
+.step3 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 15px;
+  background-color: #fffdf8;
+}
+
+.step3-header {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #738263 0%, #545f49 100%);
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.step3-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.step3-header p {
+  margin: 0 0 12px 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.step3-info {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.info-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.step3-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #EEEEE0;
+  overflow: hidden;
+}
+
+.step3-footer {
+  text-align: center;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #EEEEE0;
+}
+
+.footer-note {
+  margin: 0;
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Error States */
+.step3-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background: #fffdf8;
+}
+
+.error-content {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #EEEEE0;
+  max-width: 500px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-content h3 {
+  color: #161d25;
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.error-content p {
+  color: #666666;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.error-content p:last-child {
+  margin-bottom: 0;
+}
+
+.error-content strong {
+  color: #738263;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .step3 {
+    gap: 10px;
+  }
+  
+  .step3-header {
+    padding: 15px;
+    margin-bottom: 5px;
+  }
+  
+  .step3-header h2 {
+    font-size: 20px;
+  }
+  
+  .step3-content {
+    min-height: 400px;
+  }
+  
+  .step3-footer {
+    padding: 12px 15px;
+  }
+  
+  .footer-note {
+    font-size: 12px;
+  }
+  
+  .error-content {
+    padding: 30px 20px;
+    margin: 20px;
+  }
+  
+  .error-content h3 {
+    font-size: 18px;
+  }
+}

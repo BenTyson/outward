@@ -10,10 +10,12 @@ const initialState = {
   icons: [],
   mapImageUrl: null,
   previewImageUrl: null,
+  modelPreviewAvailable: false, // Controls Step 3 visibility for 3D preview
+  modelImageUrl: null, // Stores generated image for 3D model texture
   isLoading: false,
   error: null,
   currentStep: 1,
-  totalSteps: 2
+  totalSteps: 2 // Dynamic: 2 for most glasses, 3 for rocks glass with 3D preview
 };
 
 const actionTypes = {
@@ -27,6 +29,9 @@ const actionTypes = {
   REMOVE_ICON: 'REMOVE_ICON',
   SET_MAP_IMAGE: 'SET_MAP_IMAGE',
   SET_PREVIEW_IMAGE: 'SET_PREVIEW_IMAGE',
+  SET_MODEL_PREVIEW_AVAILABLE: 'SET_MODEL_PREVIEW_AVAILABLE', // Enable/disable 3D preview
+  SET_MODEL_IMAGE: 'SET_MODEL_IMAGE', // Store generated image for 3D model
+  UPDATE_TOTAL_STEPS: 'UPDATE_TOTAL_STEPS', // Dynamic step count (2 vs 3)
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',
   SET_STEP: 'SET_STEP',
@@ -88,6 +93,15 @@ const mapConfigReducer = (state, action) => {
     
     case actionTypes.SET_PREVIEW_IMAGE:
       return { ...state, previewImageUrl: action.payload };
+    
+    case actionTypes.SET_MODEL_PREVIEW_AVAILABLE:
+      return { ...state, modelPreviewAvailable: action.payload };
+    
+    case actionTypes.SET_MODEL_IMAGE:
+      return { ...state, modelImageUrl: action.payload };
+    
+    case actionTypes.UPDATE_TOTAL_STEPS:
+      return { ...state, totalSteps: action.payload };
     
     case actionTypes.SET_LOADING:
       return { ...state, isLoading: action.payload };
@@ -161,6 +175,18 @@ export const MapConfigProvider = ({ children }) => {
     dispatch({ type: actionTypes.SET_PREVIEW_IMAGE, payload: url });
   }, []);
   
+  const setModelPreviewAvailable = useCallback((available) => {
+    dispatch({ type: actionTypes.SET_MODEL_PREVIEW_AVAILABLE, payload: available });
+  }, []);
+  
+  const setModelImage = useCallback((url) => {
+    dispatch({ type: actionTypes.SET_MODEL_IMAGE, payload: url });
+  }, []);
+  
+  const updateTotalSteps = useCallback((steps) => {
+    dispatch({ type: actionTypes.UPDATE_TOTAL_STEPS, payload: steps });
+  }, []);
+  
   const setLoading = useCallback((isLoading) => {
     dispatch({ type: actionTypes.SET_LOADING, payload: isLoading });
   }, []);
@@ -197,6 +223,9 @@ export const MapConfigProvider = ({ children }) => {
     removeIcon,
     setMapImage,
     setPreviewImage,
+    setModelPreviewAvailable,
+    setModelImage,
+    updateTotalSteps,
     setLoading,
     setError,
     setStep,

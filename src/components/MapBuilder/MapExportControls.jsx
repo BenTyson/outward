@@ -5,7 +5,10 @@ import { flatIcons } from '../../utils/icons';
 import './MapExportControls.css';
 
 const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
-  const { mapImageUrl, texts, icons, glassType, setPreviewImage } = useMapConfig();
+  const { 
+    mapImageUrl, texts, icons, glassType, setPreviewImage,
+    setModelImage, setModelPreviewAvailable, updateTotalSteps 
+  } = useMapConfig();
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState(null);
   
@@ -176,6 +179,20 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       const url = canvas.toDataURL('image/png', 0.9);
       setPreviewImage(url);
       
+      // NEW: Check if rocks glass and enable 3D preview
+      if (glassType === 'rocks') {
+        setModelImage(url);
+        setModelPreviewAvailable(true);
+        updateTotalSteps(3);
+        console.log('🎯 Rocks glass detected - 3D preview enabled');
+        console.log('📍 Model image stored for Step 3:', url.substring(0, 50) + '...');
+      } else {
+        // Ensure 3D preview is disabled for other glass types
+        setModelPreviewAvailable(false);
+        updateTotalSteps(2);
+        console.log('📍 Glass type:', glassType, '- keeping 2-step workflow');
+      }
+      
       // Auto-download the preview optimized for Phase 2
       const link = document.createElement('a');
       link.download = `phase2-test-map-${Date.now()}.png`;
@@ -194,7 +211,7 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
     } finally {
       setIsExporting(false);
     }
-  }, [mapImageUrl, text1, text2, icon1, glassType, setPreviewImage]);
+  }, [mapImageUrl, text1, text2, icon1, glassType, setPreviewImage, setModelImage, setModelPreviewAvailable, updateTotalSteps]);
 
   const generateHighResExport = useCallback(async () => {
     if (!mapImageUrl) {

@@ -2,6 +2,7 @@ import { MapConfigProvider, useMapConfig } from './contexts/MapConfigContext'
 import Wizard from './components/UI/Wizard'
 import Step1 from './components/Steps/Step1'
 import Step2 from './components/Steps/Step2'
+import Step3 from './components/Steps/Step3'
 import TestMockup from './components/MockupGenerator/TestMockup'
 import TestWrap from './components/MockupGenerator/TestWrap'
 import TestTransform from './components/MockupGenerator/TestTransform'
@@ -18,6 +19,8 @@ const AppContent = () => {
         return <Step1 />;
       case 2:
         return <Step2 />;
+      case 3:
+        return <Step3 />;
       default:
         return <Step1 />;
     }
@@ -51,6 +54,8 @@ function App() {
     return <SimpleImageTest />;
   }
   
+  // 3D Cylinder Test - Currently configured for Rocks Glass only
+  // Future: ?test=cylinder-pint, ?test=cylinder-wine, ?test=cylinder-shot
   if (testMode === 'cylinder') {
     return <CylinderMapTest />;
   }

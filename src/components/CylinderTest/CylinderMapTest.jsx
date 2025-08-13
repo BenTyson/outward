@@ -12,7 +12,23 @@ import { applyGrain, applyBlur, createCanvasContext, processPixels } from './uti
 import { getCompleteUVMapping, applyUVMapping } from './utils/textureMapping';
 import ControlPanel from './components/ControlPanel';
 
-const CylinderMapTest = () => {
+/**
+ * CylinderMapTest - 3D Cylindrical Glass Mockup Component
+ * 
+ * IMPORTANT: This component is currently configured specifically for ROCKS GLASS.
+ * Future expansion will include separate components/configurations for:
+ * - Pint Glass (taller aspect ratio, different taper)
+ * - Wine Glass (complex tapered geometry, stem considerations) 
+ * - Shot Glass (smaller proportions, different camera angles)
+ * 
+ * Current access: ?test=cylinder (Rocks Glass configuration)
+ * Future access: ?test=cylinder-pint, ?test=cylinder-wine, ?test=cylinder-shot
+ * 
+ * @param {string|null} textureSource - Optional texture source (data URL or file path)
+ *                                    - If null, uses ASSET_PATHS.TEXTURE_IMAGE default
+ *                                    - Supports Phase 1 generated images (data URLs)
+ */
+const CylinderMapTest = ({ textureSource = null }) => {
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
@@ -189,10 +205,13 @@ const CylinderMapTest = () => {
 
     // 5. Load Texture and Create Material
     const textureLoader = new THREE.TextureLoader();
-    console.log('🖼️ Loading texture...');
+    const imageSource = textureSource || ASSET_PATHS.TEXTURE_IMAGE;
+    
+    console.log('🖼️ Loading texture from:', textureSource ? 'Phase 1 generated image (data URL)' : 'hardcoded path');
+    console.log('📍 Texture source:', imageSource.substring(0, 50) + (imageSource.length > 50 ? '...' : ''));
     
     textureLoader.load(
-      ASSET_PATHS.TEXTURE_IMAGE,
+      imageSource,
       (texture) => {
         console.log('✅ Texture loaded successfully:', texture.image.width, 'x', texture.image.height);
         
@@ -413,15 +432,53 @@ const CylinderMapTest = () => {
       (error) => {
         console.error('❌ Failed to load texture:', error);
         
-        // Fallback to colored material
-        const fallbackMaterial = new THREE.MeshBasicMaterial({ 
-          color: 0xff6b6b,  // Light red color
-          wireframe: false
-        });
-        
-        if (cylinderRef.current) {
-          cylinderRef.current.material = fallbackMaterial;
-          console.log('🔧 Applied fallback material');
+        // If Phase 1 texture failed, try fallback to hardcoded texture
+        if (textureSource && textureSource !== ASSET_PATHS.TEXTURE_IMAGE) {
+          console.log('🔄 Phase 1 texture failed, falling back to hardcoded texture...');
+          textureLoader.load(
+            ASSET_PATHS.TEXTURE_IMAGE,
+            (fallbackTexture) => {
+              console.log('✅ Fallback texture loaded successfully');
+              // Rerun the same processing logic as above
+              originalTextureRef.current = fallbackTexture;
+              setTextureLoaded(true);
+              // Note: This would need the same processing logic, but for simplicity
+              // we'll just apply a basic material here
+              const basicMaterial = new THREE.MeshBasicMaterial({
+                map: fallbackTexture,
+                transparent: true,
+                opacity: 0.8
+              });
+              if (cylinderRef.current) {
+                cylinderRef.current.material = basicMaterial;
+                console.log('🔧 Applied fallback texture material');
+              }
+            },
+            undefined,
+            (fallbackError) => {
+              console.error('❌ Fallback texture also failed:', fallbackError);
+              // Final fallback to colored material
+              const errorMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff6b6b,  // Light red color
+                wireframe: false
+              });
+              if (cylinderRef.current) {
+                cylinderRef.current.material = errorMaterial;
+                console.log('🔧 Applied final fallback colored material');
+              }
+            }
+          );
+        } else {
+          // Fallback to colored material
+          const fallbackMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0xff6b6b,  // Light red color
+            wireframe: false
+          });
+          
+          if (cylinderRef.current) {
+            cylinderRef.current.material = fallbackMaterial;
+            console.log('🔧 Applied fallback material');
+          }
         }
       }
     );
@@ -470,7 +527,7 @@ const CylinderMapTest = () => {
       if (renderer) renderer.dispose();
     };
 
-  }, []);
+  }, [textureSource]); // Re-run when textureSource changes (Phase 1 integration)
 
   // Store original texture for reprocessing - MUST be before any useEffect that uses it
   const originalTextureRef = useRef(null);

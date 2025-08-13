@@ -19,6 +19,8 @@ const Wizard = ({ children }) => {
         return 'Step 1: Select Location';
       case 2:
         return 'Step 2: Design Your Glass';
+      case 3:
+        return 'Step 3: 3D Preview';
       default:
         return `Step ${currentStep}`;
     }
@@ -30,8 +32,23 @@ const Wizard = ({ children }) => {
         return 'Choose your location and glass type';
       case 2:
         return 'Add text and icons to your map design';
+      case 3:
+        return 'See your design on a realistic 3D glass';
       default:
         return '';
+    }
+  };
+
+  const getStepLabel = (stepIndex) => {
+    switch (stepIndex) {
+      case 1:
+        return 'Location';
+      case 2:
+        return 'Design';
+      case 3:
+        return '3D Preview';
+      default:
+        return `Step ${stepIndex}`;
     }
   };
 
@@ -59,7 +76,7 @@ const Wizard = ({ children }) => {
               >
                 <div className="step-number">{index + 1}</div>
                 <div className="step-label">
-                  {index + 1 === 1 ? 'Location' : 'Design'}
+                  {getStepLabel(index + 1)}
                 </div>
               </div>
             ))}

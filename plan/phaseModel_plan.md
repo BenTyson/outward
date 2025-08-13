@@ -1,4 +1,7 @@
-# Phase Model: Three.js Cylindrical Image Mapping
+# Phase Model: Three.js Cylindrical Image Mapping [CLAUDE AGENT REFERENCE]
+
+## CRITICAL WARNING FOR CLAUDE AGENTS
+This document contains essential implementation details for cylindrical texture mapping. Pay special attention to UV offset values and texture processing architecture.
 
 ## Overview
 Transition from horizontal strip rendering to true 3D cylindrical mapping using Three.js. This approach eliminates strip line artifacts by wrapping the image as a single texture around a cylinder geometry, then overlaying it on a glass background image.
@@ -292,6 +295,50 @@ const CylinderMapTest = () => {
 - **Modern browsers**: Chrome 80+, Firefox 75+, Safari 13+
 
 ---
+
+## CRITICAL UV MAPPING DISCOVERY (Phase F)
+
+### **The UV Offset Crisis and Resolution**
+After extensive debugging with visual reference cylinders, we discovered the critical UV offset value that makes cylindrical texture mapping work correctly:
+
+```javascript
+// VERIFIED CRITICAL VALUE - DO NOT CHANGE WITHOUT TESTING
+const UV_OFFSET = 0.376; // Places seam at back center, content at front center
+
+// This offset rotates the texture 135.36° CCW from default UV mapping
+// Result: "CENTER AREA" appears at front center, seam at back center
+```
+
+### **Key Implementation Notes**
+1. **USE SAME TEXTURE FOR BOTH SIDES**
+   - Front and back MUST use the same base texture
+   - Only UV offset differs, not the texture data itself
+   - Creating separate textures breaks cylindrical wrapping
+
+2. **CORRECT TEXTURE PROCESSING ARCHITECTURE**
+   ```javascript
+   // CORRECT: Single texture, cloned for back with different UV
+   const frontTexture = processedTexture;
+   const backTexture = processedTexture.clone();
+   backTexture.offset.set(UV_OFFSET, 0);
+   
+   // WRONG: Separate texture processing for front/back
+   // This creates overlapping content and breaks wrapping
+   ```
+
+3. **DEBUG REFERENCE CYLINDER**
+   - Always maintain a debug cylinder with raw texture
+   - UV offset: 0.376, no processing, DoubleSide material
+   - This shows "ground truth" for texture wrapping
+
+### **Common Pitfalls to Avoid**
+- ❌ Don't process textures separately for front/back
+- ❌ Don't use different UV offsets for front/back materials
+- ❌ Don't manually split or flip texture data
+- ❌ Don't use hardcoded texture transformations
+- ✅ DO use UV_OFFSET = 0.376 for both materials
+- ✅ DO clone the same base texture
+- ✅ DO verify with debug reference cylinder
 
 ## Risk Mitigation
 
@@ -908,6 +955,32 @@ const controls = {
 ## **🔧 PHASE D-E: PRODUCTION REFINEMENTS & CODE ARCHITECTURE** ✅ COMPLETED (January 2025)
 
 ### **🏗️ Code Architecture Refactoring**
+
+**WARNING FOR CLAUDE AGENTS**: The following refactoring details are critical for maintaining the codebase. Do not modify the architecture without understanding these patterns.
+
+### **Module Organization Results**
+- **28% code reduction**: Main component reduced from 1094 to 786 lines
+- **Clear separation**: Constants, utilities, and components properly isolated
+- **Improved testability**: Each module can be tested independently
+
+### **Critical File Structure**
+```
+src/components/CylinderTest/
+├── CylinderMapTest.jsx         # Main component (786 lines)
+├── constants.js                # Configuration including UV_OFFSET = 0.376
+├── utils/
+│   ├── cylinderMath.js        # Geometry calculations
+│   ├── imageProcessing.js     # Texture processing utilities
+│   └── textureMapping.js      # UV mapping with critical offset values
+└── components/
+    └── ControlPanel.jsx        # Reusable control interface
+```
+
+### **Key Architectural Decisions**
+1. **Constants Extraction**: All magic numbers moved to constants.js
+2. **UV_MAPPING_CONSTANTS**: Critical UV offset values centralized
+3. **Utility Functions**: Pure functions for calculations
+4. **Component Separation**: UI controls isolated from logic
 **MISSION**: Transform monolithic 1094-line component into modular, maintainable architecture while preserving all functionality.
 
 **RESULT**: ✅ **28% code reduction** with improved maintainability and zero breaking changes.
