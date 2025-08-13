@@ -21,7 +21,8 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
   const generateRoundedStroke = (ctx, text, x, y, strokeWidth) => {
     if (strokeWidth <= 0) return;
     
-    const steps = 16;
+    // Simplified stroke generation - single circle with fewer points
+    const steps = 12; // Reduced from 16
     ctx.fillStyle = '#ffffff';
     
     for (let i = 0; i < steps; i++) {
@@ -31,12 +32,13 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       ctx.fillText(text, x + offsetX, y + offsetY);
     }
     
-    // Add additional layers for smoother stroke
-    for (let radius = strokeWidth * 0.7; radius > 0; radius -= strokeWidth * 0.3) {
+    // Single additional layer for smoothness (much reduced)
+    const innerRadius = strokeWidth * 0.6;
+    if (innerRadius > 0.5) {
       for (let i = 0; i < 8; i++) {
         const angle = (i / 8) * 2 * Math.PI;
-        const offsetX = Math.cos(angle) * radius;
-        const offsetY = Math.sin(angle) * radius;
+        const offsetX = Math.cos(angle) * innerRadius;
+        const offsetY = Math.sin(angle) * innerRadius;
         ctx.fillText(text, x + offsetX, y + offsetY);
       }
     }
@@ -127,43 +129,11 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
       
       ctx.drawImage(mapImg, 0, 0, previewWidth, previewHeight);
       
-      // Render Text 1
-      if (text1 && text1.content && text1.content.trim()) {
-        const fontSize = (text1.size / 100) * Math.min(previewWidth, previewHeight) * 0.15;
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const x = (text1.position.x / 100) * previewWidth;
-        const y = (text1.position.y / 100) * previewHeight;
-        const scaledStrokeWidth = text1.strokeWidth * (fontSize / 50);
-        
-        // Generate rounded stroke
-        generateRoundedStroke(ctx, text1.content, x, y, scaledStrokeWidth);
-        
-        // Black text on top
-        ctx.fillStyle = '#000000';
-        ctx.fillText(text1.content, x, y);
-      }
+      // NOTE: Text rendering removed from preview because mapImageUrl already contains
+      // text with stroke from generateFinalImage(). Adding text here creates double stroke.
+      // Text 1 and Text 2 are already baked into the mapImageUrl.
       
-      // Render Text 2
-      if (text2 && text2.content && text2.content.trim()) {
-        const fontSize = (text2.size / 100) * Math.min(previewWidth, previewHeight) * 0.15;
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        
-        const x = (text2.position.x / 100) * previewWidth;
-        const y = (text2.position.y / 100) * previewHeight;
-        const scaledStrokeWidth = text2.strokeWidth * (fontSize / 50);
-        
-        // Generate rounded stroke
-        generateRoundedStroke(ctx, text2.content, x, y, scaledStrokeWidth);
-        
-        // Black text on top
-        ctx.fillStyle = '#000000';
-        ctx.fillText(text2.content, x, y);
-      }
+      // NOTE: Text 2 rendering also removed - already baked into mapImageUrl
       
       // Render Icon
       if (icon1 && icon1.type && flatIcons[icon1.type]) {
@@ -265,7 +235,7 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
         
         const x = (text1.position.x / 100) * width;
         const y = (text1.position.y / 100) * height;
-        const scaledStrokeWidth = text1.strokeWidth * (fontSize / 50);
+        const scaledStrokeWidth = text1.strokeWidth * (fontSize / 100); // Reduced scaling
         
         // Generate rounded stroke
         generateRoundedStroke(ctx, text1.content, x, y, scaledStrokeWidth);
@@ -284,7 +254,7 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
         
         const x = (text2.position.x / 100) * width;
         const y = (text2.position.y / 100) * height;
-        const scaledStrokeWidth = text2.strokeWidth * (fontSize / 50);
+        const scaledStrokeWidth = text2.strokeWidth * (fontSize / 100); // Reduced scaling
         
         // Generate rounded stroke
         generateRoundedStroke(ctx, text2.content, x, y, scaledStrokeWidth);
