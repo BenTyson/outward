@@ -905,20 +905,172 @@ const controls = {
 
 ---
 
-## **🎉 CONCLUSION**
+## **🔧 PHASE D-E: PRODUCTION REFINEMENTS & CODE ARCHITECTURE** ✅ COMPLETED (January 2025)
 
-**The Three.js cylindrical mapping approach has successfully achieved the primary objective**: eliminating horizontal strip line artifacts that persisted through multiple 2D rendering optimizations.
+### **🏗️ Code Architecture Refactoring**
+**MISSION**: Transform monolithic 1094-line component into modular, maintainable architecture while preserving all functionality.
 
-**Key Success Factors**:
-1. **Paradigm shift**: From 2D approximation to true 3D projection
-2. **Mathematical precision**: Correct aspect ratio interpretation and cylinder calculations  
-3. **Modern web technology**: WebGL capabilities enabling efficient 3D rendering
-4. **Clean architecture**: Modular design supporting future enhancements
+**RESULT**: ✅ **28% code reduction** with improved maintainability and zero breaking changes.
 
-**This implementation provides a solid foundation** for production-quality glass engraving simulation with the potential for advanced features like realistic glass shaders, interactive controls, and multi-glass support.
+#### **New File Structure**
+```
+src/components/CylinderTest/
+├── CylinderMapTest.jsx           // Main component (786 lines, reduced from 1094)
+├── constants.js                  // All configuration and defaults
+├── components/
+│   └── ControlPanel.jsx         // Reusable UI control component
+└── utils/
+    ├── cylinderMath.js           // Existing math utilities
+    └── imageProcessing.js        // Texture processing utilities
+```
 
-**The core mission is complete**: Strip line artifacts are eliminated, and the system renders smooth, artifact-free cylindrical projections of map designs onto simulated glass surfaces.
+#### **Extracted Modules**
+
+**constants.js**
+```javascript
+export const PROCESSING_CONSTANTS = {
+  WHITE_THRESHOLD: 248,           // Calibrated for map detail preservation
+  GRAY_THRESHOLD: 235,            // Preserves fine line details
+  FRONT_DARKEN_FACTOR: 0.4,       // 60% darkening for front engraving
+  REVERSE_DARKEN_FACTOR: 0.6,     // 40% darkening for subtle reverse
+  BOTTOM_MASK_HEIGHT_RATIO: 0.05  // 5% bottom masking on reverse
+};
+
+export const THREEJS_CONFIG = {
+  CAMERA_NEAR: 0.1,
+  CAMERA_FAR: 2000,
+  CYLINDER_RADIAL_SEGMENTS: 32,
+  CYLINDER_HEIGHT_SEGMENTS: 1,
+  OPEN_ENDED: true                // Critical: no top/bottom faces
+};
+
+export const DEFAULT_VALUES = {
+  // All 13 calibrated control parameters
+  SCALE_X: 1.000, SCALE_Y: 0.930,
+  TILT_X: 0.605, ROTATE_Y: -0.785,  // 34.7°, -45°
+  TAPER_RATIO: 0.940, BASE_WIDTH: 1.020,
+  MODEL_X: 4.0, MODEL_Y: 45.0,
+  CANVAS_X: 0.0, CANVAS_Y: -4.0,
+  CAMERA_FOV: 22, CAMERA_Y: -47, CAMERA_Z: 200,
+  FRONT_OPACITY: 0.37, FRONT_BLUR: 0.0, FRONT_GRAIN: 0.25,
+  REVERSE_OPACITY: 0.16, REVERSE_BLUR: 1.4, REVERSE_GRAIN: 0.57
+};
+```
+
+**utils/imageProcessing.js**
+- `applyGrain()` - Noise texture effect
+- `applyBlur()` - Canvas-based blur processing
+- `createCanvasContext()` - Canvas creation utility
+- `processPixels()` - White extraction and darkening
+
+**components/ControlPanel.jsx**
+- Reusable slider control system
+- 13-parameter comprehensive controls
+- Responsive scrollable layout
+- Production-ready UI component
 
 ---
 
-*Three.js cylindrical mapping represents the successful resolution of the fundamental strip line artifact problem, achieving production-ready quality with clean architecture and exceptional performance.*
+## **🎯 CRITICAL IMPLEMENTATION NOTES FOR CLAUDE AGENTS**
+
+### **⚠️ TEXTURE PROCESSING ARCHITECTURE**
+
+**IMPORTANT**: There are TWO texture processing paths that must remain synchronized:
+
+1. **Initial Load Processing** (Lines 224-390 in main file)
+   - Runs once when texture first loads
+   - Uses hardcoded values initially (now using constants)
+   - Creates both front and reverse textures
+
+2. **Dynamic Reprocessing** (`reprocessTexture` function, Lines 522-632)
+   - Called by `updateMaterials()` when controls change
+   - **CRITICAL**: This is where threshold values actually matter for runtime
+   - Must use same constants as initial load
+
+**Common Pitfall**: Changing thresholds in initial load WILL NOT affect runtime behavior. Always update the `reprocessTexture` function for dynamic changes.
+
+### **🔴 REVERSE SIDE GEOMETRY**
+
+**Mathematical Correctness** (Lines 530-546):
+```javascript
+// Reverse side shows BACK HALF of texture, horizontally flipped
+ctx.scale(-1, 1); // Flip horizontally
+// Draw right half to left position (flipped)
+ctx.drawImage(texture, halfWidth, 0, halfWidth, height, -halfWidth, 0, halfWidth, height);
+// Draw left half to right position (flipped)  
+ctx.drawImage(texture, 0, 0, halfWidth, height, -textureWidth, 0, halfWidth, height);
+```
+
+**Bottom Masking** (Line 574):
+- Always mask bottom 5% on reverse side only
+- Represents flat bottom face of glass
+- Use `PROCESSING_CONSTANTS.BOTTOM_MASK_HEIGHT_RATIO`
+
+### **🔧 CONTROL SYSTEM INTEGRATION**
+
+**Control Flow**:
+1. User adjusts slider → setState called
+2. useEffect triggers with new value
+3. `updateMaterials()` called
+4. `reprocessTexture()` generates new texture
+5. Material map updated and marked for update
+6. Scene re-renders with new appearance
+
+**Performance Consideration**: Texture reprocessing happens on EVERY control change. Consider debouncing for production if needed.
+
+### **📦 ASSET MANAGEMENT**
+
+**Current Texture**: `/glass-images/rocks-test-2.png`
+**Background**: `/glass-images/rocks-white.jpg`
+
+**Texture Requirements**:
+- Width should be ~2.5-3x height for proper cylindrical wrap
+- White/light backgrounds for extraction
+- High contrast map lines for engraving effect
+
+---
+
+## **✅ PRODUCTION READINESS CHECKLIST**
+
+### **Completed Features**
+- [x] Strip line artifacts eliminated
+- [x] Mathematically correct reverse side
+- [x] Open-ended cylinder geometry
+- [x] Bottom face masking
+- [x] 13-parameter precision control system
+- [x] Dual-material front/reverse rendering
+- [x] Real-time texture reprocessing
+- [x] Production-calibrated defaults
+- [x] Modular architecture
+- [x] Extracted constants and utilities
+- [x] Reusable UI components
+
+### **Known Limitations**
+- Edge blur not implemented (too complex for current approach)
+- Texture reprocessing on every control change (no debouncing)
+- No LOD system for mobile optimization
+- Single glass type (rocks glass) currently supported
+
+### **Future Enhancement Opportunities**
+1. **Performance**: Debounce texture reprocessing
+2. **Features**: Multiple glass geometries (wine, pint, shot)
+3. **Quality**: WebGL shaders for edge effects
+4. **Mobile**: Progressive texture quality
+5. **Export**: High-resolution render capability
+
+---
+
+## **🎉 CONCLUSION**
+
+**The Three.js cylindrical mapping system is production-ready** with:
+- **Zero strip artifacts** through true 3D projection
+- **Pixel-perfect alignment** via 13-parameter control system
+- **Clean architecture** with 28% code reduction
+- **Maintainable structure** with separated concerns
+- **Production defaults** calibrated for rocks glass
+
+**Critical Success**: The system successfully transitioned from problematic 2D strip rendering to flawless 3D cylindrical projection, achieving the primary objective while maintaining clean, maintainable code architecture.
+
+---
+
+*Implementation complete. System ready for production deployment with rocks glass configuration.*

@@ -761,23 +761,331 @@ const CylinderMapTest = () => {
         </div>
         
         {/* Controls */}
-        <ControlPanel 
-          controls={{
-            scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth,
-            modelX, modelY, canvasX, canvasY,
-            cameraFOV, cameraY, cameraZ,
-            frontOpacity, frontBlur, frontGrain,
-            reverseOpacity, reverseBlur, reverseGrain
-          }}
-          setters={{
-            setScaleX, setScaleY, setTiltX, setRotateY, setTaperRatio, setBaseWidth,
-            setModelX, setModelY, setCanvasX, setCanvasY,
-            setCameraFOV, setCameraY, setCameraZ,
-            setFrontOpacity, setFrontBlur, setFrontGrain,
-            setReverseOpacity, setReverseBlur, setReverseGrain
-          }}
-          canvasHeight={canvasSize.height}
-        />
+        <div style={{ 
+          minWidth: '250px',
+          maxWidth: '300px',
+          maxHeight: `${canvasSize.height}px`,
+          overflowY: 'auto',
+          padding: '10px',
+          border: '1px solid #eee',
+          borderRadius: '4px',
+          backgroundColor: '#fafafa'
+        }}>
+          {/* Scale Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Scale</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Width: {scaleX.toFixed(3)}
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="3.0"
+                step="0.01"
+                value={scaleX}
+                onChange={(e) => setScaleX(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Height: {scaleY.toFixed(3)}
+              </label>
+              <input
+                type="range"
+                min="0.1"
+                max="3.0"
+                step="0.01"
+                value={scaleY}
+                onChange={(e) => setScaleY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Tilt: {(tiltX * 180/Math.PI).toFixed(1)}°
+              </label>
+              <input
+                type="range"
+                min="-0.785"
+                max="0.785"
+                step="0.01"
+                value={tiltX}
+                onChange={(e) => setTiltX(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Rotate: {(rotateY * 180/Math.PI).toFixed(1)}°
+              </label>
+              <input
+                type="range"
+                min="-0.785"
+                max="0.785"
+                step="0.01"
+                value={rotateY}
+                onChange={(e) => setRotateY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Taper: {taperRatio.toFixed(3)}
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.01"
+                value={taperRatio}
+                onChange={(e) => setTaperRatio(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Base Width: {baseWidth.toFixed(3)}
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.01"
+                value={baseWidth}
+                onChange={(e) => setBaseWidth(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* 3D Position Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>3D Position</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                X: {modelX.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={modelX}
+                onChange={(e) => setModelX(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Y: {modelY.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={modelY}
+                onChange={(e) => setModelY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Canvas Position Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Canvas Position</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Horizontal: {canvasX.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-300"
+                max="300"
+                step="1"
+                value={canvasX}
+                onChange={(e) => setCanvasX(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Vertical: {canvasY.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-300"
+                max="300"
+                step="1"
+                value={canvasY}
+                onChange={(e) => setCanvasY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Camera Controls */}
+          <div>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Camera</h3>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                FOV: {cameraFOV}°
+              </label>
+              <input
+                type="range"
+                min="10"
+                max="90"
+                step="1"
+                value={cameraFOV}
+                onChange={(e) => setCameraFOV(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Y-axis: {cameraY.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={cameraY}
+                onChange={(e) => setCameraY(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Z-axis: {cameraZ.toFixed(0)}
+              </label>
+              <input
+                type="range"
+                min="-200"
+                max="200"
+                step="1"
+                value={cameraZ}
+                onChange={(e) => setCameraZ(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Front Side Engraving Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Front Side</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Opacity: {frontOpacity.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={frontOpacity}
+                onChange={(e) => setFrontOpacity(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Blur: {frontBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="5.0"
+                step="0.1"
+                value={frontBlur}
+                onChange={(e) => setFrontBlur(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Grain: {frontGrain.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={frontGrain}
+                onChange={(e) => setFrontGrain(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+
+          {/* Reverse Side Engraving Controls */}
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ margin: '0 0 15px 0', fontSize: '16px' }}>Reverse Side</h3>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Opacity: {reverseOpacity.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={reverseOpacity}
+                onChange={(e) => setReverseOpacity(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Blur: {reverseBlur.toFixed(1)}px
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="5.0"
+                step="0.1"
+                value={reverseBlur}
+                onChange={(e) => setReverseBlur(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}>
+                Grain: {reverseGrain.toFixed(2)}
+              </label>
+              <input
+                type="range"
+                min="0.0"
+                max="1.0"
+                step="0.01"
+                value={reverseGrain}
+                onChange={(e) => setReverseGrain(parseFloat(e.target.value))}
+                style={{ width: '220px' }}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
