@@ -13,6 +13,14 @@ export const PROCESSING_CONSTANTS = {
   BOTTOM_MASK_HEIGHT_RATIO: 0.05
 };
 
+export const UV_MAPPING_CONSTANTS = {
+  // Critical UV offset for perfect seam placement at back center
+  // This places CENTER AREA at front, seam at back center
+  FRONT_UV_OFFSET: 0.376,
+  // Back view uses same texture, same offset for consistency
+  BACK_UV_OFFSET: 0.376
+};
+
 export const UI_CONSTANTS = {
   MAX_DISPLAY_WIDTH: 800,
   MAX_DISPLAY_HEIGHT: 600,
@@ -36,7 +44,7 @@ export const THREEJS_CONFIG = {
 
 export const ASSET_PATHS = {
   BACKGROUND_IMAGE: '/glass-images/rocks-white.jpg',
-  TEXTURE_IMAGE: '/glass-images/rocks-test-2.png',
+  TEXTURE_IMAGE: '/glass-images/rocks-test-3.png',
   FALLBACK_TEXTURE: '/glass-images/rocks-test-design-optimal.png'
 };
 

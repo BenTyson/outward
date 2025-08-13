@@ -9,6 +9,7 @@ import {
   DEFAULT_VALUES 
 } from './constants';
 import { applyGrain, applyBlur, createCanvasContext, processPixels } from './utils/imageProcessing';
+import { getCompleteUVMapping, applyUVMapping } from './utils/textureMapping';
 import ControlPanel from './components/ControlPanel';
 
 const CylinderMapTest = () => {
@@ -19,11 +20,18 @@ const CylinderMapTest = () => {
   const topEdgeRef = useRef(null);
   const bottomEdgeRef = useRef(null);
   const geometryRef = useRef(null);
+  
+  // Debug canvas refs
+  const debugCanvasRef = useRef(null);
+  const debugSceneRef = useRef(null);
+  const debugRendererRef = useRef(null);
+  const debugCylinderRef = useRef(null);
   const rimGeometryRef = useRef(null);
   
   const [isLoading, setIsLoading] = useState(true);
   const [dimensions, setDimensions] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: UI_CONSTANTS.MAX_DISPLAY_WIDTH, height: UI_CONSTANTS.MAX_DISPLAY_HEIGHT });
+  const [textureLoaded, setTextureLoaded] = useState(false);
   
   // Scale and rotation controls
   const [scaleX, setScaleX] = useState(DEFAULT_VALUES.SCALE_X);
@@ -190,6 +198,7 @@ const CylinderMapTest = () => {
         
         // Store original texture for reprocessing
         originalTextureRef.current = texture;
+        setTextureLoaded(true);
         
         // Helper function to apply grain effect
         const applyGrain = (imageData, grainAmount) => {
@@ -294,13 +303,36 @@ const CylinderMapTest = () => {
         // Create new texture from processed canvas
         const processedTexture = new THREE.CanvasTexture(canvas);
         
-        // Configure texture for cylindrical wrapping
+        // Calculate precise UV mapping for perspective-corrected texture visibility
+        const sceneParams = {
+          cylinderRadius: dims.radius,
+          cameraDistance: calculateCameraDistance(dims.radius),
+          cameraFOV: cameraFOV
+        };
+        
+        const uvMapping = getCompleteUVMapping(sceneParams, {
+          frontVisible: 0.4,  // 40% of texture visible from front
+          backVisible: 0.4    // 40% of texture visible from back
+        });
+        
+        console.log('🎯 UV Mapping calculated:', {
+          visibleAngle: uvMapping.debug.visibleAngleDegrees.toFixed(1) + '°',
+          frontRepeat: uvMapping.front.repeat.toFixed(3),
+          frontOffset: uvMapping.front.offset.toFixed(3),
+          textureDistribution: uvMapping.debug.textureDistribution
+        });
+        
+        // Configure texture with precise UV mapping
         processedTexture.wrapS = THREE.RepeatWrapping;      // Horizontal wrap around cylinder
         processedTexture.wrapT = THREE.ClampToEdgeWrapping; // Vertical clamp (top to bottom)
         processedTexture.minFilter = THREE.LinearFilter;    // Smooth scaling down
         processedTexture.magFilter = THREE.LinearFilter;    // Smooth scaling up
         
-        console.log('🔧 Processed texture configured for cylindrical mapping');
+        // Apply precise front-view UV mapping
+        processedTexture.repeat.set(uvMapping.front.repeat, 1);
+        processedTexture.offset.set(uvMapping.front.offset, 0);
+        
+        console.log('🔧 Front texture configured with precise UV mapping');
         
         // Create front side material with dynamic opacity
         const frontMaterial = new THREE.MeshBasicMaterial({ 
@@ -310,92 +342,18 @@ const CylinderMapTest = () => {
           side: THREE.FrontSide   // Only front-facing surfaces
         });
 
-        // Process image for reverse side - show the back portion that wraps around
-        const reverseCanvas = document.createElement('canvas');
-        const reverseCtx = reverseCanvas.getContext('2d');
-        reverseCanvas.width = texture.image.width;
-        reverseCanvas.height = texture.image.height;
+        // Create reverse side material using the SAME processed texture
+        // This ensures proper cylindrical wrapping - only UV offset differs
+        const reverseTexture = processedTexture.clone();
         
-        // Calculate what portion of texture is visible on back side
-        // When cylinder rotates, different portions become visible on front vs back
-        const textureWidth = texture.image.width;
-        const halfWidth = textureWidth / 2;
+        // Apply precise back-view UV mapping to show seam area
+        reverseTexture.repeat.set(uvMapping.back.repeat, 1);
+        reverseTexture.offset.set(uvMapping.back.offset, 0);
         
-        // Draw the back half of the texture, horizontally flipped
-        reverseCtx.scale(-1, 1); // Flip horizontally 
-        reverseCtx.drawImage(
-          texture.image, 
-          halfWidth, 0, halfWidth, texture.image.height, // Source: right half of texture
-          -halfWidth, 0, halfWidth, texture.image.height  // Dest: left half, flipped
-        );
-        reverseCtx.drawImage(
-          texture.image,
-          0, 0, halfWidth, texture.image.height, // Source: left half of texture  
-          -textureWidth, 0, halfWidth, texture.image.height // Dest: right half, flipped
-        );
-        reverseCtx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-        
-        // Apply reverse blur
-        applyBlur(reverseCtx, reverseCanvas, reverseBlur);
-        
-        // Mask out the bottom area that corresponds to the bottom face of the cylinder
-        // The bottom portion of the texture should be completely transparent on reverse side
-        const imageHeight = reverseCanvas.height;
-        const bottomMaskHeight = imageHeight * PROCESSING_CONSTANTS.BOTTOM_MASK_HEIGHT_RATIO;
-        
-        // Create solid mask for bottom area - NO GRADIENTS, complete removal
-        reverseCtx.globalCompositeOperation = 'destination-out'; // Remove pixels
-        reverseCtx.fillStyle = 'rgba(0,0,0,1)'; // Solid black = complete removal
-        reverseCtx.fillRect(0, imageHeight - bottomMaskHeight, reverseCanvas.width, bottomMaskHeight);
-        reverseCtx.globalCompositeOperation = 'source-over'; // Reset to normal
-        
-        // Get image data for reverse processing
-        const reverseImageData = reverseCtx.getImageData(0, 0, reverseCanvas.width, reverseCanvas.height);
-        const reverseData = reverseImageData.data;
-        
-        // Reverse side processing (lighter, more subtle effect)
-        const reverseWhiteThreshold = 200; // Higher threshold (more aggressive removal)
-        const reverseGrayThreshold = 160;  // Higher threshold (remove more grays)
-        const reverseDarkenFactor = 0.6;   // Less darkening (40% vs 60%)
-        
-        let reverseProcessedPixels = 0;
-        let reverseDarkenedPixels = 0;
-        
-        for (let i = 0; i < reverseData.length; i += 4) {
-          const r = reverseData[i];
-          const g = reverseData[i + 1];
-          const b = reverseData[i + 2];
-          
-          const brightness = (r + g + b) / 3;
-          
-          if (brightness > reverseWhiteThreshold) {
-            reverseData[i + 3] = 0; // Transparent
-            reverseProcessedPixels++;
-          } else if (brightness > reverseGrayThreshold) {
-            reverseData[i + 3] = 0; // Transparent
-            reverseProcessedPixels++;
-          } else {
-            // Less darkening for reverse side (more subtle)
-            reverseData[i] = Math.floor(r * reverseDarkenFactor);
-            reverseData[i + 1] = Math.floor(g * reverseDarkenFactor);
-            reverseData[i + 2] = Math.floor(b * reverseDarkenFactor);
-            reverseDarkenedPixels++;
-          }
-        }
-        
-        // Apply grain to reverse side
-        applyGrain(reverseImageData, reverseGrain);
-        
-        reverseCtx.putImageData(reverseImageData, 0, 0);
-        
-        console.log(`🔄 Reverse: ${reverseProcessedPixels} pixels transparent, ${reverseDarkenedPixels} pixels darkened, blur: ${reverseBlur}px, grain: ${reverseGrain}`);
-        
-        // Create reverse side texture and material
-        const reverseTexture = new THREE.CanvasTexture(reverseCanvas);
-        reverseTexture.wrapS = THREE.RepeatWrapping;
-        reverseTexture.wrapT = THREE.ClampToEdgeWrapping;
-        reverseTexture.minFilter = THREE.LinearFilter;
-        reverseTexture.magFilter = THREE.LinearFilter;
+        console.log('🔧 Reverse texture configured with same base texture, different UV mapping:', {
+          backRepeat: uvMapping.back.repeat.toFixed(3),
+          backOffset: uvMapping.back.offset.toFixed(3)
+        });
         
         const reverseMaterial = new THREE.MeshBasicMaterial({
           map: reverseTexture,
@@ -514,11 +472,146 @@ const CylinderMapTest = () => {
 
   }, []);
 
-  // Store original texture for reprocessing
+  // Store original texture for reprocessing - MUST be before any useEffect that uses it
   const originalTextureRef = useRef(null);
 
+  // Debug canvas initialization
+  useEffect(() => {
+    if (!debugCanvasRef.current || !originalTextureRef.current) return;
+    
+    console.log('🔍 Initializing debug cylinder...');
+    
+    // Create debug scene
+    const debugScene = new THREE.Scene();
+    debugScene.background = new THREE.Color(0xf0f0f0);
+    debugSceneRef.current = debugScene;
+    
+    // Create debug camera (same as main)
+    const debugCamera = new THREE.PerspectiveCamera(
+      cameraFOV,
+      canvasSize.width / canvasSize.height,
+      0.1,
+      2000
+    );
+    
+    // Position camera (same as main)
+    const cameraDistance = calculateCameraDistance(dimensions?.radius || 50);
+    debugCamera.position.set(0, 0, cameraDistance);
+    debugCamera.lookAt(0, 0, 0);
+    
+    // Create debug renderer
+    const debugRenderer = new THREE.WebGLRenderer({
+      canvas: debugCanvasRef.current,
+      alpha: true,
+      antialias: true
+    });
+    debugRenderer.setSize(canvasSize.width, canvasSize.height);
+    debugRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    debugRendererRef.current = debugRenderer;
+    
+    // Create simple cylinder with raw texture
+    const cylinderHeight = 100;
+    const dims = calculateCylinderDimensions(cylinderHeight);
+    
+    const debugGeometry = new THREE.CylinderGeometry(
+      dims.radius,
+      dims.radius,
+      dims.height,
+      32,
+      1,
+      true // Open ended
+    );
+    
+    // Create raw texture (no processing)
+    const debugTexture = originalTextureRef.current.clone();
+    debugTexture.wrapS = THREE.RepeatWrapping;
+    debugTexture.wrapT = THREE.ClampToEdgeWrapping;
+    debugTexture.repeat.set(1, 1);  // Natural wrap
+    // Offset by 0.376 (0.473 - 0.097) to rotate another 35° counter-clockwise
+    // 35° = 35/360 = 0.097, so 0.473 - 0.097 = 0.376
+    // Total rotation: 135° CCW to place seam at back center
+    debugTexture.offset.set(0.376, 0);
+    
+    // Simple material with DoubleSide
+    const debugMaterial = new THREE.MeshBasicMaterial({
+      map: debugTexture,
+      side: THREE.DoubleSide,
+      transparent: false
+    });
+    
+    // Create debug cylinder
+    const debugCylinder = new THREE.Mesh(debugGeometry, debugMaterial);
+    debugScene.add(debugCylinder);
+    debugCylinderRef.current = debugCylinder;
+    
+    // Add lighting for better visibility
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    debugScene.add(ambientLight);
+    
+    // Render debug scene
+    debugRenderer.render(debugScene, debugCamera);
+    
+    console.log('✅ Debug cylinder initialized with raw texture');
+    
+    return () => {
+      if (debugGeometry) debugGeometry.dispose();
+      if (debugMaterial) debugMaterial.dispose();
+      if (debugTexture) debugTexture.dispose();
+      if (debugRenderer) debugRenderer.dispose();
+    };
+  }, [textureLoaded, canvasSize, dimensions, cameraFOV]);
+
+  // Update debug cylinder to match main cylinder transformations
+  useEffect(() => {
+    if (!debugCylinderRef.current || !debugRendererRef.current || !debugSceneRef.current) return;
+    
+    // Update debug cylinder transformations to match main
+    debugCylinderRef.current.scale.set(scaleX, scaleY, 1);
+    debugCylinderRef.current.rotation.x = tiltX;
+    debugCylinderRef.current.rotation.y = rotateY;
+    debugCylinderRef.current.position.set(modelX, modelY, 0);
+    
+    // Update debug camera to match main
+    const debugCamera = new THREE.PerspectiveCamera(
+      cameraFOV,
+      canvasSize.width / canvasSize.height,
+      0.1,
+      2000
+    );
+    
+    const baseCameraDistance = calculateCameraDistance(dimensions?.radius || 50);
+    const finalCameraX = canvasX;
+    const finalCameraY = canvasY + cameraY;
+    const finalCameraZ = baseCameraDistance + cameraZ;
+    
+    debugCamera.position.set(finalCameraX, finalCameraY, finalCameraZ);
+    debugCamera.lookAt(modelX + canvasX, modelY + canvasY, 0);
+    
+    // Update cylinder geometry if taper changed
+    if (debugCylinderRef.current.geometry) {
+      debugCylinderRef.current.geometry.dispose();
+      const cylinderHeight = 100;
+      const dims = calculateCylinderDimensions(cylinderHeight);
+      
+      const newGeometry = new THREE.CylinderGeometry(
+        dims.radius * taperRatio,  // Top radius with taper
+        dims.radius * baseWidth,   // Bottom radius with base width
+        dims.height,
+        32,
+        1,
+        true
+      );
+      debugCylinderRef.current.geometry = newGeometry;
+    }
+    
+    // Render debug scene
+    debugRendererRef.current.render(debugSceneRef.current, debugCamera);
+    
+  }, [scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth, modelX, modelY, 
+      canvasX, canvasY, cameraY, cameraZ, cameraFOV, dimensions, canvasSize]);
+
   // Function to reprocess texture with current blur/grain settings
-  const reprocessTexture = (isReverse = false) => {
+  const reprocessTexture = () => {
     if (!originalTextureRef.current) return null;
 
     const canvas = document.createElement('canvas');
@@ -526,33 +619,14 @@ const CylinderMapTest = () => {
     canvas.width = originalTextureRef.current.image.width;
     canvas.height = originalTextureRef.current.image.height;
     
-    if (isReverse) {
-      // For reverse side, show the back portion of the texture, horizontally flipped
-      const textureWidth = originalTextureRef.current.image.width;
-      const halfWidth = textureWidth / 2;
-      
-      ctx.scale(-1, 1); // Flip horizontally 
-      ctx.drawImage(
-        originalTextureRef.current.image, 
-        halfWidth, 0, halfWidth, originalTextureRef.current.image.height, // Source: right half
-        -halfWidth, 0, halfWidth, originalTextureRef.current.image.height  // Dest: left half, flipped
-      );
-      ctx.drawImage(
-        originalTextureRef.current.image,
-        0, 0, halfWidth, originalTextureRef.current.image.height, // Source: left half
-        -textureWidth, 0, halfWidth, originalTextureRef.current.image.height // Dest: right half, flipped
-      );
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-    } else {
-      // Draw original image for front side
-      ctx.drawImage(originalTextureRef.current.image, 0, 0);
-    }
+    // Draw the full texture - UV mapping handles front vs back positioning
+    ctx.drawImage(originalTextureRef.current.image, 0, 0);
     
-    // Apply blur
-    const blur = isReverse ? reverseBlur : frontBlur;
-    console.log(`🔍 Blur debug - isReverse: ${isReverse}, blur value: ${blur}, reverseBlur: ${reverseBlur}, frontBlur: ${frontBlur}`);
+    // Apply front blur (reverse side will use same base texture with different UV)
+    const blur = frontBlur;
+    console.log(`🔍 Applying ${blur}px blur to base texture`);
     if (blur > 0) {
-      console.log(`🔄 Applying ${blur}px blur to ${isReverse ? 'reverse' : 'front'} texture`);
+      console.log(`🔄 Applying ${blur}px blur to base texture`);
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       tempCanvas.width = canvas.width;
@@ -567,17 +641,7 @@ const CylinderMapTest = () => {
       ctx.drawImage(tempCanvas, 0, 0);
     }
 
-    // Only mask reverse side, not front side
-    if (isReverse) {
-      const imageHeight = canvas.height;
-      const bottomMaskHeight = imageHeight * 0.05; // Bottom 5% represents the bottom face area
-      
-      // Create solid mask for bottom area - complete removal
-      ctx.globalCompositeOperation = 'destination-out'; // Remove pixels
-      ctx.fillStyle = 'rgba(0,0,0,1)'; // Solid black = complete removal
-      ctx.fillRect(0, imageHeight - bottomMaskHeight, canvas.width, bottomMaskHeight);
-      ctx.globalCompositeOperation = 'source-over'; // Reset to normal
-    }
+    // No masking needed - UV mapping handles visibility
     
     // Get image data and process pixels
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -585,8 +649,8 @@ const CylinderMapTest = () => {
     
     const whiteThreshold = PROCESSING_CONSTANTS.WHITE_THRESHOLD;
     const grayThreshold = PROCESSING_CONSTANTS.GRAY_THRESHOLD;
-    const darkenFactor = isReverse ? PROCESSING_CONSTANTS.REVERSE_DARKEN_FACTOR : PROCESSING_CONSTANTS.FRONT_DARKEN_FACTOR;
-    const grain = isReverse ? reverseGrain : frontGrain;
+    const darkenFactor = PROCESSING_CONSTANTS.FRONT_DARKEN_FACTOR;
+    const grain = frontGrain;
     
     // Process pixels
     for (let i = 0; i < data.length; i += 4) {
@@ -627,6 +691,22 @@ const CylinderMapTest = () => {
     newTexture.minFilter = THREE.LinearFilter;
     newTexture.magFilter = THREE.LinearFilter;
     
+    // Apply front-view UV mapping (reverse side will be handled separately)
+    const sceneParams = {
+      cylinderRadius: dimensions.radius,
+      cameraDistance: calculateCameraDistance(dimensions.radius),
+      cameraFOV: cameraFOV
+    };
+    
+    const uvMapping = getCompleteUVMapping(sceneParams, {
+      frontVisible: 0.4,
+      backVisible: 0.4
+    });
+    
+    // Apply front-view UV mapping
+    newTexture.repeat.set(uvMapping.front.repeat, 1);
+    newTexture.offset.set(uvMapping.front.offset, 0);
+    
     return newTexture;
   };
 
@@ -639,28 +719,45 @@ const CylinderMapTest = () => {
       if (frontCylinder && frontCylinder.material) {
         frontCylinder.material.opacity = frontOpacity;
         
-        // Update front texture with current blur/grain
-        const newFrontTexture = reprocessTexture(false);
-        if (newFrontTexture) {
+        // Update texture with current blur/grain settings
+        const newBaseTexture = reprocessTexture();
+        if (newBaseTexture) {
+          // Update front material
           if (frontCylinder.material.map) {
             frontCylinder.material.map.dispose();
           }
-          frontCylinder.material.map = newFrontTexture;
+          frontCylinder.material.map = newBaseTexture;
           frontCylinder.material.needsUpdate = true;
-        }
-      }
-      
-      if (backCylinder && backCylinder.material) {
-        backCylinder.material.opacity = reverseOpacity;
-        
-        // Update reverse texture with current blur/grain
-        const newReverseTexture = reprocessTexture(true);
-        if (newReverseTexture) {
-          if (backCylinder.material.map) {
-            backCylinder.material.map.dispose();
+          
+          // Update back material with SAME texture but different UV mapping
+          if (backCylinder && backCylinder.material) {
+            backCylinder.material.opacity = reverseOpacity;
+            
+            if (backCylinder.material.map) {
+              backCylinder.material.map.dispose();
+            }
+            
+            // Clone the same base texture for reverse side
+            const reverseTexture = newBaseTexture.clone();
+            
+            // Apply back-view UV mapping
+            const sceneParams = {
+              cylinderRadius: dimensions.radius,
+              cameraDistance: calculateCameraDistance(dimensions.radius),
+              cameraFOV: cameraFOV
+            };
+            
+            const uvMapping = getCompleteUVMapping(sceneParams, {
+              frontVisible: 0.4,
+              backVisible: 0.4
+            });
+            
+            reverseTexture.repeat.set(uvMapping.back.repeat, 1);
+            reverseTexture.offset.set(uvMapping.back.offset, 0);
+            
+            backCylinder.material.map = reverseTexture;
+            backCylinder.material.needsUpdate = true;
           }
-          backCylinder.material.map = newReverseTexture;
-          backCylinder.material.needsUpdate = true;
         }
       }
       
@@ -743,21 +840,45 @@ const CylinderMapTest = () => {
       {isLoading && <p>Initializing Three.js scene...</p>}
       
       <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-        {/* Canvas */}
-        <div style={{ 
-          border: '1px solid #ddd',
-          borderRadius: '4px',
-          overflow: 'hidden',
-          flex: '0 0 auto'
-        }}>
-          <canvas 
-            ref={canvasRef}
-            style={{ 
-              display: 'block',
-              width: `${canvasSize.width}px`,
-              height: `${canvasSize.height}px`
-            }}
-          />
+        {/* Canvases Container */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Main Canvas */}
+          <div style={{ 
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <h3 style={{ margin: '10px', fontSize: '14px', color: '#333' }}>
+              Main Model (Processed Texture with UV Offsets)
+            </h3>
+            <canvas 
+              ref={canvasRef}
+              style={{ 
+                display: 'block',
+                width: `${canvasSize.width}px`,
+                height: `${canvasSize.height}px`
+              }}
+            />
+          </div>
+          
+          {/* Debug Canvas - Raw texture reference */}
+          <div style={{ 
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            overflow: 'hidden'
+          }}>
+            <h3 style={{ margin: '10px', fontSize: '14px', color: '#666' }}>
+              Debug Reference (Raw Texture - No Processing, No UV Offset)
+            </h3>
+            <canvas 
+              ref={debugCanvasRef}
+              style={{ 
+                display: 'block',
+                width: `${canvasSize.width}px`,
+                height: `${canvasSize.height}px`
+              }}
+            />
+          </div>
         </div>
         
         {/* Controls */}
