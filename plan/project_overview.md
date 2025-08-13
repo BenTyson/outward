@@ -7,19 +7,18 @@ This document provides a complete overview of the production-ready map glass con
 
 ## Project Status: PRODUCTION READY ✅
 
-**Current State**: Fully functional 3-step workflow for rocks glass, 2-step for other glass types
+**Current State**: Simplified 2-step workflow with embedded 3D preview
 **Last Updated**: August 2025
-**Integration Status**: Phase 1 + Phase Model = COMPLETE
+**Integration Status**: Phase 1 + Phase Model + Simplified Flow = COMPLETE
 **Next Phase**: Shopify Integration (Phase 3)
 
 ---
 
 ## System Architecture Overview
 
-### **Complete User Flow**
+### **Complete User Flow** (SIMPLIFIED)
 1. **Step 1 - Location Selection**: Interactive Mapbox map + glass type selection
-2. **Step 2 - Design Phase**: Text/icon overlay system + export generation
-3. **Step 3 - 3D Preview**: Realistic glass rendering (rocks glass only)
+2. **Step 2 - Design + 3D Preview**: Text/icon overlay system + automatic 3D preview (rocks glass)
 
 ### **Technical Stack**
 - **Frontend**: React 18+ with Vite
@@ -47,16 +46,18 @@ This document provides a complete overview of the production-ready map glass con
 src/components/
 ├── Steps/
 │   ├── Step1.jsx           ✅ Location selection interface
-│   ├── Step2.jsx           ✅ Design interface
-│   └── Step3.jsx           ✅ 3D preview wrapper
+│   ├── Step2.jsx           ✅ Design interface + embedded 3D preview
+│   └── Step3.jsx           ⚠️ Legacy - no longer used in flow
 ├── MapBuilder/
 │   ├── MapSelector.jsx     ✅ Interactive GL map
 │   ├── MapRenderer.jsx     ✅ Static preview + overlays
 │   └── MapExportControls.jsx ✅ Export functionality + 3D integration
 ├── UI/
-│   ├── Wizard.jsx          ✅ Dynamic 2/3 step progress system
+│   ├── Wizard.jsx          ✅ Fixed 2-step progress system
 │   ├── GlassTypeSelector.jsx ✅ Glass selection
 │   └── TextIconControls.jsx ✅ Design control panel
+├── CylinderTest/
+│   └── CylinderMapTest.jsx ✅ 3D rendering system (embedded mode)
 └── contexts/
     └── MapConfigContext.jsx ✅ Complete state management
 ```
@@ -126,52 +127,54 @@ const defaults = {
 
 ---
 
-## Phase Integration: Seamless Connection ✅ COMPLETE
+## Phase Integration: Simplified Embedded Flow ✅ COMPLETE
 
-### **Integration Architecture**
-**Data Flow**: Phase 1 → MapConfigContext → Phase Model
-**Trigger**: MapExportControls.generatePreview() detects rocks glass
-**Result**: Automatic Step 3 enablement with texture passing
+### **Integration Architecture**  
+**Data Flow**: Phase 1 → MapConfigContext → Phase Model (embedded in Step 2)
+**Trigger**: MapRenderer.generateFinalImage() detects rocks glass  
+**Result**: Automatic 3D preview rendering below design controls
 
 ### **State Management Extensions**
 ```javascript
 // MapConfigContext additions
 const initialState = {
   // ... existing Phase 1 state
-  modelPreviewAvailable: false,  // Controls Step 3 visibility
+  modelPreviewAvailable: false,  // Controls 3D preview visibility in Step 2
   modelImageUrl: null,          // Stores Phase 1 generated image
-  totalSteps: 2                 // Dynamic: 2 vs 3 steps
+  totalSteps: 2                 // Always 2 steps
 };
 
-// New Actions
-SET_MODEL_PREVIEW_AVAILABLE, SET_MODEL_IMAGE, UPDATE_TOTAL_STEPS
+// New Actions  
+SET_MODEL_PREVIEW_AVAILABLE, SET_MODEL_IMAGE
 ```
 
 ### **Conditional Logic**
 ```javascript
-// In MapExportControls.generatePreview()
+// In MapRenderer.generateFinalImage() - triggers on "Generate Final Design"
 if (glassType === 'rocks') {
-  setModelImage(url);                 // Pass Phase 1 image to Phase Model
-  setModelPreviewAvailable(true);     // Enable Step 3
-  updateTotalSteps(3);               // Update wizard
+  setModelImage(dataUrl);             // Pass generated image to Phase Model
+  setModelPreviewAvailable(true);     // Show 3D preview in Step 2
 } else {
-  setModelPreviewAvailable(false);    // Keep 2-step workflow
-  updateTotalSteps(2);
+  setModelPreviewAvailable(false);    // Hide 3D preview for other glass types
 }
 ```
 
 ### **CylinderMapTest Integration**
 ```javascript
-// Dual rendering modes
-const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
-  // textureSource: Accepts Phase 1 data URLs or hardcoded file paths
-  // hideControls: Clean Step 3 view vs full development interface
-  
-  if (hideControls) {
-    return <CleanPreview />; // Step 3: Centered 3D model only
-  }
-  return <FullInterface />; // ?test=cylinder: All controls + debug tools
-};
+// Embedded in Step2.jsx
+{glassType === 'rocks' && modelPreviewAvailable && modelImageUrl && (
+  <div className="model-preview-section">
+    <h3 className="model-preview-title">3D Preview</h3>
+    <div className="model-preview-container">
+      <CylinderMapTest 
+        textureSource={modelImageUrl} 
+        hideControls={true} 
+      />
+    </div>
+  </div>
+)}
+
+// Development access: ?test=cylinder (full controls + debug tools)
 ```
 
 ### **Critical Bug Fix**
@@ -186,7 +189,7 @@ const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
 
 | Glass Type | Phase 1 Support | Phase Model Support | 3D Preview |
 |------------|-----------------|-------------------|------------|
-| **Rocks Glass** | ✅ Complete | ✅ Complete | ✅ **Step 3 Enabled** |
+| **Rocks Glass** | ✅ Complete | ✅ Complete | ✅ **Embedded in Step 2** |
 | **Pint Glass** | ✅ Complete | ⏳ Ready for expansion | ❌ 2-step workflow |
 | **Wine Glass** | ✅ Complete | ⏳ Ready for expansion | ❌ 2-step workflow |
 | **Shot Glass** | ✅ Complete | ⏳ Ready for expansion | ❌ 2-step workflow |
@@ -198,7 +201,7 @@ const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
 ## Production Deployment Status
 
 ### **✅ Production Ready Features**
-- **Complete Workflow**: Location → Design → 3D Preview (rocks glass)
+- **Simplified Workflow**: Location → Design + Automatic 3D Preview (rocks glass)
 - **High-Quality Exports**: 4800px laser-ready PNG files
 - **Mobile Responsive**: Full touch support and responsive layouts
 - **Error Handling**: Comprehensive fallbacks and user feedback
@@ -212,10 +215,14 @@ const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
 - **Console Logging**: Detailed technical feedback
 
 ### **📊 Performance Metrics**
-- **Step 3 Load Time**: 2-3 seconds
+- **3D Preview Load Time**: Instant (embedded in Step 2)
 - **3D Rendering**: 60fps+ on desktop, acceptable on mobile
 - **Memory Usage**: No leaks detected in extended testing
 - **Export Quality**: Production-grade 1200 DPI output
+
+### **⚠️ Known Issues**
+- **Icon Stroke Quality**: Sharp/jagged edges on icon strokes, requires refinement
+- **Text Stroke**: Currently smooth and working well
 
 ---
 
@@ -224,21 +231,21 @@ const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
 ### **Core Application Files**
 ```
 src/
-├── App.jsx                     ✅ Main routing + Step3 integration
+├── App.jsx                     ✅ Main routing (Step3 legacy reference)
 ├── contexts/
 │   └── MapConfigContext.jsx   ✅ Complete state management
 ├── components/
 │   ├── Steps/
 │   │   ├── Step1.jsx          ✅ Location selection
-│   │   ├── Step2.jsx          ✅ Design interface
-│   │   └── Step3.jsx          ✅ 3D preview wrapper
+│   │   ├── Step2.jsx          ✅ Design interface + embedded 3D preview
+│   │   └── Step3.jsx          ⚠️ Legacy (no longer in workflow)
 │   ├── UI/
-│   │   └── Wizard.jsx         ✅ Dynamic 2/3 step system
+│   │   └── Wizard.jsx         ✅ Fixed 2-step system
 │   ├── MapBuilder/
-│   │   ├── MapRenderer.jsx    ✅ Preview + overlays
-│   │   └── MapExportControls.jsx ✅ Export + integration
+│   │   ├── MapRenderer.jsx    ✅ Preview + overlays + 3D trigger
+│   │   └── MapExportControls.jsx ✅ Export functionality
 │   └── CylinderTest/
-│       └── CylinderMapTest.jsx ✅ 3D rendering system
+│       └── CylinderMapTest.jsx ✅ 3D rendering system (embedded mode)
 ├── utils/
 │   ├── mapbox.js              ✅ API utilities
 │   ├── canvas.js              ✅ Glass ratios
@@ -348,4 +355,28 @@ src/
 
 ---
 
-*This overview represents the complete state of the LumenGrave Map Glass Configurator as of August 2025. The system is production-ready with Phase 1 + Phase Model integration complete. Phase 3 (Shopify integration) is recommended as the next development priority to enable revenue generation.*
+---
+
+## Recent Changes: Simplified Flow Implementation (August 2025)
+
+### **User Experience Improvements**
+- **Eliminated Step Navigation**: 3D preview now appears automatically in Step 2
+- **Instant Feedback**: 3D model renders immediately after clicking "Generate Final Design"
+- **Single Page Experience**: All design results visible at once
+- **Streamlined Workflow**: 2 steps for all glass types, rocks glass gets embedded 3D preview
+
+### **Technical Implementation**
+- **Step2.jsx**: Added conditional 3D preview rendering with responsive CSS
+- **MapRenderer.jsx**: Modified `generateFinalImage()` to trigger 3D preview
+- **MapConfigContext.jsx**: Simplified to always use 2-step workflow
+- **Wizard.jsx**: Updated step descriptions for new flow
+
+### **Files Modified**
+- `src/components/Steps/Step2.jsx` + `Step2.css` - Embedded 3D preview
+- `src/components/MapBuilder/MapRenderer.jsx` - 3D trigger logic
+- `src/contexts/MapConfigContext.jsx` - Simplified state management
+- `src/components/UI/Wizard.jsx` - Updated descriptions
+
+---
+
+*This overview represents the complete state of the LumenGrave Map Glass Configurator as of August 2025. The system is production-ready with simplified embedded 3D preview flow complete. Phase 3 (Shopify integration) is recommended as the next development priority to enable revenue generation.*

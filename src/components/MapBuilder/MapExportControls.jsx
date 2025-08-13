@@ -44,48 +44,31 @@ const MapExportControls = ({ onGenerateFinalImage, isGenerating }) => {
     }
   };
 
-  // Helper function to render icons with rounded stroke on canvas
+  // Helper function to render icons with smooth stroke using scale technique
   const renderIconWithStroke = (ctx, iconData, x, y, scale, strokeWidth) => {
     const path = new Path2D(iconData.path);
     
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(scale, scale);
     
-    // Draw white stroke in circular pattern if strokeWidth > 0
+    // Draw white stroke background using slightly larger scale
     if (strokeWidth > 0) {
-      const steps = 16;
+      const strokeScale = scale * (1 + strokeWidth / 12); // Increase scale proportionally
+      ctx.scale(strokeScale, strokeScale);
       ctx.fillStyle = '#ffffff';
+      ctx.fill(path);
       
-      for (let i = 0; i < steps; i++) {
-        const angle = (i / steps) * 2 * Math.PI;
-        const offsetX = Math.cos(angle) * strokeWidth;
-        const offsetY = Math.sin(angle) * strokeWidth;
-        
-        ctx.save();
-        ctx.translate(offsetX, offsetY);
-        ctx.fill(path);
-        ctx.restore();
-      }
-      
-      // Additional layers for smoother stroke
-      for (let radius = strokeWidth * 0.7; radius > 0; radius -= strokeWidth * 0.3) {
-        for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * 2 * Math.PI;
-          const offsetX = Math.cos(angle) * radius;
-          const offsetY = Math.sin(angle) * radius;
-          
-          ctx.save();
-          ctx.translate(offsetX, offsetY);
-          ctx.fill(path);
-          ctx.restore();
-        }
-      }
+      // Reset transform and draw black icon at normal scale
+      ctx.restore();
+      ctx.save();
+      ctx.translate(x, y);
     }
     
-    // Draw black icon on top
+    // Draw black icon at normal scale
+    ctx.scale(scale, scale);
     ctx.fillStyle = '#000000';
     ctx.fill(path);
+    
     ctx.restore();
   };
 

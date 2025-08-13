@@ -370,37 +370,19 @@ const MapRenderer = () => {
       ctx.translate(iconCoords.x - iconScale/2, iconCoords.y - iconScale/2);
       ctx.scale(iconScale/24, iconScale/24); // SVG viewBox is 24x24
       
-      // Draw rounded white stroke behind the icon
+      // Draw smooth stroke using scale technique
       if (icon1.strokeWidth > 0) {
-        const scaledStrokeWidth = icon1.strokeWidth * (24/iconScale);
+        // Draw white stroke background at larger scale first
+        const strokeScale = (iconScale + icon1.strokeWidth * 2) / 24; // Add stroke width to scale
+        ctx.scale(strokeScale / (iconScale/24), strokeScale / (iconScale/24)); // Adjust scale
         ctx.fillStyle = '#ffffff';
-        const strokeSteps = 16;
+        ctx.fill(path);
         
-        // Primary circular stroke
-        for (let i = 0; i < strokeSteps; i++) {
-          const angle = (i / strokeSteps) * 2 * Math.PI;
-          const offsetX = Math.cos(angle) * scaledStrokeWidth;
-          const offsetY = Math.sin(angle) * scaledStrokeWidth;
-          
-          ctx.save();
-          ctx.translate(offsetX, offsetY);
-          ctx.fill(path);
-          ctx.restore();
-        }
-        
-        // Additional layers for smoother stroke
-        for (let radius = scaledStrokeWidth * 0.7; radius > 0; radius -= scaledStrokeWidth * 0.3) {
-          for (let i = 0; i < 8; i++) {
-            const angle = (i / 8) * 2 * Math.PI;
-            const offsetX = Math.cos(angle) * radius;
-            const offsetY = Math.sin(angle) * radius;
-            
-            ctx.save();
-            ctx.translate(offsetX, offsetY);
-            ctx.fill(path);
-            ctx.restore();
-          }
-        }
+        // Reset and redraw black icon at normal scale
+        ctx.restore();
+        ctx.save();
+        ctx.translate(iconCoords.x - iconScale/2, iconCoords.y - iconScale/2);
+        ctx.scale(iconScale/24, iconScale/24);
       }
       
       // Draw black icon on top
