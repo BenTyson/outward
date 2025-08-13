@@ -1,6 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { calculateCylinderDimensions, calculateCameraDistance } from './utils/cylinderMath';
+import { 
+  PROCESSING_CONSTANTS, 
+  UI_CONSTANTS, 
+  THREEJS_CONFIG, 
+  ASSET_PATHS, 
+  DEFAULT_VALUES 
+} from './constants';
+import { applyGrain, applyBlur, createCanvasContext, processPixels } from './utils/imageProcessing';
+import ControlPanel from './components/ControlPanel';
 
 const CylinderMapTest = () => {
   const canvasRef = useRef(null);
@@ -14,30 +23,37 @@ const CylinderMapTest = () => {
   
   const [isLoading, setIsLoading] = useState(true);
   const [dimensions, setDimensions] = useState(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
-  const [scaleX, setScaleX] = useState(1.000);
-  const [scaleY, setScaleY] = useState(0.930);
-  const [tiltX, setTiltX] = useState(0.555); // Forward/backward tilt in radians (31.8°)
-  const [rotateY, setRotateY] = useState(-0.785); // Left/right rotation around Y-axis in radians (-45.0°)
-  const [cameraFOV, setCameraFOV] = useState(22); // Camera field of view in degrees (75 = wide angle, 15 = telephoto)
-  const [modelX, setModelX] = useState(4.0); // Model 3D position X (rotation around origin)
-  const [modelY, setModelY] = useState(45.0); // Model 3D position Y (rotation around origin)
-  const [canvasX, setCanvasX] = useState(0.0); // Canvas position X (horizontal translation)
-  const [canvasY, setCanvasY] = useState(-3.0); // Canvas position Y (vertical translation)
-  const [cameraZ, setCameraZ] = useState(200.0); // Camera Z-axis position (up/down viewing angle)
-  const [cameraY, setCameraY] = useState(-47.0); // Camera Y-axis movement (up/down along Y-axis)
-  const [taperRatio, setTaperRatio] = useState(0.940); // Bottom radius as ratio of top radius (1.0 = no taper, >1.0 = wider base)
-  const [baseWidth, setBaseWidth] = useState(1.020); // Base width scale independent of taper
+  const [canvasSize, setCanvasSize] = useState({ width: UI_CONSTANTS.MAX_DISPLAY_WIDTH, height: UI_CONSTANTS.MAX_DISPLAY_HEIGHT });
+  
+  // Scale and rotation controls
+  const [scaleX, setScaleX] = useState(DEFAULT_VALUES.SCALE_X);
+  const [scaleY, setScaleY] = useState(DEFAULT_VALUES.SCALE_Y);
+  const [tiltX, setTiltX] = useState(DEFAULT_VALUES.TILT_X);
+  const [rotateY, setRotateY] = useState(DEFAULT_VALUES.ROTATE_Y);
+  const [taperRatio, setTaperRatio] = useState(DEFAULT_VALUES.TAPER_RATIO);
+  const [baseWidth, setBaseWidth] = useState(DEFAULT_VALUES.BASE_WIDTH);
+  
+  // Position controls
+  const [modelX, setModelX] = useState(DEFAULT_VALUES.MODEL_X);
+  const [modelY, setModelY] = useState(DEFAULT_VALUES.MODEL_Y);
+  const [canvasX, setCanvasX] = useState(DEFAULT_VALUES.CANVAS_X);
+  const [canvasY, setCanvasY] = useState(DEFAULT_VALUES.CANVAS_Y);
+  
+  // Camera controls
+  const [cameraFOV, setCameraFOV] = useState(DEFAULT_VALUES.CAMERA_FOV);
+  const [cameraY, setCameraY] = useState(DEFAULT_VALUES.CAMERA_Y);
+  const [cameraZ, setCameraZ] = useState(DEFAULT_VALUES.CAMERA_Z);
   
   // Front side engraving controls
-  const [frontOpacity, setFrontOpacity] = useState(0.44);
-  const [frontBlur, setFrontBlur] = useState(0.0);
-  const [frontGrain, setFrontGrain] = useState(0.0);
+  const [frontOpacity, setFrontOpacity] = useState(DEFAULT_VALUES.FRONT_OPACITY);
+  const [frontBlur, setFrontBlur] = useState(DEFAULT_VALUES.FRONT_BLUR);
+  const [frontGrain, setFrontGrain] = useState(DEFAULT_VALUES.FRONT_GRAIN);
   
   // Reverse side engraving controls
-  const [reverseOpacity, setReverseOpacity] = useState(0.19);
-  const [reverseBlur, setReverseBlur] = useState(1.0);
-  const [reverseGrain, setReverseGrain] = useState(0.5);
+  const [reverseOpacity, setReverseOpacity] = useState(DEFAULT_VALUES.REVERSE_OPACITY);
+  const [reverseBlur, setReverseBlur] = useState(DEFAULT_VALUES.REVERSE_BLUR);
+  const [reverseGrain, setReverseGrain] = useState(DEFAULT_VALUES.REVERSE_GRAIN);
+  
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -58,7 +74,7 @@ const CylinderMapTest = () => {
     console.log('🖼️ Loading rocks glass background to determine canvas size...');
     
     backgroundLoader.load(
-      '/glass-images/rocks-white.jpg',
+      ASSET_PATHS.BACKGROUND_IMAGE,
       (backgroundTexture) => {
         const bgWidth = backgroundTexture.image.width;
         const bgHeight = backgroundTexture.image.height;
@@ -67,8 +83,8 @@ const CylinderMapTest = () => {
         console.log(`✅ Background loaded: ${bgWidth}x${bgHeight} (aspect: ${bgAspect.toFixed(3)})`);
         
         // Calculate optimal canvas size based on background aspect ratio
-        const maxDisplayWidth = 800;  // Maximum width for UI
-        const maxDisplayHeight = 600; // Maximum height for UI
+        const maxDisplayWidth = UI_CONSTANTS.MAX_DISPLAY_WIDTH;
+        const maxDisplayHeight = UI_CONSTANTS.MAX_DISPLAY_HEIGHT;
         
         let canvasWidth, canvasHeight;
         
@@ -151,9 +167,9 @@ const CylinderMapTest = () => {
       dims.radius,  // Top radius
       dims.radius,  // Bottom radius (will be updated)
       dims.height,  // Height
-      32,          // Radial segments (smooth)
-      1,           // Height segments
-      true         // Open-ended (no top/bottom faces)
+      THREEJS_CONFIG.CYLINDER_RADIAL_SEGMENTS,
+      THREEJS_CONFIG.CYLINDER_HEIGHT_SEGMENTS,
+      THREEJS_CONFIG.OPEN_ENDED
     );
 
     console.log('🔶 Cylinder geometry created:', {
@@ -168,7 +184,7 @@ const CylinderMapTest = () => {
     console.log('🖼️ Loading texture...');
     
     textureLoader.load(
-      '/glass-images/rocks-test-design-optimal.png',
+      ASSET_PATHS.TEXTURE_IMAGE,
       (texture) => {
         console.log('✅ Texture loaded successfully:', texture.image.width, 'x', texture.image.height);
         
@@ -221,12 +237,12 @@ const CylinderMapTest = () => {
         
         let processedPixels = 0;
         let darkenedPixels = 0;
-        const whiteThreshold = 253; // Very close to pure white only
-        const grayThreshold = 245;  // Above average brightness to preserve more lines
+        const whiteThreshold = PROCESSING_CONSTANTS.WHITE_THRESHOLD;
+        const grayThreshold = PROCESSING_CONSTANTS.GRAY_THRESHOLD;
         
         console.log('🎨 Processing with thresholds - White:', whiteThreshold, 'Gray:', grayThreshold);
         console.log('🔍 Image dimensions:', canvas.width, 'x', canvas.height, 'Total pixels:', data.length / 4);
-        const darkenFactor = 0.4;   // Factor to darken existing lines (0.4 = 60% darker)
+        const darkenFactor = PROCESSING_CONSTANTS.FRONT_DARKEN_FACTOR;
         
         let sampleCount = 0;
         let brightnessSum = 0;
@@ -325,7 +341,7 @@ const CylinderMapTest = () => {
         // Mask out the bottom area that corresponds to the bottom face of the cylinder
         // The bottom portion of the texture should be completely transparent on reverse side
         const imageHeight = reverseCanvas.height;
-        const bottomMaskHeight = imageHeight * 0.05; // Bottom 5% represents the bottom face area
+        const bottomMaskHeight = imageHeight * PROCESSING_CONSTANTS.BOTTOM_MASK_HEIGHT_RATIO;
         
         // Create solid mask for bottom area - NO GRADIENTS, complete removal
         reverseCtx.globalCompositeOperation = 'destination-out'; // Remove pixels
@@ -534,14 +550,19 @@ const CylinderMapTest = () => {
     
     // Apply blur
     const blur = isReverse ? reverseBlur : frontBlur;
+    console.log(`🔍 Blur debug - isReverse: ${isReverse}, blur value: ${blur}, reverseBlur: ${reverseBlur}, frontBlur: ${frontBlur}`);
     if (blur > 0) {
-      ctx.filter = `blur(${blur}px)`;
+      console.log(`🔄 Applying ${blur}px blur to ${isReverse ? 'reverse' : 'front'} texture`);
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       tempCanvas.width = canvas.width;
       tempCanvas.height = canvas.height;
+      
+      // Draw blurred version to temp canvas
+      tempCtx.filter = `blur(${blur}px)`;
       tempCtx.drawImage(canvas, 0, 0);
-      ctx.filter = 'none';
+      
+      // Clear original and draw blurred version back
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(tempCanvas, 0, 0);
     }
@@ -562,9 +583,9 @@ const CylinderMapTest = () => {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     
-    const whiteThreshold = isReverse ? 248 : 248;  // Same for both front and reverse
-    const grayThreshold = isReverse ? 235 : 235;   // Same for both front and reverse
-    const darkenFactor = isReverse ? 0.6 : 0.4;
+    const whiteThreshold = PROCESSING_CONSTANTS.WHITE_THRESHOLD;
+    const grayThreshold = PROCESSING_CONSTANTS.GRAY_THRESHOLD;
+    const darkenFactor = isReverse ? PROCESSING_CONSTANTS.REVERSE_DARKEN_FACTOR : PROCESSING_CONSTANTS.FRONT_DARKEN_FACTOR;
     const grain = isReverse ? reverseGrain : frontGrain;
     
     // Process pixels
@@ -661,9 +682,9 @@ const CylinderMapTest = () => {
           topRadius,     // Top radius (narrower for rocks glass)
           bottomRadius,  // Bottom radius (wider for rocks glass)
           dimensions.height,
-          32,
-          1,
-          true          // Open-ended (no top/bottom faces)
+          THREEJS_CONFIG.CYLINDER_RADIAL_SEGMENTS,
+          THREEJS_CONFIG.CYLINDER_HEIGHT_SEGMENTS,
+          THREEJS_CONFIG.OPEN_ENDED
         );
         cylinderRef.current.geometry = newGeometry;
         geometryRef.current = newGeometry;
@@ -703,7 +724,7 @@ const CylinderMapTest = () => {
       console.log(`📋 Copy for defaults: const defaultScaleX = ${scaleX.toFixed(3)}; const defaultScaleY = ${scaleY.toFixed(3)}; const defaultTiltX = ${tiltX.toFixed(3)}; const defaultRotateY = ${rotateY.toFixed(3)}; const defaultTaperRatio = ${taperRatio.toFixed(3)}; const defaultBaseWidth = ${baseWidth.toFixed(3)}; const defaultModelX = ${modelX.toFixed(3)}; const defaultModelY = ${modelY.toFixed(3)}; const defaultCanvasX = ${canvasX.toFixed(3)}; const defaultCanvasY = ${canvasY.toFixed(3)}; const defaultCameraY = ${cameraY.toFixed(3)}; const defaultCameraZ = ${cameraZ.toFixed(3)}; const defaultCameraFOV = ${cameraFOV};`);
       
       // Create and position camera (Z-axis movement changes viewing angle)
-      const camera = new THREE.PerspectiveCamera(cameraFOV, canvasSize.width / canvasSize.height, 0.1, 2000);
+      const camera = new THREE.PerspectiveCamera(cameraFOV, canvasSize.width / canvasSize.height, THREEJS_CONFIG.CAMERA_NEAR, THREEJS_CONFIG.CAMERA_FAR);
       camera.position.set(finalCameraX, finalCameraY, finalCameraZ);
       camera.lookAt(modelX + canvasX, modelY + canvasY, 0); // Look at model center adjusted for canvas position
       
@@ -711,6 +732,7 @@ const CylinderMapTest = () => {
       updateMaterials();
       
       rendererRef.current.render(sceneRef.current, camera);
+      
     }
   }, [scaleX, scaleY, tiltX, rotateY, taperRatio, baseWidth, modelX, modelY, canvasX, canvasY, cameraY, cameraZ, cameraFOV, frontOpacity, frontBlur, frontGrain, reverseOpacity, reverseBlur, reverseGrain, canvasSize.width, canvasSize.height, dimensions]);
 
