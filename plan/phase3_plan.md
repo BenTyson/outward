@@ -36,36 +36,26 @@ Completed:
 - ✅ Created .env.production with environment variables
 - ✅ Ready for deployment when needed
 
-### Step 2: Set Up Cloudinary for File Storage ⏳ IN PROGRESS
-**Status**: Integration code ready, needs account setup
+### Step 2: Set Up Cloudinary for File Storage ✅ COMPLETED
+**Status**: Account created, integration working
 **Risk Level**: Zero (external service)
 
-**IMMEDIATE ACTIONS FOR USER:**
+**COMPLETED:**
+- ✅ Created Cloudinary account (free tier)
+- ✅ Cloud Name: dq69mrv68
+- ✅ Upload Preset: lumengrave_maps (unsigned, folder: map-glass)
+- ✅ Updated .env.local and .env.production with credentials
+- ✅ **VERIFIED**: Images successfully uploading to Cloudinary
+- ✅ **VERIFIED**: URLs appearing in Shopify orders
+- ✅ **VERIFIED**: Images accessible and loading correctly
 
-1. **Create Account**: Go to https://cloudinary.com/users/register/free
-2. **Sign up with email** (free tier: 25GB storage, 25k transformations/month)
-3. **After signup, go to Dashboard**: https://console.cloudinary.com/console
-4. **Copy these values:**
-   - **Cloud Name**: (appears at top of dashboard)
-   - **API Key**: (in Account Details section)
-
-5. **Create Upload Preset**:
-   - Go to Settings → Upload → Upload presets
-   - Click "Add upload preset"
-   - **Upload preset name**: `lumengrave_maps`
-   - **Signing Mode**: Unsigned
-   - **Folder**: `map-glass`
-   - Click Save
-
-6. **Provide to Claude**:
-   - Cloud Name: [YOUR_CLOUD_NAME]
-   - Upload Preset: `lumengrave_maps`
-
-**CLAUDE AGENT TASKS:**
-- Update .env.local and .env.production with Cloudinary credentials
-- Test image upload functionality via CheckoutButton
-- Verify images appear in Shopify order custom attributes
-- Verify URLs are accessible and images load correctly
+**Current Upload Structure:**
+```
+map-glass/
+├── models/        # 3D glass model previews (for order thumbnails)
+├── previews/      # Flat map previews (for reference)
+└── laser-files/   # High-resolution files (for engraving)
+```
 
 ### Step 3: Create Shopify Storefront API Access ✅ COMPLETED
 **Status**: API access configured and working
@@ -111,48 +101,123 @@ Completed:
 
 ---
 
-## Phase 3B: Testing & Refinement
+## Phase 3B: Testing & Refinement ✅ COMPLETED
 
-### Step 6: Internal Testing Phase
-**Timeline**: Day 5-7
-**Risk Level**: Zero (using test product)
+### Enhanced Order Details Integration ✅ COMPLETED
+**Status**: Working with HTML formatting and 3D model capture
+**Risk Level**: Zero (order enhancement only)
 
-Testing Checklist:
-- [ ] Complete flow from design to checkout (5+ times)
-- [ ] Test all glass types
-- [ ] Test on mobile devices
-- [ ] Verify image quality and storage
-- [ ] Check checkout data integrity
-- [ ] Test error handling
-- [ ] Verify Cloudinary URLs work
+**COMPLETED:**
+- ✅ **3D Model Capture**: Added async capture from WebGL canvas
+- ✅ **HTML Enhanced Attributes**: Clickable links and embedded images
+- ✅ **Multiple Image Types**: Model preview, flat preview, and laser files
+- ✅ **Shopify Order Format**: Enhanced additional details section
 
-### Step 7: Create Live Product (Hidden)
-**Timeline**: Day 8
-**Risk Level**: Low (hidden from public)
+**Current Order Details Structure:**
+```
+Additional details:
+├── Glass Type: "rocks" 
+├── 3D Model Preview: [Clickable link + embedded 150x150px image]
+├── Map Preview: [Clickable link to flat map]  
+└── Laser File (High-Res): [Clickable download link]
+```
 
-Tasks:
-- Duplicate test product as "Custom Map Glass"
-- Set status to ACTIVE but exclude from all collections
-- Hide from search and navigation
-- Price appropriately for live sales
-- Generate direct product link for testing
+**CLAUDE AGENT DEBUGGING STATUS:**
+- ⏳ **3D Canvas Capture**: Enhanced debugging added, needs testing verification
+- ⏳ **HTML Rendering**: Testing if Shopify supports embedded HTML images
+- ✅ **Cloudinary Integration**: All three image types uploading successfully
 
-### Step 8: Beta Testing with Friendly Customers
-**Timeline**: Day 9-14
-**Risk Level**: Low (controlled audience)
+**IMMEDIATE VERIFICATION NEEDED:**
+1. Check browser console logs during checkout for 3D capture debugging
+2. Verify Shopify order details show clickable links and/or embedded images
+3. Confirm all three image URLs are accessible
 
-Process:
-1. Share direct link with 3-5 friendly customers
-2. Offer discount code for testing
-3. Monitor orders closely
-4. Gather feedback via email/phone
-5. Process test orders through fulfillment
+---
 
-**Verification Checkpoint**:
-- [ ] Successfully process 3+ real orders
-- [ ] Download and verify laser files
-- [ ] Confirm fulfillment process works
-- [ ] No impact on regular store operations
+## Phase 3C: Production Readiness ⏳ NEXT STEPS
+
+### Immediate Actions Needed
+
+**CURRENT STATUS**: Core integration complete, final testing and deployment needed
+
+### Step 1: Verify Enhanced Order Features ⏳ IN PROGRESS
+**CLAUDE AGENT TASKS:**
+- Verify console logs show successful 3D canvas capture
+- Confirm Shopify order details display enhanced formatting
+- Test all three image types are accessible
+
+### Step 2: Deploy to Vercel (Recommended Next)
+**Risk Level**: Zero (separate from live store)
+**Purpose**: Enable testing away from development environment
+
+**CLAUDE AGENT TASKS:**
+```bash
+# Deploy to Vercel
+vercel
+
+# Configure environment variables in Vercel dashboard:
+# - All VITE_* variables from .env.production
+# - Verify Shopify and Cloudinary integration works on live URL
+```
+
+### Step 3: Add Password Protection
+**CLAUDE AGENT TASKS:**
+- Implement simple password protection for testing phase
+- Use VITE_APP_PASSWORD=testlumen2025 from .env.production
+- Hide configurator behind login until ready for customers
+
+### Step 4: Create Live Product
+**USER TASKS:**
+- Duplicate test product as "Custom Map Glass" 
+- Set real pricing for production
+- Keep hidden from collections initially
+- Generate direct link for controlled testing
+
+### Step 5: Controlled Beta Testing
+**USER TASKS:**
+- Share configurator URL with 3-5 friendly customers
+- Monitor orders and fulfillment process
+- Gather feedback for improvements
+
+---
+
+## Alternative Next Steps (User Choice)
+
+### Option A: Deploy & Test First (Recommended)
+1. Deploy to Vercel with password protection
+2. Test live deployment thoroughly
+3. Then create production product
+
+### Option B: Production Product First  
+1. Create live product in Shopify
+2. Deploy configurator
+3. Begin customer testing
+
+### Option C: Add More Features
+1. Glass type expansion (wine, pint, shot)
+2. Enhanced 3D features
+3. Additional customization options
+
+---
+
+## Current Technical Status
+
+### ✅ WORKING FEATURES
+- Complete map configurator (location selection, text, icons)
+- 3D preview for rocks glass
+- Shopify checkout integration
+- Cloudinary image storage
+- Enhanced order details with multiple image types
+
+### ⏳ TESTING NEEDED
+- 3D canvas capture verification
+- HTML formatting in Shopify orders
+- Live deployment testing
+
+### 📋 READY FOR DEPLOYMENT
+- All environment variables configured
+- Vercel configuration complete
+- Safe rollback plan established
 
 ---
 

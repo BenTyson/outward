@@ -82,12 +82,20 @@ class ShopifyService {
       { key: 'Glass Type', value: configuration.glassType || 'rocks' }
     ];
 
-    // Add image URLs when available
+    // Add 3D model preview with embedded image and clickable link
+    if (configuration.modelPreviewUrl) {
+      const modelHtml = `<a href="${configuration.modelPreviewUrl}" target="_blank">View 3D Model</a><br><img src="${configuration.modelPreviewUrl}" width="150" height="150" style="border-radius:8px; margin-top:5px;">`;
+      attributes.push({ key: '3D Model Preview', value: modelHtml });
+    }
+
+    // Add image URLs as clickable links
     if (configuration.previewUrl) {
-      attributes.push({ key: 'Preview Image', value: configuration.previewUrl });
+      const previewHtml = `<a href="${configuration.previewUrl}" target="_blank">Open Preview Image</a>`;
+      attributes.push({ key: 'Map Preview', value: previewHtml });
     }
     if (configuration.laserFileUrl) {
-      attributes.push({ key: 'Laser File URL', value: configuration.laserFileUrl });
+      const laserHtml = `<a href="${configuration.laserFileUrl}" target="_blank">Download Laser File</a>`;
+      attributes.push({ key: 'Laser File (High-Res)', value: laserHtml });
     }
 
     return attributes;

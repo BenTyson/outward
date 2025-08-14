@@ -26,6 +26,17 @@ export function CheckoutButton({ configuration, images, disabled }) {
       if (cloudinaryService.isConfigured() && images) {
         console.log('Uploading design files to Cloudinary...');
         
+        // Capture 3D model preview if function provided
+        let modelPreviewImage = null;
+        if (images.modelPreview && typeof images.modelPreview === 'function') {
+          try {
+            modelPreviewImage = await images.modelPreview();
+            console.log('3D model preview captured');
+          } catch (error) {
+            console.error('Failed to capture 3D model preview:', error);
+          }
+        }
+        
         // Generate high-resolution laser file if only preview exists
         let highResImage = images.highRes;
         if (!highResImage && images.preview) {
@@ -38,7 +49,8 @@ export function CheckoutButton({ configuration, images, disabled }) {
           configuration,
           {
             preview: images.preview,
-            highRes: highResImage
+            highRes: highResImage,
+            modelPreview: modelPreviewImage
           }
         );
         

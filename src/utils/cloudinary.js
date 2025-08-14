@@ -84,6 +84,22 @@ class CloudinaryService {
     
     const uploads = {};
     
+    // Upload 3D model preview if available (for Shopify thumbnail)
+    if (images.modelPreview) {
+      try {
+        uploads.modelPreviewUrl = await this.uploadImage(images.modelPreview, {
+          type: 'model',
+          orderId: orderId,
+          glassType: configuration.glassType,
+          folder: 'map-glass/models'
+        });
+        console.log('3D Model preview uploaded:', uploads.modelPreviewUrl);
+      } catch (error) {
+        console.error('3D Model preview upload failed:', error);
+        uploads.modelPreviewUrl = images.modelPreview; // Fallback to data URL
+      }
+    }
+    
     // Upload preview image if available
     if (images.preview) {
       try {

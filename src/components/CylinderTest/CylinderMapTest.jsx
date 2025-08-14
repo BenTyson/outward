@@ -29,7 +29,7 @@ import ControlPanel from './components/ControlPanel';
  *                                    - Supports Phase 1 generated images (data URLs)
  * @param {boolean} hideControls - If true, hides control panel and debug elements (for Step 3)
  */
-const CylinderMapTest = ({ textureSource = null, hideControls = false }) => {
+const CylinderMapTest = ({ textureSource = null, hideControls = false, onCapture = null }) => {
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
