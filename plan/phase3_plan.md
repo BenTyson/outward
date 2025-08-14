@@ -1,506 +1,647 @@
-# Phase 3: Shopify Integration
+# Phase 3: Shopify Integration - Safe Incremental Approach
 
 ## Overview
-Seamlessly integrate the completed map configurator and 3D mockup system into the existing Shopify store (lumengrave.com). Enable customers to purchase configured glasses through the standard Shopify checkout while maintaining the custom configurator experience.
+Integrate the completed map configurator with the existing Shopify Basic store (lumengrave.com) using a careful, step-by-step approach that minimizes risk to the live store. Deploy configurator as a standalone app on Vercel, with minimal changes to the live store until fully tested.
 
-## Prerequisites
-- Phase 1 Map Builder completed and tested
-- Phase 2 3D Mockup Generator completed and tested
-- Access to Shopify store theme files
-- Shopify product variants created for each glass type
+## Current Status & Context
+- **Shopify Plan**: Basic
+- **Theme**: Custom theme (purchased template, customized)
+- **Store URL**: www.lumengrave.com
+- **Configurator Status**: Phase 1 & 2 complete (2-step workflow with 3D preview)
+- **Expected Volume**: <100 orders initially
+- **Deployment**: Vercel (free tier)
+- **File Storage**: Cloudinary (free tier, 25GB/month)
 
 ---
 
-## Integration Strategy
+## SAFE INTEGRATION STRATEGY
 
-### Approach: Custom Product Page with iframe Embed
-Replace standard product pages for map glasses with custom configurator while maintaining native Shopify checkout flow.
+### Core Principles
+1. **NO direct theme modifications** until fully tested
+2. **Separate subdomain deployment** via Vercel
+3. **Test with draft/hidden products** first
+4. **Incremental rollout** with verification checkpoints
+5. **Easy rollback** at any stage
 
-#### Architecture Overview
+---
+
+## Phase 3A: Standalone Deployment & Basic Integration
+
+### Step 1: Deploy Configurator to Vercel
+**Timeline**: Day 1
+**Risk Level**: Zero (completely separate from store)
+
+Tasks:
+- Create Vercel account (if needed)
+- Deploy React app to vercel subdomain (e.g., lumengrave-configurator.vercel.app)
+- Add password protection during testing
+- Set up environment variables in Vercel
+
+Files to create:
 ```
-Customer Journey:
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Browse Store    │    │ Custom Product  │    │ Shopify Cart &  │
-│ (Standard)      │───►│ Page with       │───►│ Checkout        │
-│                 │    │ Configurator    │    │ (Standard)      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+vercel.json                 # Vercel configuration
+.env.production            # Production environment variables
 ```
 
-### Shopify Product Setup
+### Step 2: Set Up Cloudinary for File Storage
+**Timeline**: Day 1
+**Risk Level**: Zero (external service)
 
-#### Product Structure Required
+Tasks:
+- Create free Cloudinary account
+- Set up upload preset for unsigned uploads
+- Configure image transformations
+- Test upload/download functionality
+
+Implementation:
+- Preview images: Auto-optimized, watermarked
+- High-res files: Secure URLs with expiration (24 hours)
+- Storage structure: `/orders/[order-id]/[timestamp]-[type].png`
+
+### Step 3: Create Shopify Storefront API Access
+**Timeline**: Day 2
+**Risk Level**: Zero (read-only access)
+
+Tasks:
+1. In Shopify Admin → Settings → Apps and sales channels → Develop apps
+2. Create private app: "Map Configurator"
+3. Configure Storefront API scopes:
+   - `unauthenticated_read_product_listings`
+   - `unauthenticated_write_checkouts`
+   - `unauthenticated_read_checkouts`
+4. Save Storefront API access token
+
+### Step 4: Create Test Product in Shopify
+**Timeline**: Day 2
+**Risk Level**: Zero (draft product)
+
+Tasks:
+- Create DRAFT product: "Custom Map Glass - TEST"
+- Add variants:
+  - Pint Glass - $65
+  - Wine Glass - $55
+  - Rocks Glass - $55
+  - Shot Glass - $45
+- Enable line item properties
+- Keep as DRAFT (not visible to customers)
+
+Product Configuration:
 ```
-Product: "Custom Map Glass"
-├── Variant 1: Pint Glass - $[PRICE_TBD]
-├── Variant 2: Wine Glass - $[PRICE_TBD] 
-└── Variant 3: Rocks Glass - $[PRICE_TBD]
-
-Product Handle: "custom-map-glass"
+Title: Custom Map Glass - TEST
+Handle: custom-map-glass-test
+Status: DRAFT
+Variants: 4 (by glass type)
+Inventory: Track quantity OFF
+Shipping: Requires shipping
 ```
 
-#### Custom Properties Schema
+### Step 5: Implement Basic Cart Integration
+**Timeline**: Day 3-4
+**Risk Level**: Low (external checkout)
+
+Implementation using Shopify Buy SDK:
 ```javascript
-const orderProperties = {
-  'Map Location': string,           // "Denver, CO, USA"
-  'Map Coordinates': string,        // "39.7392,-104.9903"
-  'Map Zoom Level': string,         // "12"
-  'Glass Type': string,             // "pint" | "wine" | "rocks"
-  'Custom Text': string,            // User's custom text
-  'Text Position': string,          // "x,y coordinates"
-  'Selected Icons': string,         // JSON array of icon data
-  'Design Preview URL': string,     // Low-res preview image
-  'Laser File URL': string,         // High-res PNG for engraving
-  'Configuration ID': string        // Unique identifier
+// Configuration
+const shopifyConfig = {
+  domain: 'lumengrave.myshopify.com',
+  storefrontAccessToken: process.env.VITE_SHOPIFY_STOREFRONT_TOKEN
 };
+
+// Add to cart opens Shopify checkout in new tab
+// No modifications to existing store cart
 ```
 
-### Technical Implementation
+Files to modify:
+- `src/components/Steps/Step2.jsx` - Add purchase button
+- `src/utils/shopify.js` - New file for Shopify integration
+- `src/utils/cloudinary.js` - New file for image uploads
 
-#### 1. Theme Integration Component
+**Verification Checkpoint**: 
+- [ ] Can upload design to Cloudinary
+- [ ] Can create checkout with custom properties
+- [ ] All design data appears in checkout
+
+---
+
+## Phase 3B: Testing & Refinement
+
+### Step 6: Internal Testing Phase
+**Timeline**: Day 5-7
+**Risk Level**: Zero (using test product)
+
+Testing Checklist:
+- [ ] Complete flow from design to checkout (5+ times)
+- [ ] Test all glass types
+- [ ] Test on mobile devices
+- [ ] Verify image quality and storage
+- [ ] Check checkout data integrity
+- [ ] Test error handling
+- [ ] Verify Cloudinary URLs work
+
+### Step 7: Create Live Product (Hidden)
+**Timeline**: Day 8
+**Risk Level**: Low (hidden from public)
+
+Tasks:
+- Duplicate test product as "Custom Map Glass"
+- Set status to ACTIVE but exclude from all collections
+- Hide from search and navigation
+- Price appropriately for live sales
+- Generate direct product link for testing
+
+### Step 8: Beta Testing with Friendly Customers
+**Timeline**: Day 9-14
+**Risk Level**: Low (controlled audience)
+
+Process:
+1. Share direct link with 3-5 friendly customers
+2. Offer discount code for testing
+3. Monitor orders closely
+4. Gather feedback via email/phone
+5. Process test orders through fulfillment
+
+**Verification Checkpoint**:
+- [ ] Successfully process 3+ real orders
+- [ ] Download and verify laser files
+- [ ] Confirm fulfillment process works
+- [ ] No impact on regular store operations
+
+---
+
+## Phase 3C: Soft Launch
+
+### Step 9: Add Simple Link to Store
+**Timeline**: Day 15
+**Risk Level**: Low (minimal theme change)
+
+Implementation:
+- Add single link/button to existing product pages
+- "Design Your Custom Map Glass →"
+- Opens configurator in new tab
+- One-line theme modification only
+
+Location options:
+1. Product page banner
+2. Navigation menu item
+3. Homepage section
+4. Collection page callout
+
+### Step 10: Monitor and Optimize
+**Timeline**: Day 16-30
+**Risk Level**: Low
+
+Metrics to track:
+- Completion rate
+- Error rate
+- Load times
+- Customer feedback
+- Order accuracy
+
+---
+
+## Phase 3D: Full Integration (Future, Optional)
+
+### Only After Proven Success (30+ successful orders)
+
+Potential enhancements:
+- Custom domain (configure.lumengrave.com)
+- Embedded iframe in product page
+- Cart drawer integration
+- Automated order processing
+- Multiple product types
+
+---
+
+## Technical Implementation Details
+
+### File Structure Additions
 ```
-Purpose: Detect and replace map glass product pages
-Features:
-- Product handle detection
-- Conditional rendering (configurator vs standard)
-- Theme compatibility layer
-- CSS integration
+src/
+├── utils/
+│   ├── shopify.js          # Shopify Buy SDK integration
+│   ├── cloudinary.js        # Image upload/storage
+│   └── orderManagement.js   # Order data formatting
+├── components/
+│   └── Checkout/
+│       ├── CheckoutButton.jsx
+│       └── CheckoutButton.css
+├── config/
+│   └── shopify.config.js    # Shopify configuration
 ```
 
-#### 2. Shopify API Integration
-```
-Purpose: Cart and checkout integration
-Features:
-- Add to cart functionality
-- Variant selection
-- Custom properties attachment
-- Price calculation
-```
+### Environment Variables (.env.production)
+```bash
+# Mapbox (existing)
+VITE_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoibHVtZW5ncmF2ZSIsImEiOiJjbGx6ZG83a2sxaHhjM2xwNGVwYWowY3JzIn0.-3meyG5AjY3rfC86-C-hdQ
+VITE_MAPBOX_STYLE_ID=lumengrave/clm6vi67u02jm01qiayvjbsmt
 
-#### 3. Order Processing Webhook
-```
-Purpose: Handle post-purchase order processing
-Features:
-- Extract configuration data
-- Generate final laser files
-- Send files to fulfillment system
-- Customer notification
-```
+# Shopify (new)
+VITE_SHOPIFY_DOMAIN=lumengrave.myshopify.com
+VITE_SHOPIFY_STOREFRONT_TOKEN=[TO BE CREATED]
 
-#### 4. File Storage Management
-```
-Purpose: Store and serve design files
-Features:
-- Design file hosting
-- Temporary vs permanent storage
-- File cleanup routines
-- Access control
+# Cloudinary (new)
+VITE_CLOUDINARY_CLOUD_NAME=[TO BE CREATED]
+VITE_CLOUDINARY_UPLOAD_PRESET=[TO BE CREATED]
+
+# App Configuration
+VITE_APP_ENV=production
+VITE_APP_PASSWORD=[TEMPORARY PASSWORD FOR TESTING]
 ```
 
-### Implementation Details
-
-#### Theme File Modifications
-
-##### Product Template Override
-```liquid
-<!-- templates/product-custom-map.liquid -->
-{% comment %} Custom template for map glass products {% endcomment %}
-
-{% if product.handle == 'custom-map-glass' %}
-  <div class="custom-product-page">
-    <div class="product-header">
-      <h1>{{ product.title }}</h1>
-      <div class="product-price">
-        <span class="price-range">
-          From ${{ product.price_min | money_without_currency }}
-        </span>
-      </div>
-    </div>
-    
-    <div class="configurator-embed">
-      <iframe 
-        id="map-configurator"
-        src="{{ 'configurator-url' | append: '?shop=' | append: shop.domain | append: '&product=' | append: product.id }}"
-        width="100%" 
-        height="900px"
-        frameborder="0"
-        allow="geolocation">
-      </iframe>
-    </div>
-    
-    <div class="product-details">
-      {{ product.description }}
-    </div>
-  </div>
-{% else %}
-  {% comment %} Standard product template {% endcomment %}
-  {% include 'product-standard' %}
-{% endif %}
-```
-
-##### Cart Integration JavaScript
+### Shopify Buy SDK Integration
 ```javascript
-// assets/configurator-integration.js
-class ShopifyIntegration {
+// src/utils/shopify.js
+import Client from 'shopify-buy';
+
+class ShopifyService {
   constructor() {
-    this.setupMessageHandlers();
-  }
-  
-  setupMessageHandlers() {
-    window.addEventListener('message', (event) => {
-      if (event.data.action === 'addToCart') {
-        this.addConfiguredProductToCart(event.data);
-      }
+    this.client = Client.buildClient({
+      domain: process.env.VITE_SHOPIFY_DOMAIN,
+      storefrontAccessToken: process.env.VITE_SHOPIFY_STOREFRONT_TOKEN
     });
   }
-  
-  async addConfiguredProductToCart(config) {
-    const cartData = {
-      id: config.variantId,
+
+  async createCheckout(configuration) {
+    // Upload images to Cloudinary first
+    const imageUrls = await this.uploadImages(configuration);
+    
+    // Create checkout with custom attributes
+    const checkout = await this.client.checkout.create();
+    
+    const lineItems = [{
+      variantId: this.getVariantId(configuration.glassType),
       quantity: 1,
-      properties: {
-        'Map Location': config.location,
-        'Map Coordinates': `${config.lat},${config.lng}`,
-        'Map Zoom Level': config.zoom.toString(),
-        'Glass Type': config.glassType,
-        'Custom Text': config.text || '',
-        'Text Position': config.textPosition || '',
-        'Selected Icons': JSON.stringify(config.icons || []),
-        'Design Preview URL': config.previewUrl,
-        'Laser File URL': config.laserFileUrl,
-        'Configuration ID': config.configId
-      }
+      customAttributes: [
+        {key: 'Map Location', value: configuration.location},
+        {key: 'Coordinates', value: `${configuration.lat},${configuration.lng}`},
+        {key: 'Zoom Level', value: configuration.zoom.toString()},
+        {key: 'Glass Type', value: configuration.glassType},
+        {key: 'Custom Text 1', value: configuration.text1 || 'None'},
+        {key: 'Custom Text 2', value: configuration.text2 || 'None'},
+        {key: 'Preview Image', value: imageUrls.preview},
+        {key: 'Laser File URL', value: imageUrls.highRes},
+        {key: 'Configuration Date', value: new Date().toISOString()}
+      ]
+    }];
+    
+    await this.client.checkout.addLineItems(checkout.id, lineItems);
+    return checkout;
+  }
+
+  getVariantId(glassType) {
+    // These will be set after creating product in Shopify
+    const variants = {
+      'pint': 'gid://shopify/ProductVariant/[PINT_ID]',
+      'wine': 'gid://shopify/ProductVariant/[WINE_ID]',
+      'rocks': 'gid://shopify/ProductVariant/[ROCKS_ID]',
+      'shot': 'gid://shopify/ProductVariant/[SHOT_ID]'
     };
+    return variants[glassType];
+  }
+}
+```
+
+### Cloudinary Integration
+```javascript
+// src/utils/cloudinary.js
+class CloudinaryService {
+  constructor() {
+    this.cloudName = process.env.VITE_CLOUDINARY_CLOUD_NAME;
+    this.uploadPreset = process.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+  }
+
+  async uploadImage(imageDataUrl, options = {}) {
+    const formData = new FormData();
+    formData.append('file', imageDataUrl);
+    formData.append('upload_preset', this.uploadPreset);
+    
+    // Add metadata
+    formData.append('context', `order_id=${options.orderId}|type=${options.type}`);
+    formData.append('tags', 'map-glass,customer-design');
+    
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`,
+      {
+        method: 'POST',
+        body: formData
+      }
+    );
+    
+    const data = await response.json();
+    return data.secure_url;
+  }
+
+  async uploadDesignFiles(configuration) {
+    const timestamp = Date.now();
+    
+    // Upload preview (watermarked, optimized)
+    const previewUrl = await this.uploadImage(configuration.previewImage, {
+      type: 'preview',
+      orderId: `preview-${timestamp}`
+    });
+    
+    // Upload high-res for laser cutting
+    const highResUrl = await this.uploadImage(configuration.highResImage, {
+      type: 'laser',
+      orderId: `laser-${timestamp}`
+    });
+    
+    return { previewUrl, highResUrl };
+  }
+}
+```
+
+### Checkout Button Component
+```javascript
+// src/components/Checkout/CheckoutButton.jsx
+import { useState } from 'react';
+import { ShopifyService } from '../../utils/shopify';
+import { CloudinaryService } from '../../utils/cloudinary';
+
+export function CheckoutButton({ configuration, disabled }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const handleCheckout = async () => {
+    setLoading(true);
+    setError(null);
     
     try {
-      const response = await fetch('/cart/add.js', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cartData)
-      });
+      // Create Shopify checkout
+      const shopify = new ShopifyService();
+      const checkout = await shopify.createCheckout(configuration);
       
-      if (response.ok) {
-        // Show success message or redirect to cart
-        this.showCartSuccess();
-        // Optionally auto-open cart drawer
-        document.querySelector('.cart-drawer-toggle')?.click();
-      }
-    } catch (error) {
-      console.error('Cart addition failed:', error);
-      this.showCartError();
+      // Open checkout in new tab
+      window.open(checkout.webUrl, '_blank');
+      
+      // Track event
+      console.log('Checkout created:', checkout.id);
+      
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      setError('Failed to create checkout. Please try again.');
+    } finally {
+      setLoading(false);
     }
-  }
-  
-  showCartSuccess() {
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'cart-success-notification';
-    notification.textContent = 'Custom glass added to cart!';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 3000);
-  }
-}
-
-// Initialize integration
-new ShopifyIntegration();
-```
-
-#### Configurator-to-Shopify Communication
-
-##### PostMessage API Usage
-```javascript
-// In configurator application
-class ShopifyMessenger {
-  constructor(shopDomain, productId) {
-    this.shopDomain = shopDomain;
-    this.productId = productId;
-    this.variants = null;
-    this.loadProductData();
-  }
-  
-  async loadProductData() {
-    // Fetch product variants from Shopify Storefront API
-    const query = `
-      query getProduct($handle: String!) {
-        productByHandle(handle: $handle) {
-          id
-          variants(first: 10) {
-            edges {
-              node {
-                id
-                title
-                priceV2 {
-                  amount
-                  currencyCode
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
-    
-    // Implementation depends on Shopify Storefront API setup
-    this.variants = await this.fetchFromStorefront(query);
-  }
-  
-  addToCart(configuration) {
-    // Determine variant based on glass type
-    const variant = this.getVariantByGlassType(configuration.glassType);
-    
-    const cartData = {
-      action: 'addToCart',
-      variantId: variant.id,
-      ...configuration
-    };
-    
-    // Send to parent window (Shopify theme)
-    window.parent.postMessage(cartData, `https://${this.shopDomain}`);
-  }
-  
-  getVariantByGlassType(glassType) {
-    const variantMap = {
-      'pint': 'Pint Glass',
-      'wine': 'Wine Glass', 
-      'rocks': 'Rocks Glass'
-    };
-    
-    return this.variants.find(v => 
-      v.title.includes(variantMap[glassType])
-    );
-  }
-}
-```
-
-### Order Processing System
-
-#### Webhook Handler
-```javascript
-// webhook-handler.js (deployed separately)
-import { createHash } from 'crypto';
-
-export async function handleOrderCreated(orderData) {
-  // Verify webhook authenticity
-  if (!verifyWebhook(orderData)) {
-    return { status: 401, body: 'Unauthorized' };
-  }
-  
-  // Process custom map glass orders
-  for (const lineItem of orderData.line_items) {
-    if (lineItem.product_id === CUSTOM_MAP_PRODUCT_ID) {
-      await processCustomMapOrder(lineItem, orderData);
-    }
-  }
-  
-  return { status: 200, body: 'OK' };
-}
-
-async function processCustomMapOrder(lineItem, order) {
-  const properties = lineItem.properties;
-  
-  // Extract configuration
-  const config = {
-    orderId: order.id,
-    customerEmail: order.email,
-    location: properties['Map Location'],
-    coordinates: properties['Map Coordinates'],
-    glassType: properties['Glass Type'],
-    laserFileUrl: properties['Laser File URL'],
-    configId: properties['Configuration ID']
   };
   
-  // Generate final laser file if needed
-  await generateFinalLaserFile(config);
-  
-  // Send to fulfillment system
-  await sendToFulfillment(config);
-  
-  // Notify customer
-  await sendCustomerNotification(config);
-}
-```
-
-#### File Management System
-```javascript
-// file-manager.js
-class DesignFileManager {
-  constructor(storageProvider) {
-    this.storage = storageProvider; // AWS S3, Google Cloud, etc.
-  }
-  
-  async storeDesignFile(configId, fileData, type = 'png') {
-    const filename = `designs/${configId}-laser.${type}`;
-    const url = await this.storage.upload(filename, fileData);
-    
-    // Store metadata in database
-    await this.saveFileMetadata({
-      configId,
-      filename,
-      url,
-      type,
-      createdAt: new Date(),
-      status: 'active'
-    });
-    
-    return url;
-  }
-  
-  async cleanupTempFiles(olderThanDays = 7) {
-    // Clean up preview files older than specified days
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
-    
-    const tempFiles = await this.findTempFiles(cutoffDate);
-    for (const file of tempFiles) {
-      await this.storage.delete(file.filename);
-      await this.deleteFileMetadata(file.id);
-    }
-  }
-}
-```
-
-### Security and Performance
-
-#### Security Considerations
-```javascript
-// Security measures
-const securityConfig = {
-  // CORS settings for configurator iframe
-  allowedOrigins: [
-    'https://lumengrave.com',
-    'https://www.lumengrave.com',
-    'https://configurator.lumengrave.com'
-  ],
-  
-  // Webhook verification
-  webhookSecret: process.env.SHOPIFY_WEBHOOK_SECRET,
-  
-  // File access controls
-  signedUrls: true,
-  urlExpiration: 24 * 60 * 60 * 1000 // 24 hours
-};
-```
-
-#### Performance Optimizations
-```javascript
-// Caching strategy
-const cacheConfig = {
-  // Static assets
-  modelFiles: '30d',      // 3D models cached for 30 days
-  mapTiles: '7d',         // Map tiles cached for 7 days
-  previewImages: '1d',    // Preview images cached for 1 day
-  
-  // Dynamic content
-  productData: '1h',      // Product info cached for 1 hour
-  configData: '15m'       // Configuration data cached for 15 minutes
-};
-```
-
-### File Structure for Phase 3
-```
-shopify-integration/
-├── theme-files/
-│   ├── templates/
-│   │   └── product-custom-map.liquid
-│   ├── assets/
-│   │   ├── configurator-integration.js
-│   │   └── custom-product-styles.css
-│   └── snippets/
-│       └── configurator-embed.liquid
-├── webhooks/
-│   ├── order-created.js
-│   ├── order-updated.js
-│   └── webhook-verification.js
-├── api/
-│   ├── storefront-client.js
-│   ├── admin-client.js
-│   └── product-sync.js
-└── utils/
-    ├── file-manager.js
-    ├── order-processor.js
-    └── notification-service.js
-```
-
-### Success Criteria for Phase 3
-- [ ] Custom product page displays configurator seamlessly
-- [ ] Add to cart works with proper variant selection
-- [ ] Custom properties are properly stored with orders
-- [ ] Order webhooks process custom map orders correctly
-- [ ] Files are properly stored and accessible for fulfillment
-- [ ] Customer receives order confirmation with preview
-- [ ] Integration works on mobile devices
-- [ ] No impact on other store products/functionality
-
-### Testing Requirements
-- [ ] End-to-end purchase flow testing
-- [ ] Order processing webhook testing
-- [ ] File storage and retrieval testing
-- [ ] Mobile checkout experience testing
-- [ ] Cart abandonment and recovery testing
-- [ ] Customer email notification testing
-- [ ] Fulfillment system integration testing
-
-### Environment Variables (Additional)
-```
-SHOPIFY_STORE_DOMAIN=lumengrave.myshopify.com
-SHOPIFY_STOREFRONT_ACCESS_TOKEN=your_storefront_token
-SHOPIFY_ADMIN_ACCESS_TOKEN=your_admin_token
-SHOPIFY_WEBHOOK_SECRET=your_webhook_secret
-CUSTOM_MAP_PRODUCT_ID=your_product_id
-FULFILLMENT_API_URL=your_fulfillment_endpoint
-```
-
-### Dependencies for Phase 3
-```json
-{
-  "@shopify/storefront-api-client": "^1.0.0",
-  "@shopify/admin-api-client": "^1.0.0",
-  "crypto": "^1.0.1"
+  return (
+    <div className="checkout-container">
+      <button 
+        onClick={handleCheckout}
+        disabled={disabled || loading}
+        className="checkout-button"
+      >
+        {loading ? 'Creating Order...' : 'Proceed to Checkout'}
+      </button>
+      {error && <div className="error-message">{error}</div>}
+    </div>
+  );
 }
 ```
 
 ---
 
-## Deployment Strategy
+## Deployment Instructions (Vercel)
 
-### Staging Environment
-1. **Test Store Setup**: Create Shopify development store
-2. **Theme Testing**: Deploy theme modifications to test store
-3. **Webhook Testing**: Test webhook handlers with test orders
-4. **End-to-End Testing**: Complete purchase flow validation
+### Initial Setup
+1. **Create Vercel Account** (if needed)
+   - Go to vercel.com
+   - Sign up with GitHub account
 
-### Production Deployment
-1. **Backup Current Theme**: Save current production theme
-2. **Deploy Theme Changes**: Push modified theme files
-3. **Configure Webhooks**: Set up production webhook endpoints
-4. **Monitor Performance**: Watch for errors and performance issues
-5. **Customer Support**: Prepare support team for new functionality
+2. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
+
+3. **Deploy to Vercel**
+   ```bash
+   # In project root
+   vercel
+   
+   # Follow prompts:
+   # - Link to existing project? No
+   # - What's your project name? lumengrave-configurator
+   # - In which directory is your code? ./
+   # - Want to override settings? No
+   ```
+
+4. **Configure Environment Variables**
+   - Go to Vercel Dashboard
+   - Select project
+   - Settings → Environment Variables
+   - Add all VITE_* variables
+
+5. **Set up Password Protection** (during testing)
+   ```javascript
+   // Add to App.jsx
+   if (process.env.VITE_APP_PASSWORD) {
+     // Simple password protection
+   }
+   ```
+
+### Custom Domain Setup (Optional, Later)
+1. In Vercel Dashboard → Settings → Domains
+2. Add domain: configure.lumengrave.com
+3. Update DNS records at domain registrar:
+   ```
+   Type: CNAME
+   Name: configure
+   Value: cname.vercel-dns.com
+   ```
 
 ---
 
-## Notes for Claude Code Agent
+## Order Processing Workflow
 
-### Build Priority
-1. Start with basic theme integration and iframe embed
-2. Implement PostMessage communication between systems
-3. Add cart integration with custom properties
-4. Set up webhook processing for orders
-5. Implement file management and storage
-6. Add error handling and monitoring
+### Customer Flow
+1. Customer designs map on configurator
+2. Clicks "Proceed to Checkout"
+3. Redirected to Shopify checkout (new tab)
+4. Completes payment normally
+5. Receives standard order confirmation
 
-### Key Considerations
-- Theme compatibility must be maintained
-- Existing store functionality cannot be disrupted
-- Mobile experience is critical for Shopify stores
-- Order processing must be reliable and fast
-- Customer support workflows need documentation
+### Admin Flow
+1. Order appears in Shopify admin
+2. Order notes contain:
+   - Map location and coordinates
+   - Custom text
+   - Links to images on Cloudinary
+3. Click laser file URL to download high-res
+4. Process engraving
+5. Fulfill order normally
 
-### Shopify Specifics
-- Liquid template syntax required for theme modifications
-- Shopify API rate limits must be respected
-- PCI compliance maintained through Shopify checkout
-- Multi-currency support if store uses Shopify Payments
+### Order Note Format
+```
+=== CUSTOM MAP GLASS CONFIGURATION ===
+Location: Denver, CO, USA
+Coordinates: 39.7392, -104.9903
+Zoom Level: 12
+Glass Type: Rocks
+Custom Text 1: [Text or None]
+Custom Text 2: [Text or None]
+
+Preview Image: [Cloudinary URL]
+Laser File (High-Res): [Cloudinary URL - 24hr expiration]
+
+Configuration Date: 2025-08-13T10:30:00Z
+=====================================
+```
 
 ---
 
-*This specification covers Phase 3 implementation. Proceed only after Phases 1 and 2 are complete and thoroughly tested.*
+## Testing Checklist
+
+### Pre-Launch Testing
+- [ ] Vercel deployment works
+- [ ] Password protection active
+- [ ] Cloudinary uploads successful
+- [ ] Shopify API connection works
+- [ ] Test product created (DRAFT)
+- [ ] Checkout opens with correct data
+- [ ] All custom properties visible in checkout
+- [ ] Mobile responsive
+- [ ] Error handling works
+- [ ] Images downloadable from Cloudinary
+
+### Beta Testing
+- [ ] 3-5 friendly customers test
+- [ ] Orders appear correctly in admin
+- [ ] Laser files download properly
+- [ ] Fulfillment process smooth
+- [ ] Customer emails correct
+- [ ] No impact on regular store
+
+### Launch Readiness
+- [ ] 10+ successful test orders
+- [ ] Fulfillment process documented
+- [ ] Support team briefed
+- [ ] Backup plan ready
+- [ ] Monitoring in place
+
+---
+
+## Rollback Plan
+
+### If Issues Occur
+1. **Level 1**: Remove link from store (instant)
+2. **Level 2**: Password protect configurator (2 min)
+3. **Level 3**: Unpublish product (5 min)
+4. **Level 4**: Take configurator offline (instant via Vercel)
+
+### Recovery Process
+1. Fix identified issues
+2. Test thoroughly in staging
+3. Re-deploy to Vercel
+4. Test with single order
+5. Re-enable gradually
+
+---
+
+## Success Metrics
+
+### Phase 3A-B Success (Testing)
+- Zero impact on existing store
+- 5+ successful test checkouts
+- All data properly transferred
+- Images properly stored
+
+### Phase 3C Success (Soft Launch)
+- 20+ successful customer orders
+- <5% error rate
+- Positive customer feedback
+- Smooth fulfillment process
+
+### Long-term Success
+- 50+ orders processed
+- Consistent order flow
+- Customer satisfaction high
+- Ready for theme integration
+
+---
+
+## Support Documentation
+
+### For Customer Support Team
+```
+New Product: Custom Map Glass
+
+What it is:
+- Customer designs custom map on their glass
+- Chooses location, adds text
+- Gets 3D preview (rocks glass only)
+- Orders through special configurator
+
+How to handle issues:
+1. Design not loading → Clear cache, try different browser
+2. Can't add to cart → Check popup blockers
+3. Lost design → Unfortunately can't recover, need to recreate
+4. Wrong location → Customer needs to restart design
+
+Order processing:
+- Orders appear normally in Shopify
+- Contains special links to design files
+- Forward to fulfillment team
+```
+
+### For Fulfillment Team
+```
+Processing Custom Map Orders:
+
+1. Look for "Custom Map Glass" orders
+2. Check order notes for configuration
+3. Click "Laser File URL" link
+4. Download high-resolution PNG (4800x4800px)
+5. Process according to glass type
+6. Standard quality checks apply
+
+File specifications:
+- Resolution: 1200 DPI
+- Format: PNG with transparency
+- Size: Varies by glass type
+- Color: Black on white background
+```
+
+---
+
+## FAQ
+
+### Q: Why not embed directly in Shopify theme?
+A: Starting with separate deployment eliminates risk to live store. Can embed later after proven success.
+
+### Q: Why Cloudinary over other storage?
+A: Free tier sufficient for <100 orders, automatic image optimization, CDN included, no backend needed.
+
+### Q: What about order notifications?
+A: Standard Shopify order notifications work normally. Custom properties appear in order details.
+
+### Q: How long are files stored?
+A: Preview images permanent (watermarked). High-res files have 24-hour expiration URLs, but source files retained for 30 days.
+
+### Q: Can customers save/share designs?
+A: Not in initial version. Could add in Phase 4 with user accounts.
+
+---
+
+## Next Steps
+
+### Immediate Actions (Day 1)
+1. Create Vercel account
+2. Create Cloudinary account  
+3. Create Shopify private app for API access
+4. Update environment variables
+5. Deploy initial version to Vercel
+
+### This Week
+- Complete Phase 3A (Steps 1-5)
+- Begin internal testing
+- Refine based on findings
+
+### Next Week
+- Beta testing with friendly customers
+- Refine fulfillment process
+- Prepare for soft launch
+
+---
+
+*This plan prioritizes safety and incremental rollout. Each phase can be paused or rolled back without affecting the live store. Success at each stage builds confidence for the next.*

@@ -5,11 +5,15 @@ const MapConfigContext = createContext();
 
 const initialState = {
   location: DEFAULT_LOCATION,
+  coordinates: null, // {lat, lng}
+  zoom: 12,
   glassType: 'pint',
   texts: [],
   icons: [],
   mapImageUrl: null,
   previewImageUrl: null,
+  highResImage: null, // High-resolution image for laser engraving
+  previewImage: null, // Preview image for display
   modelPreviewAvailable: false, // Controls Step 3 visibility for 3D preview
   modelImageUrl: null, // Stores generated image for 3D model texture
   isLoading: false,
@@ -20,6 +24,8 @@ const initialState = {
 
 const actionTypes = {
   SET_LOCATION: 'SET_LOCATION',
+  SET_COORDINATES: 'SET_COORDINATES',
+  SET_ZOOM: 'SET_ZOOM',
   SET_GLASS_TYPE: 'SET_GLASS_TYPE',
   ADD_TEXT: 'ADD_TEXT',
   UPDATE_TEXT: 'UPDATE_TEXT',
@@ -29,6 +35,7 @@ const actionTypes = {
   REMOVE_ICON: 'REMOVE_ICON',
   SET_MAP_IMAGE: 'SET_MAP_IMAGE',
   SET_PREVIEW_IMAGE: 'SET_PREVIEW_IMAGE',
+  SET_HIGH_RES_IMAGE: 'SET_HIGH_RES_IMAGE',
   SET_MODEL_PREVIEW_AVAILABLE: 'SET_MODEL_PREVIEW_AVAILABLE', // Enable/disable 3D preview
   SET_MODEL_IMAGE: 'SET_MODEL_IMAGE', // Store generated image for 3D model
   UPDATE_TOTAL_STEPS: 'UPDATE_TOTAL_STEPS', // Dynamic step count (2 vs 3)
@@ -44,6 +51,12 @@ const mapConfigReducer = (state, action) => {
   switch (action.type) {
     case actionTypes.SET_LOCATION:
       return { ...state, location: action.payload };
+    
+    case actionTypes.SET_COORDINATES:
+      return { ...state, coordinates: action.payload };
+    
+    case actionTypes.SET_ZOOM:
+      return { ...state, zoom: action.payload };
     
     case actionTypes.SET_GLASS_TYPE:
       return { ...state, glassType: action.payload };
@@ -92,7 +105,10 @@ const mapConfigReducer = (state, action) => {
       return { ...state, mapImageUrl: action.payload };
     
     case actionTypes.SET_PREVIEW_IMAGE:
-      return { ...state, previewImageUrl: action.payload };
+      return { ...state, previewImageUrl: action.payload, previewImage: action.payload };
+    
+    case actionTypes.SET_HIGH_RES_IMAGE:
+      return { ...state, highResImage: action.payload };
     
     case actionTypes.SET_MODEL_PREVIEW_AVAILABLE:
       return { ...state, modelPreviewAvailable: action.payload };
@@ -139,6 +155,14 @@ export const MapConfigProvider = ({ children }) => {
     dispatch({ type: actionTypes.SET_LOCATION, payload: location });
   }, []);
   
+  const setCoordinates = useCallback((coordinates) => {
+    dispatch({ type: actionTypes.SET_COORDINATES, payload: coordinates });
+  }, []);
+  
+  const setZoom = useCallback((zoom) => {
+    dispatch({ type: actionTypes.SET_ZOOM, payload: zoom });
+  }, []);
+  
   const setGlassType = useCallback((glassType) => {
     dispatch({ type: actionTypes.SET_GLASS_TYPE, payload: glassType });
   }, []);
@@ -173,6 +197,10 @@ export const MapConfigProvider = ({ children }) => {
   
   const setPreviewImage = useCallback((url) => {
     dispatch({ type: actionTypes.SET_PREVIEW_IMAGE, payload: url });
+  }, []);
+  
+  const setHighResImage = useCallback((url) => {
+    dispatch({ type: actionTypes.SET_HIGH_RES_IMAGE, payload: url });
   }, []);
   
   const setModelPreviewAvailable = useCallback((available) => {
@@ -214,6 +242,8 @@ export const MapConfigProvider = ({ children }) => {
   const value = {
     ...state,
     setLocation,
+    setCoordinates,
+    setZoom,
     setGlassType,
     addText,
     updateText,
@@ -223,6 +253,7 @@ export const MapConfigProvider = ({ children }) => {
     removeIcon,
     setMapImage,
     setPreviewImage,
+    setHighResImage,
     setModelPreviewAvailable,
     setModelImage,
     updateTotalSteps,
@@ -231,7 +262,10 @@ export const MapConfigProvider = ({ children }) => {
     setStep,
     nextStep,
     prevStep,
-    reset
+    reset,
+    // Computed values for convenience
+    text1: state.texts[0]?.text || '',
+    text2: state.texts[1]?.text || ''
   };
   
   return (

@@ -1,11 +1,24 @@
 import MapRenderer from '../MapBuilder/MapRenderer';
 import TextIconControls from '../UI/TextIconControls';
 import CylinderMapTest from '../CylinderTest/CylinderMapTest';
+import { CheckoutButton } from '../Checkout/CheckoutButton';
 import { useMapConfig } from '../../contexts/MapConfigContext';
 import './Step2.css';
 
 const Step2 = () => {
-  const { glassType, modelPreviewAvailable, modelImageUrl } = useMapConfig();
+  const { 
+    glassType, 
+    modelPreviewAvailable, 
+    modelImageUrl,
+    location,
+    coordinates,
+    zoom,
+    text1,
+    text2,
+    icons,
+    highResImage,
+    previewImage
+  } = useMapConfig();
 
   return (
     <div className="step2">
@@ -36,6 +49,20 @@ const Step2 = () => {
             />
           </div>
         </div>
+      )}
+      
+      {/* Checkout Button - Shows after design is complete */}
+      {modelImageUrl && (
+        <CheckoutButton 
+          configuration={{
+            glassType
+          }}
+          images={{
+            preview: previewImage || modelImageUrl,
+            highRes: highResImage
+          }}
+          disabled={!modelImageUrl}
+        />
       )}
     </div>
   );
