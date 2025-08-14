@@ -181,7 +181,8 @@ const CylinderMapTest = ({ textureSource = null, hideControls = false, onCapture
     const renderer = new THREE.WebGLRenderer({ 
       canvas: canvasRef.current,
       alpha: true,
-      antialias: true 
+      antialias: true,
+      preserveDrawingBuffer: true  // Required for canvas.toDataURL() capture
     });
     renderer.setSize(canvasSize.width, canvasSize.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));

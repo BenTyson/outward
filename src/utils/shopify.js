@@ -41,26 +41,22 @@ class ShopifyService {
       const variantId = this.getVariantId(configuration.glassType);
       console.log('Using variant ID:', variantId);
       
+      // Add custom attributes directly to line items (better formatting support)
+      const customAttributes = this.formatLineItemAttributes(configuration);
+      
       const lineItems = [{
         variantId: variantId,
-        quantity: 1
+        quantity: 1,
+        customAttributes: customAttributes
       }];
       
       console.log('Line items to add:', lineItems);
       
       // Add line items to checkout
       console.log('Step 2: Adding line items to checkout...');
-      const updatedCheckout = await this.client.checkout.addLineItems(
+      const finalCheckout = await this.client.checkout.addLineItems(
         checkout.id, 
         lineItems
-      );
-      
-      // Add custom attributes at the checkout level
-      console.log('Step 3: Adding custom attributes to checkout...');
-      const customAttributes = this.formatCustomAttributes(configuration);
-      const finalCheckout = await this.client.checkout.updateAttributes(
-        updatedCheckout.id,
-        { customAttributes: customAttributes }
       );
       
       console.log('Checkout completed:', finalCheckout);
@@ -76,26 +72,42 @@ class ShopifyService {
     }
   }
 
-  formatCustomAttributes(configuration) {
-    // Minimal attributes - just what you need for fulfillment
+  formatLineItemAttributes(configuration) {
+    // Format attributes for line items (appears in order line details)
     const attributes = [
       { key: 'Glass Type', value: configuration.glassType || 'rocks' }
     ];
 
-    // Add 3D model preview with embedded image and clickable link
+    // Add image URLs - these will appear in admin order details
     if (configuration.modelPreviewUrl) {
-      const modelHtml = `<a href="${configuration.modelPreviewUrl}" target="_blank">View 3D Model</a><br><img src="${configuration.modelPreviewUrl}" width="150" height="150" style="border-radius:8px; margin-top:5px;">`;
-      attributes.push({ key: '3D Model Preview', value: modelHtml });
+      attributes.push({ key: '_3D Model Preview', value: configuration.modelPreviewUrl });
+    }
+    if (configuration.previewUrl) {
+      attributes.push({ key: '_Map Preview Image', value: configuration.previewUrl });
+    }
+    // High-res laser file - prefixed with underscore to hide from customer
+    if (configuration.laserFileUrl) {
+      attributes.push({ key: '_Laser File (High-Res)', value: configuration.laserFileUrl });
     }
 
-    // Add image URLs as clickable links
+    return attributes;
+  }
+
+  formatCustomAttributes(configuration) {
+    // Minimal attributes - just what you need for fulfillment (checkout level)
+    const attributes = [
+      { key: 'Glass Type', value: configuration.glassType || 'rocks' }
+    ];
+
+    // Add URLs as plain text - Shopify will auto-link them
+    if (configuration.modelPreviewUrl) {
+      attributes.push({ key: '3D Model Preview', value: configuration.modelPreviewUrl });
+    }
     if (configuration.previewUrl) {
-      const previewHtml = `<a href="${configuration.previewUrl}" target="_blank">Open Preview Image</a>`;
-      attributes.push({ key: 'Map Preview', value: previewHtml });
+      attributes.push({ key: 'Map Preview Image', value: configuration.previewUrl });
     }
     if (configuration.laserFileUrl) {
-      const laserHtml = `<a href="${configuration.laserFileUrl}" target="_blank">Download Laser File</a>`;
-      attributes.push({ key: 'Laser File (High-Res)', value: laserHtml });
+      attributes.push({ key: 'Laser File (High-Res)', value: configuration.laserFileUrl });
     }
 
     return attributes;

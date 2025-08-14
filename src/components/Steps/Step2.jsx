@@ -26,23 +26,44 @@ const Step2 = () => {
   const capture3DModelImage = async () => {
     if (cylinderRef.current) {
       try {
-        // Wait a moment for the 3D model to finish rendering
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait longer for the 3D model to finish rendering
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Find the canvas element in the 3D component
         const canvas = cylinderRef.current.querySelector('canvas');
-        console.log('Found canvas:', canvas);
+        console.log('=== 3D CANVAS CAPTURE DEBUG ===');
+        console.log('Found canvas:', !!canvas);
         console.log('Canvas parent:', cylinderRef.current);
         
         if (canvas) {
-          console.log('Capturing 3D canvas:', canvas.width, 'x', canvas.height);
+          console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
           console.log('Canvas style:', canvas.style.cssText);
+          console.log('Canvas context type:', canvas.getContext ? 'supported' : 'not supported');
           
-          // For WebGL canvases, we need to be careful about preserveDrawingBuffer
+          // Check if it's a WebGL canvas
+          const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+          if (gl) {
+            console.log('WebGL context found');
+            console.log('WebGL drawing buffer size:', gl.drawingBufferWidth, 'x', gl.drawingBufferHeight);
+          }
+          
+          // Try to capture the canvas
           try {
+            // Force a render if possible
+            const event = new Event('resize');
+            window.dispatchEvent(event);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             const dataUrl = canvas.toDataURL('image/png', 0.9);
-            console.log('3D canvas captured, data URL length:', dataUrl.length);
-            console.log('Data URL preview:', dataUrl.substring(0, 100) + '...');
+            console.log('3D canvas captured successfully');
+            console.log('Data URL length:', dataUrl.length);
+            console.log('Data URL valid:', dataUrl.startsWith('data:image/png;base64,'));
+            
+            // Check if image is just blank/empty
+            if (dataUrl.length < 1000) {
+              console.warn('Captured image appears to be very small/blank');
+            }
+            
             return dataUrl;
           } catch (webglError) {
             console.error('WebGL canvas capture failed:', webglError);
@@ -51,13 +72,17 @@ const Step2 = () => {
         } else {
           console.warn('Canvas element not found in 3D component');
           const allCanvases = document.querySelectorAll('canvas');
-          console.log('All canvases on page:', allCanvases);
+          console.log('All canvases on page:', allCanvases.length);
+          allCanvases.forEach((c, i) => {
+            console.log(`Canvas ${i}:`, c.width, 'x', c.height, 'parent:', c.parentElement?.className);
+          });
         }
       } catch (error) {
         console.error('Failed to capture 3D model:', error);
       }
+    } else {
+      console.warn('cylinderRef.current not available');
     }
-    console.warn('cylinderRef.current not available');
     return null;
   };
 

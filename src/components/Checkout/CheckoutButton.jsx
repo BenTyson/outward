@@ -3,6 +3,37 @@ import shopifyService from '../../utils/shopify';
 import cloudinaryService from '../../utils/cloudinary';
 import './CheckoutButton.css';
 
+// Generate high-resolution laser file from preview image
+const generateHighResLaserFile = async (previewImage) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      // Create high-res canvas at 4800px width (1200 DPI equivalent)
+      const aspectRatio = img.width / img.height;
+      const width = 4800;
+      const height = Math.round(width / aspectRatio);
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      // High quality settings
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // Draw image at high resolution
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Export as high quality PNG
+      const highResDataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log(`Generated high-res laser file: ${width}x${height}px, size: ~${Math.round(highResDataUrl.length / 1024)}KB`);
+      resolve(highResDataUrl);
+    };
+    img.src = previewImage;
+  });
+};
+
 export function CheckoutButton({ configuration, images, disabled }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -37,12 +68,12 @@ export function CheckoutButton({ configuration, images, disabled }) {
           }
         }
         
-        // Generate high-resolution laser file if only preview exists
+        // Generate high-resolution laser file
         let highResImage = images.highRes;
         if (!highResImage && images.preview) {
           console.log('Generating high-resolution laser file...');
-          // For now, use the preview image - we'll enhance this later
-          highResImage = images.preview;
+          // Generate actual high-res image at 4800px for laser engraving
+          highResImage = await generateHighResLaserFile(images.preview);
         }
         
         const uploadedUrls = await cloudinaryService.uploadDesignFiles(
