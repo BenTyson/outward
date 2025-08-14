@@ -1,0 +1,95 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "page-contact",
+      "disabled": true,
+      "settings": {
+        "container": "container"
+      }
+    },
+    "16630052558c3c1934": {
+      "type": "custom-content",
+      "blocks": {
+        "1663005254eb1a1330-0": {
+          "type": "text",
+          "settings": {
+            "title": "Join Our Team",
+            "subheading": "",
+            "text": "<p>As a LumEngrave employee, you become an essential member of our small, personal team, and a fundamental part of a fast-growing company. We want our success to be your success. We pride ourselves on creating high-quality, creative art and goods for both corporate clients and personal consumers, and recognize and reward individual talent that contributes to this goal. <br/><br/>A few reasons to consider Lumengrave for employment are our prioritization of a healthy work/life balance, flexible paid and unpaid time off, pet-friendly work environment, yearly bonuses, and the encouraged opportunity for advancement that a fast-growing company like ours provides.</p>",
+            "width": "66%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        },
+        "804e837c-0810-4b54-8a97-c15b493a18ec": {
+          "type": "text",
+          "settings": {
+            "title": "What Next?",
+            "subheading": "",
+            "text": "<p>We are accepting applications and resumes on an on-going basis for a variety of roles—specifically:</p><p><strong>- laser-engraving technicians </strong>(no experience necessary; training provided)</p><p><strong>- post-production </strong>(washing, packing, etc.)</p><p><strong>- social media management & marketing </strong>(experience required)</p><p><strong>- sales managers </strong>(healthy commission-based)</p><p>The first two positions will be in-house, while the latter two can be hybrid or fully remote.<br/><br/><em>Please send us your resume and a brief cover letter or message </em>telling us a little about yourself, your interest in any of these positions, and why you think you'd be a good fit. If there's any position not listed above that you think you'd be a good fit for, don't hesitate to let us know!</p>",
+            "width": "66%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1663005254eb1a1330-0",
+        "804e837c-0810-4b54-8a97-c15b493a18ec"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "contact-form": {
+      "type": "contact-form",
+      "settings": {
+        "container": "container",
+        "title": "",
+        "description": "",
+        "show_name": true,
+        "show_phone": true,
+        "show_signup_email": true
+      }
+    }
+  },
+  "order": [
+    "main",
+    "16630052558c3c1934",
+    "contact-form"
+  ]
+}

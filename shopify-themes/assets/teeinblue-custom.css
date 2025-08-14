@@ -1,0 +1,14 @@
+.teeinblue-enabled .tee-gallery-wrapper .sf-product-media__desktop,
+.teeinblue-enabled .tee-gallery-wrapper .sf-product-media__mobile,
+.teeinblue-enabled .prod__sticky-atc,
+.teeinblue-enabled .main-product__block-variant_picker,
+.teeinblue-enabled .main-product__block-price,
+.teeinblue-enabled .main-product__block-description,
+.tee-description .tee-option__title {
+  display: none !important;
+}
+
+.tee-cart-thumbnail.loaded img {
+  opacity: 1;
+}
+ 

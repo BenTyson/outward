@@ -1,0 +1,415 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "breadcrumb": {
+      "type": "breadcrumb",
+      "settings": {
+        "container": "container",
+        "text_alignment": "center",
+        "hide_current": false,
+        "hide_on_mb": false
+      }
+    },
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "title": {
+          "type": "title",
+          "settings": {}
+        },
+        "price": {
+          "type": "price",
+          "settings": {
+            "show_saving": false
+          }
+        },
+        "f73b6b38-b6d0-4b75-b880-9aa10cc59375": {
+          "type": "short_description",
+          "settings": {}
+        },
+        "b48d913e-ca62-42dc-bbf5-9e414e79b1b8": {
+          "type": "description",
+          "settings": {}
+        },
+        "variant_picker": {
+          "type": "variant_picker",
+          "settings": {
+            "size_title": "Size"
+          }
+        },
+        "buy_buttons": {
+          "type": "buy_buttons",
+          "settings": {
+            "show_quantity_selector": true,
+            "show_atc_button": true,
+            "show_dynamic_checkout": true
+          }
+        },
+        "addons": {
+          "type": "addons",
+          "settings": {
+            "show_atcp": true,
+            "show_ask_a_question": true,
+            "show_social": true
+          }
+        },
+        "b31c11f0-a472-4085-9f36-07f72e18a735": {
+          "type": "meta",
+          "settings": {
+            "show_collections": true,
+            "show_vendor": false,
+            "show_type": false,
+            "show_availability": false,
+            "show_sku": false
+          }
+        }
+      },
+      "block_order": [
+        "title",
+        "price",
+        "f73b6b38-b6d0-4b75-b880-9aa10cc59375",
+        "b48d913e-ca62-42dc-bbf5-9e414e79b1b8",
+        "variant_picker",
+        "buy_buttons",
+        "addons",
+        "b31c11f0-a472-4085-9f36-07f72e18a735"
+      ],
+      "settings": {
+        "container": "container",
+        "layout": "layout-4",
+        "show_atwl": true,
+        "enable_history_state": true,
+        "enable_variant_group_images": false,
+        "show_featured_media": true,
+        "show_zoom_button": true,
+        "enable_video_autoplay": false,
+        "show_nav_media_mobile": false,
+        "show_pagination_mobile": true,
+        "use_sticky_atc": true,
+        "use_sticky_atc_on_mobile": true,
+        "enable_dynamic_checkout": false,
+        "sticky_atc_wishtlist": false,
+        "sticky_atc_compare": false
+      }
+    },
+    "8f5f60a7-02f6-495d-a201-a0bec097b1cd": {
+      "type": "custom-content",
+      "blocks": {
+        "94f5b33b-65c5-4bcf-824f-cf7cecadba0c": {
+          "type": "text",
+          "settings": {
+            "title": "DESCRIPTION",
+            "subheading": "",
+            "text": "<p>Our temper-rimmed 11.5 oz lowball whiskey glasses are heavy duty, high quality, and dishwasher safe. Each glass is intricately laser engraved, then carefully washed and deburred, ensuring that your design never chips, fades, washes off, or wears away with time and use.</p>",
+            "width": "75%",
+            "alignment": "start",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        },
+        "0fb5df1b-8f78-45ba-860c-d523d6ee880b": {
+          "type": "text",
+          "settings": {
+            "title": "DETAILS",
+            "subheading": "",
+            "text": "<ul><li>Capacity: 11.5 fl oz</li><li>Height: 3.625\"</li><li>Top Diameter: 3.25\"</li><li>Bottom Diameter: 3\"</li><li>Weight: 0.625 lbs</li></ul>",
+            "width": "25%",
+            "alignment": "start",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        },
+        "template--14712716427352__8f5f60a7-02f6-495d-a201-a0bec097b1cd-text-1": {
+          "type": "text",
+          "settings": {
+            "title": "Elevate your evenings.",
+            "subheading": "",
+            "text": "<p>Turn an otherwise everyday evening into a memorable moment: enhance the beer or cocktail you share with friends, the glass of wine you sip with your love, or the family hangout session in the kitchen with our unique laser-engraved drinkware.</p>",
+            "width": "50%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        },
+        "template--14712716427352__8f5f60a7-02f6-495d-a201-a0bec097b1cd-image-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Lifestyle_Whiskey_Mockup.jpg",
+            "link": "",
+            "width": "50%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        },
+        "557c04d0-5caa-4db3-a7ed-ba547a9a5e59": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/mathscience_rx.jpg",
+            "link": "",
+            "width": "50%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        },
+        "8e2df8b5-304b-41d7-85e9-0739ab2e3e85": {
+          "type": "text",
+          "settings": {
+            "title": "Details, durability, and damn good drinks.",
+            "subheading": "",
+            "text": "<p>We take pride in crafting unique, exceptional drinkware. From sourcing the highest quality, most durable glassware, to ensuring our designs are carefully and meticulously engraved to show the greatest amount of detail, our pint glasses aren't just vessels for your favorite drinks—they're works of art.</p>",
+            "width": "50%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "94f5b33b-65c5-4bcf-824f-cf7cecadba0c",
+        "0fb5df1b-8f78-45ba-860c-d523d6ee880b",
+        "template--14712716427352__8f5f60a7-02f6-495d-a201-a0bec097b1cd-text-1",
+        "template--14712716427352__8f5f60a7-02f6-495d-a201-a0bec097b1cd-image-1",
+        "557c04d0-5caa-4db3-a7ed-ba547a9a5e59",
+        "8e2df8b5-304b-41d7-85e9-0739ab2e3e85"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "aa62a469-0623-4548-9aef-99ce17e00a3d": {
+      "type": "testimonials",
+      "blocks": {
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-3": {
+          "type": "testimonial",
+          "settings": {
+            "title": "Fantastic find!",
+            "description": "<p>I bought this for my husband...He smiled big and said \"thats pretty cool!\" He also has two other glasses from Lumengrave that he loves. For all glasses we've purchased so far: The quality is awesome. Shipped well (completely wrapped in thick bubble wrap inside of the box). ALOT of designs to choose from so we have a couple others in our sights! Great for a gift, collecting or personal use...</p>",
+            "footer": "<p>Jessie CO, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        },
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-4": {
+          "type": "testimonial",
+          "settings": {
+            "title": "The absolute perfect gift",
+            "description": "<p>\"It was a gift for a dear friend. He absolutely loved it and found it to be a unique and very personal gift!\"</p>",
+            "footer": "<p>Danielle TN, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        },
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-5": {
+          "type": "testimonial",
+          "settings": {
+            "title": "Can't stop buying!!",
+            "description": "<p>\"I ordered one of the 'Middle Earth maps' for my husband for Christmas. He LOVED IT! As stock started coming back in, I have ordered 5 more!\"</p>",
+            "footer": "<p>Angela TX, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        },
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-1": {
+          "type": "testimonial",
+          "settings": {
+            "title": "Wowwwwww!!!",
+            "description": "<p>This is so beautiful. I'm going to order another one as a gift. The detailing is impeccable and this company is great. Etching Wowwwww!</p>",
+            "footer": "<p>Peter R. GA, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        },
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-2": {
+          "type": "testimonial",
+          "settings": {
+            "title": "Great Company!!",
+            "description": "<p>This company is great to work with, I’m a guessing a small group of independent artists who really care about customer service. Thinking about personalized engraving I would definitely work with Lumengrave! Looking for a cool pint glass this is the ticket.</p>",
+            "footer": "<p>Paul W. MA, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        },
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-6": {
+          "type": "testimonial",
+          "settings": {
+            "title": "This pint glass is absolutely amazing!",
+            "description": "<p>High quality glassware (it's definitely got some weight to it!), the engraving is fantastic, and the design is absolutely spot on!!! The glass was packaged safely & securely. I couldn't be happier with it & I can easily see myself buying a few more!!! AWESOME JOB!!! A++</p>",
+            "footer": "<p>Charles D. NY, US</p>",
+            "image_text": "",
+            "image_link": "",
+            "product": ""
+          }
+        }
+      },
+      "block_order": [
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-3",
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-4",
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-5",
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-1",
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-2",
+        "template--14712716427352__aa62a469-0623-4548-9aef-99ce17e00a3d-testimonial-6"
+      ],
+      "settings": {
+        "heading": "What People Are Saying",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "design": "testimonials-1",
+        "show_stars": true,
+        "autorotate": false,
+        "show_navigation": false,
+        "show_pagination": true,
+        "star_color": "#000000",
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "product-details-tabs": {
+      "type": "product-details-tabs",
+      "blocks": {
+        "tab": {
+          "type": "tab",
+          "settings": {
+            "header": "Shipping & Returns",
+            "content": "<p>Orders generally ship USPS unless otherwise specified. Shipping cost is based on weight. Add products to your cart and use the Shipping Calculator to see the estimated shipping price.</p><p>We want you to be 100% satisfied with your purchase! If there is any problem with your order, please reach out to us directly at orders@lumengrave.com. </p>",
+            "content_page": ""
+          }
+        },
+        "d8383ba5-c71f-45ca-ad7d-ff210b3b84f1": {
+          "type": "tab",
+          "settings": {
+            "header": "General Info",
+            "content": "<p>- Handmade in the USA</p><p>- Dishwasher Safe</p><p>- Design Never Fades</p><p>- Unique Gift Idea</p><p>- Durable Rim Tempered Glass</p><p>- Awesome Customer Service</p>",
+            "content_page": ""
+          }
+        }
+      },
+      "block_order": [
+        "tab",
+        "d8383ba5-c71f-45ca-ad7d-ff210b3b84f1"
+      ],
+      "disabled": true,
+      "settings": {
+        "container": "container-narrow",
+        "bg_color": "",
+        "default_open": true
+      }
+    },
+    "product-recommendations": {
+      "type": "product-recommendations",
+      "settings": {
+        "container": "container",
+        "heading": "Similar Products",
+        "text_align": "left",
+        "limit": 20,
+        "columns": 8,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    },
+    "recent-viewed-products": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Recently Viewed Products",
+        "limit": 8,
+        "columns": 5,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    },
+    "1661196604996c898f": {
+      "type": "custom-content",
+      "blocks": {
+        "1661196603428d4cd9-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1661196603428d4cd9-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "breadcrumb",
+    "main",
+    "8f5f60a7-02f6-495d-a201-a0bec097b1cd",
+    "aa62a469-0623-4548-9aef-99ce17e00a3d",
+    "product-details-tabs",
+    "product-recommendations",
+    "recent-viewed-products",
+    "1661196604996c898f"
+  ]
+}

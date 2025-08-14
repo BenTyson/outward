@@ -1,0 +1,140 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "collection-header": {
+      "type": "collection-page-header",
+      "blocks": {
+        "84ce804f-2f2a-420d-97e8-2de283b694c3": {
+          "type": "banner",
+          "settings": {
+            "collection": "",
+            "image": "shopify://shop_images/Lum_Banner2_36d62d0e-226c-478a-8d2b-5162c79348ef.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "84ce804f-2f2a-420d-97e8-2de283b694c3"
+      ],
+      "settings": {
+        "container": "container",
+        "layout": "inside",
+        "header_height": "small",
+        "text_alignment": "center",
+        "vertical_alignment": "center",
+        "text_color": "dark",
+        "bg_color": "#ffffff",
+        "bg_image": "shopify://shop_images/Lum_Banner2_a8d4621b-528c-413d-af61-ad5baf8061a1.jpg",
+        "enable_parallax": true,
+        "upper_title": true,
+        "show_desc": false,
+        "collection_all_desc": ""
+      }
+    },
+    "main": {
+      "type": "main-collection-product-grid",
+      "blocks": {
+        "a3df6052-2392-456d-82aa-23c92dd5ab37": {
+          "type": "collections",
+          "settings": {
+            "title": "Collection",
+            "menu": "master-collection-whiskey",
+            "show_image": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        },
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "default",
+            "title": "Subcollection",
+            "filtergroup": "Aliens + UFOs,\nAnimals,\nAstronomy,\nChristianity,\nChristmas,\nEsoterica,\nFishing,\nGreek + Roman,\nHalloween,\nHiking + Camping,\nHistory, \nHumor + Memes,\nInternational,\nIslam,\nMarine + Ocean,\nMilitary,\nMusic,\nMythical Creatures,\nNature,\nPatriotism,\nPets + Family,\nPolitics,\nPopular Culture,\nScience + Math,\nSkylines,\nSports + Hobbies,\nStates,\nTopographic,\nUS City Streets,\nWeddings",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        }
+      },
+      "block_order": [
+        "a3df6052-2392-456d-82aa-23c92dd5ab37",
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb"
+      ],
+      "settings": {
+        "container": "container-fluid",
+        "grid_layout": "grid",
+        "grid_columns": "5",
+        "show_columns_switcher": true,
+        "pagination_limit": 12,
+        "paginate_type": "infinite",
+        "show_sorting": true,
+        "show_filter": true,
+        "filters_type": "tags_filter",
+        "sidebar": "leftColumn",
+        "sidebar_title": "",
+        "limit_height_widget": false,
+        "limit_height": 300,
+        "change_product_variant_on_fitlering": true,
+        "show_product_count": true,
+        "collapsed_groups": "Brand, Vendor, Size",
+        "color_swatches": "color,colour,couleur,farbe"
+      }
+    },
+    "recent-viewed": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Recently Viewed Products",
+        "limit": 8,
+        "columns": 4,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    },
+    "1661196515368ce9b8": {
+      "type": "custom-content",
+      "blocks": {
+        "1661196514677dea24-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner_4d120f0a-7bc4-4f53-a587-1a7c4d0de104.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1661196514677dea24-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "collection-header",
+    "main",
+    "recent-viewed",
+    "1661196515368ce9b8"
+  ]
+}

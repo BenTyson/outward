@@ -1,0 +1,103 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "collection-header": {
+      "type": "collection-page-header",
+      "blocks": {
+        "e9c8f350-95c3-4e04-8e88-1523b1962634": {
+          "type": "banner",
+          "settings": {
+            "collection": "marine-ocean",
+            "image": "shopify://shop_images/beautiful-day-at-the-beach.jpg"
+          }
+        },
+        "0540210d-0c5c-4797-9d31-3536fa0e2700": {
+          "type": "banner",
+          "settings": {
+            "collection": "pint-glasses",
+            "image": "shopify://shop_images/poured-beer-pints.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "e9c8f350-95c3-4e04-8e88-1523b1962634",
+        "0540210d-0c5c-4797-9d31-3536fa0e2700"
+      ],
+      "settings": {
+        "container": "container",
+        "layout": "inside",
+        "header_height": "small",
+        "text_alignment": "center",
+        "vertical_alignment": "center",
+        "text_color": "dark",
+        "bg_color": "#ffffff",
+        "enable_parallax": false,
+        "upper_title": false,
+        "show_desc": false,
+        "collection_all_desc": ""
+      }
+    },
+    "main": {
+      "type": "main-collection-product-grid",
+      "blocks": {
+        "00b3badd-1613-4230-85d8-f87f04306aaa": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "inrow",
+            "title": "Item Type",
+            "filtergroup": "Pint Glass, Whiskey Glass, Wine Glass",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        }
+      },
+      "block_order": [
+        "00b3badd-1613-4230-85d8-f87f04306aaa"
+      ],
+      "settings": {
+        "container": "container-fluid",
+        "grid_layout": "grid",
+        "grid_columns": "4",
+        "show_columns_switcher": true,
+        "pagination_limit": 12,
+        "paginate_type": "paginate",
+        "show_sorting": true,
+        "show_filter": true,
+        "filters_type": "tags_filter",
+        "sidebar": "fixed",
+        "sidebar_title": "Filters",
+        "limit_height_widget": false,
+        "limit_height": 300,
+        "change_product_variant_on_fitlering": true,
+        "show_product_count": true,
+        "collapsed_groups": "Brand, Vendor, Size, Type",
+        "color_swatches": ""
+      }
+    },
+    "recent-viewed": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Awesome things you've already looked at:",
+        "limit": 8,
+        "columns": 6,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    }
+  },
+  "order": [
+    "collection-header",
+    "main",
+    "recent-viewed"
+  ]
+}

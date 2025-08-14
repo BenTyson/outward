@@ -1,0 +1,203 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "page",
+      "disabled": true,
+      "settings": {}
+    },
+    "image_with_text_2_HR4XAR": {
+      "type": "image-with-text-2",
+      "settings": {
+        "container": "w-full",
+        "hero_size": "adapt",
+        "show_overlay": true,
+        "image": "shopify://shop_images/Outdoors_Banner.jpg",
+        "bg_position": "center",
+        "image_link": "",
+        "parallax": false,
+        "content_in_container": false,
+        "content_position": "center middle",
+        "text_alignment": "center",
+        "text_size": "medium",
+        "text_color": "white",
+        "title": "OUTDOORS",
+        "subtitle": "",
+        "text": "",
+        "button_label": "",
+        "button_link": "",
+        "button_style": "sf__btn-primary",
+        "button_size": "",
+        "use_content_above": false,
+        "custom_class": ""
+      }
+    },
+    "custom_content_X8G7gE": {
+      "type": "custom-content",
+      "blocks": {
+        "image_card_iU48Mm": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Pint_Lifestyle_PineForest.png",
+            "link": "shopify://collections/nature",
+            "title": "NATURE",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-link",
+            "button_size": "sf__btn-small",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "image_card_9Vrapw": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Rocks_Lifestyle_Camel_Tribal_Mural.png",
+            "link": "shopify://collections/animals",
+            "title": "ANIMALS",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-link",
+            "button_size": "sf__btn-small",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "image_card_iKGUVD": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Rocks_Lifestyle_Octopus.png",
+            "link": "shopify://collections/marine-ocean",
+            "title": "MARINE + OCEAN",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-link",
+            "button_size": "sf__btn-small",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "image_card_4Nb3Ue": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Sticker_Flask_Lifestyle_Camping.jpg",
+            "link": "shopify://collections/hiking-camping",
+            "title": "HIKING + CAMPING",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-link",
+            "button_size": "sf__btn-small",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "image_card_dRkqYh": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "bottom_center",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Pint_Lifestyle_Fishing3.png",
+            "link": "shopify://collections/fishing",
+            "title": "FISHING",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-link",
+            "button_size": "sf__btn-small",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_card_iU48Mm",
+        "image_card_9Vrapw",
+        "image_card_iKGUVD",
+        "image_card_4Nb3Ue",
+        "image_card_dRkqYh"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "custom_content_wLQbKN": {
+      "type": "custom-content",
+      "blocks": {
+        "image_qJ99NF": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner_4d120f0a-7bc4-4f53-a587-1a7c4d0de104.jpg",
+            "link": "https://lumengrave.com/cdn/shop/files/foothills_banner_4d120f0a-7bc4-4f53-a587-1a7c4d0de104.jpg?v=1690489523&width=1500",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_qJ99NF"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "main",
+    "image_with_text_2_HR4XAR",
+    "custom_content_X8G7gE",
+    "custom_content_wLQbKN"
+  ]
+}

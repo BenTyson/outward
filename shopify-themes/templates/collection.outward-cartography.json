@@ -1,0 +1,217 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "custom_content_WtYfn3": {
+      "type": "custom-content",
+      "blocks": {
+        "image_8ndNH4": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/Map_Banner.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        },
+        "text_8FCcRT": {
+          "type": "text",
+          "settings": {
+            "title": "",
+            "subheading": "",
+            "text": "<p>Our Maps + Places collection is inspired by our love for the outdoors, for the uncharted routes, roadways, and foothpaths we're always chasing. Maps help us not only find our way, but forge ever new pathways in our minds to the memories and moments we cherish most.</p><p>Every sip we take from a glass etched with a map from one of our adventures is a reminder of who we are, where we've been, and where we might go. It's a daily reminder that the horizon is out there, beyond the daily grind, always awaiting our arrival. We hope our maps will motivate and move you, too.</p>",
+            "width": "100%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_8ndNH4",
+        "text_8FCcRT"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "collection-header": {
+      "type": "collection-page-header",
+      "blocks": {
+        "84ce804f-2f2a-420d-97e8-2de283b694c3": {
+          "type": "banner",
+          "settings": {
+            "collection": "",
+            "image": "shopify://shop_images/Lum_Banner2_36d62d0e-226c-478a-8d2b-5162c79348ef.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "84ce804f-2f2a-420d-97e8-2de283b694c3"
+      ],
+      "disabled": true,
+      "settings": {
+        "container": "container",
+        "layout": "inside",
+        "header_height": "small",
+        "text_alignment": "center",
+        "vertical_alignment": "center",
+        "text_color": "white",
+        "bg_color": "#ffffff",
+        "bg_image": "shopify://shop_images/Lum_Banner.jpg",
+        "enable_parallax": true,
+        "upper_title": true,
+        "show_desc": false,
+        "collection_all_desc": ""
+      }
+    },
+    "main": {
+      "type": "main-collection-product-grid",
+      "blocks": {
+        "00b3badd-1613-4230-85d8-f87f04306aaa": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "button",
+            "title": "Product",
+            "filtergroup": "Pint Glasses, Whiskey Glasses, Wine Glasses, Shot Glass, Camp Cups, Cutting Board, Flasks, Bottle Opener, Bookmarks, Keychains, Coasters, Phone Cases, Bags",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        },
+        "collections_iHGnwf": {
+          "type": "collections",
+          "settings": {
+            "title": "Maps + Places Collection",
+            "menu": "maps-places-collection",
+            "show_image": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        },
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "default",
+            "title": "State",
+            "filtergroup": "Alabama, Alaska, American Samoa, Arizona, Arkansas, California, Colorado, Connecticut, Delaware, District of Columbia, Florida, Georgia, Guam, Hawaii, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Maine, Maryland, Massachusetts, Michigan, Minnesota, Minor Outlying Islands, Mississippi, Missouri, Montana, Nebraska, Nevada, New Hampshire, New Jersey, New Mexico, New York, North Carolina, North Dakota, Northern Mariana Islands, Ohio, Oklahoma, Oregon, Pennsylvania, Puerto Rico, Rhode Island, South Carolina, South Dakota, Tennessee, Texas, U.S. Virgin Islands, Utah, Vermont, Virginia, Washington, West Virginia, Wisconsin, Wyoming",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        },
+        "filter_xN8XfE": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "default",
+            "title": "City",
+            "filtergroup": "Amsterdam,\nArvada,\nAspen,\nAustin,\nBerlin,\nBillings,\nBoston,\nBreckenridge,\nBuffalo,\nChicago,\nCleveland,\nColumbus,\nCopper Mtn,\nDallas,\nDenver,\nDetroit,\nFt. Collins,\nGolden,\nHonolulu,\nHouston,\nKansas City,\nKeystone,\nLafayette,\nLas Vegas,\nLisbon,\nLittle Rock,\nLondon,\nLos Angeles,\nMadrid,\nManhattan,\nMiami,\nMinneapolis,\nMoab,\nMt. Bierstadt,\nNashville,\nNew Orleans,\nNew York,\nOakland,\nOklahoma City,\nParis,\nPhiladelphia,\nPhoenix,\nPortland,\nRaleigh,\nRocky Mtn National Park,\nRome,\nSalt Lake City,\nSan Diego,\nSan Jose,\nSeattle,\nSt. Louis,\nSt. Paul,\nSydney,\nToronto,\nTulsa,\nTuscon,\nVail,\nVancouver,\nWashington DC,",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        }
+      },
+      "block_order": [
+        "00b3badd-1613-4230-85d8-f87f04306aaa",
+        "collections_iHGnwf",
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb",
+        "filter_xN8XfE"
+      ],
+      "settings": {
+        "container": "container-fluid",
+        "grid_layout": "grid",
+        "grid_columns": "4",
+        "show_columns_switcher": true,
+        "pagination_limit": 12,
+        "paginate_type": "infinite",
+        "show_sorting": true,
+        "show_filter": true,
+        "filters_type": "tags_filter",
+        "sidebar": "leftColumn",
+        "sidebar_title": "",
+        "limit_height_widget": false,
+        "limit_height": 300,
+        "change_product_variant_on_fitlering": true,
+        "show_product_count": true,
+        "collapsed_groups": "Brand, Vendor, Size",
+        "color_swatches": "color,colour,couleur,farbe"
+      }
+    },
+    "recent-viewed": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Recently Viewed Products",
+        "limit": 8,
+        "columns": 4,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    },
+    "1661196515368ce9b8": {
+      "type": "custom-content",
+      "blocks": {
+        "1661196514677dea24-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1661196514677dea24-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "custom_content_WtYfn3",
+    "collection-header",
+    "main",
+    "recent-viewed",
+    "1661196515368ce9b8"
+  ]
+}

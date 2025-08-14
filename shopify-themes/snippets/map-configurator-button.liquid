@@ -1,0 +1,94 @@
+{% comment %}
+  Map Glass Configurator Button
+  Usage: {% include 'map-configurator-button', product: product %}
+{% endcomment %}
+
+{% if settings.enable_map_configurator %}
+  <div class="map-configurator-button-wrapper" style="margin: 20px 0;">
+    <button 
+      type="button"
+      id="open-map-configurator"
+      class="btn btn-primary map-configurator-button"
+      data-product-id="{{ product.id }}"
+      data-product-handle="{{ product.handle }}"
+      style="
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 16px;
+        font-weight: 600;
+        background-color: #738263;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      "
+      onmouseover="this.style.backgroundColor='#545f49'"
+      onmouseout="this.style.backgroundColor='#738263'"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+        <path d="M21 10h-8.35C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H21l2-2-2-2z" stroke-width="2"/>
+        <circle cx="7" cy="12" r="1" fill="currentColor"/>
+      </svg>
+      Customize Your Map Design
+    </button>
+    
+    <p style="text-align: center; margin-top: 10px; font-size: 14px; color: #666;">
+      Design a custom map engraved on your glass
+    </p>
+  </div>
+
+  <script>
+    // Initialize configurator when button is clicked
+    document.getElementById('open-map-configurator').addEventListener('click', function() {
+      // Check if configurator is loaded
+      if (typeof window.MapGlassConfigurator === 'undefined') {
+        console.error('Map Glass Configurator not loaded');
+        return;
+      }
+
+      // Get product data
+      const productData = {
+        id: this.dataset.productId,
+        handle: this.dataset.productHandle,
+        title: {{ product.title | json }},
+        variants: [
+          {% for variant in product.variants %}
+            {
+              id: {{ variant.id | json }},
+              title: {{ variant.title | json }},
+              price: {{ variant.price | money_without_currency | json }},
+              available: {{ variant.available | json }}
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      };
+
+      // Initialize and open configurator
+      window.MapGlassConfigurator.init({
+        product: productData,
+        onAddToCart: function(item) {
+          // Handle successful add to cart
+          console.log('Item added to cart:', item);
+          
+          // Optional: Show cart drawer if your theme has one
+          if (typeof window.theme !== 'undefined' && window.theme.cart) {
+            window.theme.cart.open();
+          }
+          
+          // Optional: Update cart count
+          fetch('/cart.js')
+            .then(response => response.json())
+            .then(cart => {
+              document.querySelectorAll('.cart-count').forEach(el => {
+                el.textContent = cart.item_count;
+              });
+            });
+        },
+        onClose: function() {
+          console.log('Configurator closed');
+        }
+      }).open();
+    });
+  </script>
+{% endif %}

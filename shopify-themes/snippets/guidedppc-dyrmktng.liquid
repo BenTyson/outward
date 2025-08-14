@@ -1,0 +1,59 @@
+{% assign shopify_store_country = 'US' %}
+{% if template contains 'collection' %}
+  <script type='text/javascript'>
+    window.dataLayer = window.dataLayer || [];
+    dataLayer.push({
+      event: 'view_item_list',
+      guidedppc: {
+        items: [
+          {% for item in collection.products %}
+            {
+              id: 'shopify_{{ shopify_store_country }}_{{ item.id }}_{{ item.variants.first.id }}',
+              google_business_vertical: 'retail',
+            },
+          {% endfor %}
+        ]
+      }
+    });
+  </script>
+{% elsif template contains 'product' %}
+  <script type='text/javascript'>
+    window.dataLayer = window.dataLayer || [];
+    dataLayer.push({
+      event: 'view_item',
+      guidedppc: {
+        value: {{ product.price | money_without_currency | remove: ',' }},
+        items: [
+          {
+            id: 'shopify_{{ shopify_store_country }}_{{ product.id }}_{{ product.selected_or_first_available_variant.id }}',
+            google_business_vertical: 'retail',
+          },
+        ]
+      }
+    });
+  </script>
+{% elsif template contains 'search' %}
+  <script type='text/javascript'>
+    window.dataLayer = window.dataLayer || [];
+    dataLayer.push({
+      event: 'view_search_results',
+      guidedppc: {
+        items: [
+          {% for item in search.results %}
+            {
+              id: 'shopify_{{ shopify_store_country }}_{{ item.id }}_{{ item.variants.first.id }}',
+              google_business_vertical: 'retail',
+            },
+          {% endfor %}
+        ]
+      }
+    });
+  </script>
+{% else %}
+  <script type='text/javascript'>
+    window.dataLayer = window.dataLayer || [];
+    dataLayer.push({
+      event: 'page_view',
+    });
+  </script>
+{% endif %}

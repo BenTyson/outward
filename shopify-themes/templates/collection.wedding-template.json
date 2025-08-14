@@ -1,0 +1,291 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "collection-header": {
+      "type": "collection-page-header",
+      "disabled": true,
+      "blocks": {
+        "84ce804f-2f2a-420d-97e8-2de283b694c3": {
+          "type": "banner",
+          "settings": {
+            "collection": "",
+            "image": "shopify://shop_images/Lum_Banner2_36d62d0e-226c-478a-8d2b-5162c79348ef.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "84ce804f-2f2a-420d-97e8-2de283b694c3"
+      ],
+      "settings": {
+        "container": "container",
+        "layout": "inside",
+        "header_height": "small",
+        "text_alignment": "center",
+        "vertical_alignment": "center",
+        "text_color": "white",
+        "bg_color": "#ffffff",
+        "bg_image": "shopify://shop_images/Lum_Banner.jpg",
+        "enable_parallax": true,
+        "upper_title": true,
+        "show_desc": false,
+        "collection_all_desc": ""
+      }
+    },
+    "16631834291f57d2ea": {
+      "type": "image-with-text-2",
+      "settings": {
+        "container": "w-full",
+        "hero_size": "small",
+        "show_overlay": true,
+        "image": "shopify://shop_images/nathan-dumlao-5BB_atDT4oA-unsplash-min.png",
+        "bg_position": "center",
+        "image_link": "",
+        "parallax": false,
+        "content_in_container": false,
+        "content_position": "center middle",
+        "text_alignment": "center",
+        "text_size": "medium",
+        "text_color": "white",
+        "title": "Laser-Engraved Wedding Gifts",
+        "subtitle": "",
+        "text": "<p>Pint Glasses, Whiskey Glasses, Wine Glasses, Coasters, Cutting Boards, Flasks, & More!</p>",
+        "button_label": "",
+        "button_link": "",
+        "button_style": "sf__btn-primary",
+        "button_size": "",
+        "use_content_above": false,
+        "custom_class": ""
+      }
+    },
+    "16631833736d19aa5b": {
+      "type": "custom-content",
+      "blocks": {
+        "166318337317eb63b3-0": {
+          "type": "text",
+          "settings": {
+            "title": "Gifts Worthy of a Wedding",
+            "subheading": "",
+            "text": "<p>Your wedding should be one of the most important, and memorable, days of your lives. Think beyond the commonplace, beyond just the registry, and make your wedding goods and gifts personal and practical. By adding your monograms, names, and/or dates to high-quality kitchenware and barware, your wedding becomes truly, and unequivocally, your own. Our engraved, personalized goods will become daily reminders of that special day—something you can carry with you from place to place, home to home, always anchoring you in that most memorable of moments.</p>",
+            "width": "50%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        },
+        "166318337317eb63b3-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/wedding_glasses.jpg",
+            "link": "",
+            "width": "50%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "166318337317eb63b3-0",
+        "166318337317eb63b3-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "1663183876e29321e9": {
+      "type": "custom-content",
+      "blocks": {
+        "1663183875ee7ac273-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/DSC09767-min.jpg",
+            "link": "",
+            "width": "50%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        },
+        "1663183875ee7ac273-0": {
+          "type": "text",
+          "settings": {
+            "title": "Don't Settle For Less",
+            "subheading": "",
+            "text": "<p>Laser-engraved goods are superior to screen printed products. Unlike screen printing, laser-engraving is permanent, never fades over time, and glassware is dishwasher-safe. The gifts you receive will be classy, elegant, and durable goods that you can cherish forever.</p><p></p><p>Customize your item with monograms, names, and dates. Buy as a set of 2, or purchase larger quantities to gift to the entire wedding party.  </p>",
+            "width": "50%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1663183875ee7ac273-1",
+        "1663183875ee7ac273-0"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "16631843143d7c7540": {
+      "type": "custom-content",
+      "settings": {
+        "heading": "Shop Our Entire Wedding Collection!",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "main": {
+      "type": "main-collection-product-grid",
+      "blocks": {
+        "00b3badd-1613-4230-85d8-f87f04306aaa": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "button",
+            "title": "Item Type",
+            "filtergroup": "Pint Glass, Whiskey Glass, Wine Glass, Cutting Board, Flask, Bottle Opener, Bookmark, Keychain, Coaster",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        },
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "default",
+            "title": "Sub Collection",
+            "filtergroup": "Monogram",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        }
+      },
+      "block_order": [
+        "00b3badd-1613-4230-85d8-f87f04306aaa",
+        "a95b4cd3-aabb-4523-a387-93b514f5c2cb"
+      ],
+      "settings": {
+        "container": "container-fluid",
+        "grid_layout": "grid",
+        "grid_columns": "5",
+        "show_columns_switcher": true,
+        "pagination_limit": 12,
+        "paginate_type": "infinite",
+        "show_sorting": true,
+        "show_filter": true,
+        "filters_type": "tags_filter",
+        "sidebar": "leftColumn",
+        "sidebar_title": "Filters",
+        "limit_height_widget": false,
+        "limit_height": 300,
+        "change_product_variant_on_fitlering": true,
+        "show_product_count": true,
+        "collapsed_groups": "Brand, Vendor, Size",
+        "color_swatches": "color,colour,couleur,farbe"
+      }
+    },
+    "recent-viewed": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Recently Viewed Products",
+        "limit": 8,
+        "columns": 4,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    },
+    "1661196515368ce9b8": {
+      "type": "custom-content",
+      "blocks": {
+        "1661196514677dea24-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "1661196514677dea24-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "collection-header",
+    "16631834291f57d2ea",
+    "16631833736d19aa5b",
+    "1663183876e29321e9",
+    "16631843143d7c7540",
+    "main",
+    "recent-viewed",
+    "1661196515368ce9b8"
+  ]
+}

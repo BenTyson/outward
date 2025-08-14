@@ -1,0 +1,43 @@
+<script>
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const checkoutButtons = document.querySelectorAll('[name="checkout"]');
+  
+    checkoutButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        fetch('/cart.js')
+          .then(response => response.json())
+          .then(cartData => {
+            const productDetails = cartData.items.map(item => ({
+              item_id: item.id,
+              id: item.id,
+              item_name: item.product_title,
+              item_brand: item.vendor,
+              item_category: item.product_type,
+              quantity: item.quantity,
+              currency: cartData.currency,
+              google_business_vertical: 'retail',
+              price: parseFloat(item.price / 100.0)
+            }));
+  
+            const cartTotalValue = cartData.items.reduce((acc, item) => {
+              return acc + (item.price * item.quantity);
+            }, 0);
+  
+            dataLayer.push({ ecommerce: null });
+  
+            dataLayer.push({
+              event: "custom_begin_checkout",
+              ecommerce: {
+                items: productDetails,
+                value: parseFloat(cartTotalValue / 100.0),
+                currency: cartData.currency
+              }
+            });
+          })
+          .catch(error => console.error('Error fetching cart data:', error));
+      });
+    });
+  });
+  </script>
+  

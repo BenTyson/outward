@@ -1,0 +1,247 @@
+{%- capture page_title -%}
+    {{ 'cart.general.title' | t }}
+{%- endcapture -%}
+{% render 'page-title', title: page_title %}
+
+<div class="container">
+  <div class="scd__wrapper sf-cart pb-20" data-cart-wrapper>
+    {% render 'foxkit-cart-countdown' %}
+    {% render 'foxkit-cart-goal' %}
+
+    <form action="{{ routes.cart_url }}" method="post" novalidate class="checkout-form sf-cart__form scd__content">
+      <div class="sf-cart__table w-full">
+        <div class="sf-cart__table-head flex mb-1">
+          <div class="sf-cart__table-col sf-cart__table-product">{{ 'cart.label.product' | t }}</div>
+          <div class="sf-cart__table-col sf-cart__table-price">{{ 'cart.label.price' | t }}</div>
+          <div class="sf-cart__table-col sf-cart__table-quantity hidden md:block">{{ 'cart.label.quantity' | t }}</div>
+          <div class="sf-cart__table-col text-right sf-cart__table-subtotal hidden md:block">{{ 'cart.label.total' | t }}</div>
+        </div>
+
+        <div class="sf-cart__table-body scd__body">
+          {%- if cart.item_count > 0 -%}
+            <div class="scd__items">
+              {%- assign wcp_total_price = 0 -%} 
+              {% for item in cart.items %}
+              {%- include 'wcp_discount' with item.product -%}
+              {%- include 'wcp_variant' with item.variant -%}
+              {%- include 'wcp_vd_discount' with item -%}  
+              {%- assign  wcp_custom_final_Price = item.final_price  -%} 
+              {%- if wcp_v_price < wcp_custom_final_Price -%}
+              {%- assign wcp_line_price = wcp_v_price | floor | minus: 0 | times: item.quantity -%}
+              {%- else -%}
+              {%- assign wcp_line_price = wcp_custom_final_Price | floor | minus: 0 | times: item.quantity -%}
+              {%- assign wcp_v_price = wcp_custom_final_Price | floor | minus: 0 -%}
+              {%- endif -%}
+              {%- assign wcp_total_price = wcp_total_price | plus: wcp_line_price -%}	
+                {% include 'cart-line-item', item: item %}
+              {% endfor %}
+            </div>
+          {%- else -%}
+            <div class="my-32 px-4">
+              <h3 class="text-center text-xl">
+                {{ 'cart.general.empty' | t }}
+                <a href="{{ routes.all_products_collection_url }}" class="border-b border-gray-800">
+                    {{ 'layout.back_to_shopping' | t }}
+                </a>
+              </h3>
+            </div>
+          {%- endif -%}
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <div class="sf-cart__summary relative">
+          {% render 'cart-addons' %}
+
+          {%- assign cart_discounts = 'template ' | split: ' ' -%}
+          {%- if cart.cart_level_discount_applications.size > 0 -%}
+            {%- assign cart_discounts = cart.cart_level_discount_applications -%}
+          {%- endif -%}
+          <div class="scd__summary" data-cart-summary>
+            <div
+              class="scd-item__discounts sf-cart__item-discounts {% if cart.cart_level_discount_applications.size == 0 %}hidden{% endif %}"
+              data-discounts-wrapper
+            >
+              <div class="sf-cart__summary-row text-right">
+                <span class="visually-hidden">{{ 'customer.order.discounts' | t }}</span>
+                <div data-discounts>
+                  <ul class="scd-item__discounts-list" data-discounts-list>
+                    {%- for discount_application in cart_discounts -%}
+                      {% if discount_application.total_allocated_amount != blank %}
+                        <li class="scd-item__discounts-item">
+                          <svg aria-hidden="true" width="20" height="20" focusable="false" role="presentation" viewBox="0 0 12 13"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 .5h3a2 2 0 0 1 2 2v3a.995.995 0 0 1-.293.707l-6 6a1 1 0 0 1-1.414 0l-4-4a1 1 0 0 1 0-1.414l6-6A.995.995 0 0 1 7 .5zm2 2a1 1 0 1 0 2 0 1 1 0 0 0-2 0z" fill="currentColor"></path></svg>
+                          <span data-cart-discount-title>{{- discount_application.title -}}&nbsp;(-<span data-cart-discount-amount>{{ discount_application.total_allocated_amount | money }}</span>)</span>
+                        </li>
+                      {% endif %}
+                    {%- endfor -%}
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div class="sf-cart__summary-row sf-cart-subtotal" data-cart-subtotal>
+              <span class="sf-cart-subtotal__title">{{ 'cart.general.subtotal' | t }}</span>
+              <span class="sf-cart-subtotal__price font-medium" data-cart-subtotal-price><span class="wcp-original-cart-total">{{ cart.total_price | money}}</span>
+              <span class="wcp-cart-total"></span>
+              </span>
+            </div>
+            <div class="additional-notes">
+                <span class="wcp-minimums-note"></span>
+                <span class="wcp-extra-note "></span>
+            </div>{% render "wcp_multi_currency_msg" %}
+          </div>
+
+          {%- capture taxes_shipping_checkout -%}
+            {%- if cart.taxes_included and shop.shipping_policy.body != blank -%}
+              {{ 'cart.general.taxes_included_and_shipping_policy_html' | t: link: shop.shipping_policy.url }}
+            {%- elsif cart.taxes_included -%}
+              {{ 'cart.general.taxes_included_but_shipping_at_checkout' | t }}
+            {%- elsif shop.shipping_policy.body != blank -%}
+              {{ 'cart.general.taxes_and_shipping_policy_at_checkout_html' | t: link: shop.shipping_policy.url }}
+            {%- else -%}
+              {{ 'cart.general.taxes_and_shipping_at_checkout' | t }}
+            {%- endif -%}
+          {%- endcapture -%}
+          <div class="sf-cart__shipping note" data-shipping-note>{{ taxes_shipping_checkout }}</div>
+          <div class="sf-cart__buttons-container mt-5">
+            {% assign show_terms = false %}
+            {% if settings.agree_text != blank and settings.show_agree_on_cart %}
+              <div class="agree-terms">
+                <label>
+                  <input type="checkbox" name="agree_terms" value="yes" required>
+                  <span>{{ settings.agree_text }}</span>
+                </label>
+              </div>
+              {% assign show_terms = true %}
+            {% endif %}
+            {% assign is_wcp_wholesale_customer = false %}
+{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+{% assign active_discounts_array = active_discounts | split: ',' %}
+{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+    {% for discount_key in active_discounts_array %}
+        {% assign key_split = discount_key | split: '-' %}
+        {% assign key_split_length = key_split | size %}
+        {% if key_split_length > 2 %}            
+            {% assign removeable_key = key_split.last | prepend: '-' %}
+            {% assign wcp_hide_sale_badge_customer_tag = discount_key | remove_first: removeable_key %}
+        {% else %}
+            {% assign wcp_hide_sale_badge_customer_tag = key_split[0] %}      
+        {% endif %}
+        {% if customer.tags contains wcp_hide_sale_badge_customer_tag %}
+            {% assign is_wcp_wholesale_customer = true %}     
+        {% endif %}
+    {% endfor %}
+{% endif %}
+{% if is_wcp_wholesale_customer == true %}
+  <div><strong>We will email a custom quote for shipping within 48 hrs</strong></div>
+  {% endif %}
+            <div class="sf-cart__submit-controls{% if show_terms %} mt-3{% endif %}"{% if show_terms %} data-terms-action disabled{% endif %}>
+              <button type="submit" name="checkout" class="w-full cart__submit sf__btn sf__btn-primary relative">
+                <span>{{ 'cart.general.checkout' | t | upcase }}</span>
+                <svg class="animate-spin w-[18px] h-[18px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </button>
+            </div>
+            <div>
+              {% if customer.tags contains "wpdnet" %}
+                  {% if shop.metafields.wcp_net.isNetEnabled == "true" or shop.metafields.wcp_net.isNetEnabled == "1" %}
+                      <div style="margin-top:30px;">
+                          <p>{{shop.metafields.wcp_net.netCartMsg}}</p>
+                          <button id="wcp-30-open" class="w-full cart__submit sf__btn sf__btn-primary relative">{{shop.metafields.wcp_net.netBtnMsg}}</button>
+                      </div>
+                  {% endif %}
+              {% endif %}
+            </div> 
+            {%- if additional_checkout_buttons -%}
+              <div class="additional-checkout-buttons w-full">
+                {{ content_for_additional_checkout_buttons }}
+              </div>
+              <script>
+                  var v = setInterval(function()
+                  {
+                      if(typeof window.wcp_data != 'undefined' && typeof window.wcp_data.discounted_hash != 'undefined')
+                      {
+                          if((window.wcp_data.discounted_hash.discount_value || window.wcp_data.discounted_hash.shipping) && $('.additional-checkout-buttons').children(':visible').length > 0)
+                          {
+                              $('.additional-checkout-buttons').html("Other payment options are available at checkout");
+                              clearInterval(v);
+                          }   
+                      }  
+                      
+                  },500);                                 
+              </script>
+            {%- endif -%}
+          </div>
+          {% if settings.cart_drawer_trust_badge %}
+            <div class="scd__trust-badge mt-3">
+              <img src="{{ settings.cart_drawer_trust_badge | image_url: width: 1000 }}" alt="Trust secure badge" loading="lazy" width="1000" height="200">
+            </div>
+          {% endif %}
+          <div class="scd__overlay inset-0"></div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% assign wcp_wholesale_customer = false %}
+{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+{% assign active_discounts_array = active_discounts | split: ',' %}
+{% assign customer_tags = blank %}
+{% for tag in customer.tags %}
+{% assign tempTag = tag | downcase %}
+{% assign customer_tags = customer_tags | prepend:tempTag %}
+{% unless forloop.last %}
+{% assign customer_tags = customer_tags | prepend:','  %}
+{% endunless %}
+{% endfor %}
+{% assign customer_tags = customer_tags | split:',' %}
+{% assign active_discounts = active_discounts | downcase %}
+{% for discount_key in active_discounts_array %}
+{% assign key_split = discount_key | split: '-' %}
+{% assign key_split_length = key_split | size %}
+{% if key_split_length > 2 %}
+{% assign removeable_key = key_split.last | prepend: '-' %}
+{% assign wcp_customer_tag = discount_key | remove_last: removeable_key %}
+{% else %}
+{% assign wcp_customer_tag = key_split[0] %}
+{% endif %}
+{% assign wcp_customer_tag = wcp_customer_tag | downcase %}
+{% if customer_tags contains wcp_customer_tag %}
+{% assign wcp_wholesale_customer = true %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<style>
+  #wpd-net-place-order{
+    background: #000!important;
+    color: #fff!important;
+    padding: 10px 30px;
+  }
+  .wcp-hero-wcpModal select{
+    border: 1px solid #ccc!important;
+  }
+</style>
+ 
+{% if wcp_wholesale_customer == true %}
+<style>
+  .additional-checkout-buttons{
+    display: none!important;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var WPD_reloadPage = function(e) {setTimeout(function(){window.location.reload();},2500);};
+    function wcp_build_event(x){for (var i = 0; i < x.length; i++) {x[i].addEventListener('click', WPD_reloadPage, false);}}
+//     var x=document.querySelectorAll(".CartItem__Remove");wcp_build_event(x);
+    var x=document.querySelectorAll(".scd-item__btn");wcp_build_event(x);
+    var x=document.querySelectorAll(".scd-item__remove");wcp_build_event(x);
+     function wcp_build_event_change(x){for (var i = 0; i < x.length; i++) {x[i].addEventListener('change', WPD_reloadPage, false);}}
+//      var x=document.querySelectorAll(".QuantitySelector__CurrentQuantity");wcp_build_event_change(x);
+    
+  }, false);
+</script>
+{% endif %}

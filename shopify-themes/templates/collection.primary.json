@@ -1,0 +1,103 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "collection-header": {
+      "type": "collection-page-header",
+      "blocks": {
+        "e9c8f350-95c3-4e04-8e88-1523b1962634": {
+          "type": "banner",
+          "settings": {
+            "collection": "marine-ocean",
+            "image": "shopify://shop_images/small-rocky-island-in-blue-ocean-shallows.jpg"
+          }
+        },
+        "7bdeb06c-8b7c-494b-8c67-1b42d4159980": {
+          "type": "banner",
+          "settings": {
+            "collection": "holidays",
+            "image": "shopify://shop_images/gold-tree-holiday-lights.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "e9c8f350-95c3-4e04-8e88-1523b1962634",
+        "7bdeb06c-8b7c-494b-8c67-1b42d4159980"
+      ],
+      "settings": {
+        "container": "container",
+        "layout": "inside",
+        "header_height": "small",
+        "text_alignment": "center",
+        "vertical_alignment": "center",
+        "text_color": "white",
+        "bg_color": "#ffffff",
+        "enable_parallax": true,
+        "upper_title": true,
+        "show_desc": false,
+        "collection_all_desc": ""
+      }
+    },
+    "main": {
+      "type": "main-collection-product-grid",
+      "blocks": {
+        "00b3badd-1613-4230-85d8-f87f04306aaa": {
+          "type": "filter",
+          "settings": {
+            "design_filtergroup": "default",
+            "title": "Tags",
+            "filtergroup": "Marine & Ocean, Pets, Holidays, Sci Fi & Fantasy, Beer & Whiskey, Nature",
+            "show_label": false,
+            "use_accordion": true,
+            "open_filtergroup": true
+          }
+        }
+      },
+      "block_order": [
+        "00b3badd-1613-4230-85d8-f87f04306aaa"
+      ],
+      "settings": {
+        "container": "container-fluid",
+        "grid_layout": "grid",
+        "grid_columns": "5",
+        "show_columns_switcher": true,
+        "pagination_limit": 12,
+        "paginate_type": "paginate",
+        "show_sorting": true,
+        "show_filter": true,
+        "filters_type": "tags_filter",
+        "sidebar": "leftColumn",
+        "sidebar_title": "Filters",
+        "limit_height_widget": false,
+        "limit_height": 300,
+        "change_product_variant_on_fitlering": true,
+        "show_product_count": true,
+        "collapsed_groups": "Brand, Vendor, Size",
+        "color_swatches": "color,colour,couleur,farbe"
+      }
+    },
+    "recent-viewed": {
+      "type": "recent-viewed-products",
+      "settings": {
+        "container": "container",
+        "heading": "Recently Viewed Products",
+        "limit": 8,
+        "columns": 4,
+        "column_gap": 30,
+        "enable_slider": true
+      }
+    }
+  },
+  "order": [
+    "collection-header",
+    "main",
+    "recent-viewed"
+  ]
+}

@@ -1,0 +1,69 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "page-contact",
+      "settings": {
+        "container": "container"
+      }
+    },
+    "contact-form": {
+      "type": "contact-form",
+      "blocks": {
+        "text-block-1": {
+          "type": "textblock",
+          "settings": {
+            "title": "Address",
+            "content": "<p><a href=\"#\">10390 W 38th Ave., Wheat Ridge, CO 80033</a></p>"
+          }
+        },
+        "text-block-2": {
+          "type": "textblock",
+          "settings": {
+            "title": "Information",
+            "content": "<p>hello@lumengrave.com</p><p></p>"
+          }
+        },
+        "text-block-3": {
+          "type": "socialmedia",
+          "settings": {
+            "title": "Social Media"
+          }
+        },
+        "text-block-4": {
+          "type": "textblock",
+          "settings": {
+            "title": "Hit Us Up",
+            "content": "<p>Feel free to reach out to us via email with any questions, custom orders, or ideas! Our hours are generally 9am - 4:30pm. </p>"
+          }
+        }
+      },
+      "block_order": [
+        "text-block-1",
+        "text-block-2",
+        "text-block-3",
+        "text-block-4"
+      ],
+      "settings": {
+        "container": "container",
+        "title": "Reach Out",
+        "description": "<p>We'll do our best to reply as promptly as we can. </p>",
+        "show_name": true,
+        "show_phone": true,
+        "show_signup_email": true
+      }
+    }
+  },
+  "order": [
+    "main",
+    "contact-form"
+  ]
+}

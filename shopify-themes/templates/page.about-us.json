@@ -1,0 +1,172 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "main": {
+      "type": "page-about-us",
+      "disabled": true,
+      "settings": {}
+    },
+    "custom-content": {
+      "type": "custom-content",
+      "blocks": {
+        "f5e88f1f-ff68-4d03-b686-0cb9fe62fab1": {
+          "type": "text",
+          "settings": {
+            "title": "<h4 class=\"about__block-heading\">Who We Are</h4>",
+            "subheading": "",
+            "text": "<p>LumEngrave is an engraving studio in the foothills of Colorado. We began as a bespoke engraver for local corporate gifting, but shifted towards more creative, personable work during the pandemic. Today, we take pride in providing our customers from around the world with unique, memorable products that elevate their homes and kitchens. </p>",
+            "width": "100%",
+            "alignment": "center",
+            "align_text": "center",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": "sf__about-block sf__about-block-text sf__about-block-text-1"
+          }
+        },
+        "7ef2b0e5-ac31-441d-ba62-712db21298c2": {
+          "type": "text",
+          "settings": {
+            "title": "<h4 class=\"about__block-heading\">What We Do</h4>",
+            "subheading": "",
+            "text": "<p>We take the things you love—your hobbies, lifestyle and cultural interests, spiritual backgrounds, favorite holidays, historical and scientific fascinations, and so much more—and engrave them onto a variety of unique, functional, and high-quality goods.</p><p></p><p>We encourage people to express themselves and to share their personalities with the world around them through the products they use the most in their daily lives. We make it easy for you to enhance the beer you share with friends, or the glass of wine you enjoy with your love—not only through the style and functionality of our products, but by turning an otherwise everyday event into a memorable one with our unique engravings.</p>",
+            "width": "100%",
+            "alignment": "center",
+            "align_text": "center",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": "sf__about-block sf__about-block-text sf__about-block-text-1"
+          }
+        }
+      },
+      "block_order": [
+        "f5e88f1f-ff68-4d03-b686-0cb9fe62fab1",
+        "7ef2b0e5-ac31-441d-ba62-712db21298c2"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container",
+        "background_color": "",
+        "gap": 0,
+        "use_scroll_mobile": false,
+        "gap_mobile": 0,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": "sf__page-about"
+      }
+    },
+    "icon-box": {
+      "type": "icon-box",
+      "blocks": {
+        "c8a16382-6620-4bcf-ba3e-1bb9d69d5b77": {
+          "type": "iconbox",
+          "settings": {
+            "image": "shopify://shop_images/shipping.png",
+            "image_by_url": "",
+            "title": "Free Shipping",
+            "description": "<p>On all orders over $70</p>",
+            "link": "",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-link",
+            "button_size": ""
+          }
+        },
+        "13184979-bd7f-482c-865f-60738819a029": {
+          "type": "iconbox",
+          "settings": {
+            "image": "shopify://shop_images/cash.png",
+            "image_by_url": "",
+            "title": "Money-Back Guarantee",
+            "description": "<p>Within 30 days for an exchange or refund</p>",
+            "link": "",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-link",
+            "button_size": ""
+          }
+        },
+        "c4cf2072-efce-4cb9-b184-14404b61e2a3": {
+          "type": "iconbox",
+          "settings": {
+            "image": "shopify://shop_images/chat.png",
+            "image_by_url": "",
+            "title": "Online Support",
+            "description": "<p>24 hours a day, 7 days a week</p>",
+            "link": "",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-link",
+            "button_size": ""
+          }
+        },
+        "8e15d521-c62b-4552-a64a-94ead24641e5": {
+          "type": "iconbox",
+          "settings": {
+            "image": "shopify://shop_images/4_2f378f25-cac8-415a-b98b-e491bd3fd4f3.png",
+            "image_by_url": "",
+            "title": "Flexible Payment",
+            "description": "<p>Multiple payment options for your convenience</p>",
+            "link": "",
+            "button_label": "",
+            "button_link": "",
+            "button_style": "sf__btn-link",
+            "button_size": ""
+          }
+        }
+      },
+      "block_order": [
+        "c8a16382-6620-4bcf-ba3e-1bb9d69d5b77",
+        "13184979-bd7f-482c-865f-60738819a029",
+        "c4cf2072-efce-4cb9-b184-14404b61e2a3",
+        "8e15d521-c62b-4552-a64a-94ead24641e5"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "#ffffff",
+        "item_per_row": 4,
+        "item_gap": 30,
+        "item_gap_mobile": 10,
+        "card_style": "horizontal",
+        "image_max_width": "30px",
+        "content_alignment": "start",
+        "hover_effect": "none",
+        "enable_slider": false,
+        "show_pagination": false,
+        "show_navigation": false,
+        "use_scroll_mobile": false,
+        "use_grid_column_mb": false,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": "sf__page-about"
+      }
+    }
+  },
+  "order": [
+    "main",
+    "custom-content",
+    "icon-box"
+  ]
+}

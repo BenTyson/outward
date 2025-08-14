@@ -1,0 +1,748 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin theme editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
+{
+  "sections": {
+    "1623223002c02c7263": {
+      "type": "slider",
+      "blocks": {
+        "video_slide_kGrE9f": {
+          "type": "video_slide",
+          "settings": {
+            "video": "https://cdn.shopify.com/videos/c/o/v/dfd8fe6286bb45508b117a66ed41d642.mp4",
+            "content_in_container": false,
+            "content_position": "left middle",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "subheading": "",
+            "title": "Colorado 14er Collection",
+            "description": "<p>A PINT FOR EVERY PEAK</p>",
+            "image_link": "",
+            "button_text": "Shop now",
+            "button_link": "https://lumengrave.com/products/colorado-14ers-pints",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": false,
+            "footer_alignment": "end",
+            "footer_text": "New Collection",
+            "footer_button": "Shop Now",
+            "footer_link": ""
+          }
+        },
+        "slider_item_iDawC4": {
+          "type": "slider_item",
+          "disabled": true,
+          "settings": {
+            "background": "shopify://shop_images/Easter_Banner.png",
+            "mb_background": "shopify://shop_images/Easter_Banner.png",
+            "content_in_container": false,
+            "content_position": "center top",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "black",
+            "subheading": "",
+            "title": "EASTER PROMO",
+            "description": "<p><strong>17% OFF</strong> YOUR ORDER OF<strong> $35+</strong><br/>Use coupon code <strong>EASTER17 </strong>at checkout.</p>",
+            "image_link": "",
+            "button_text": "Shop now",
+            "button_link": "shopify://collections",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": false,
+            "footer_alignment": "end",
+            "footer_text": "New Collection",
+            "footer_button": "Shop Now",
+            "footer_link": ""
+          }
+        },
+        "slider_item_9Ci3Lp": {
+          "type": "slider_item",
+          "settings": {
+            "background": "shopify://shop_images/Wine_Academic_Lifestyle.jpg",
+            "content_in_container": false,
+            "content_position": "left top",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "subheading": "",
+            "title": "Academic Collection",
+            "description": "<p>Shop your favorite historical, scientific, and cultural designs</p>",
+            "image_link": "",
+            "button_text": "Shop now",
+            "button_link": "shopify://collections/academic",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": false,
+            "footer_alignment": "end",
+            "footer_text": "New Collection",
+            "footer_button": "Shop Now",
+            "footer_link": ""
+          }
+        },
+        "video_slide_T6GH93": {
+          "type": "video_slide",
+          "settings": {
+            "video": "https://cdn.shopify.com/videos/c/o/v/398f236c0af34e29852512dc71baf77c.mp4",
+            "content_in_container": false,
+            "content_position": "left top",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "subheading": "",
+            "title": "",
+            "description": "",
+            "image_link": "",
+            "button_text": "",
+            "button_link": "",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": true,
+            "footer_alignment": "start",
+            "footer_text": "Declaration of Independence Rocks Glass",
+            "footer_button": "Shop Now",
+            "footer_link": "shopify://products/declaration-of-independence-rocks-glass"
+          }
+        },
+        "slider_item_WFNUwN": {
+          "type": "slider_item",
+          "disabled": true,
+          "settings": {
+            "background": "shopify://shop_images/Halloween_Skull_Pint.png",
+            "mb_background": "shopify://shop_images/Halloween_Skull_Pint_dec83abe-db20-4fbd-a4bc-799ed29e9873.png",
+            "content_in_container": false,
+            "content_position": "left middle",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "subheading": "",
+            "title": "Halloween Collection",
+            "description": "<p>Use code <strong>SPOOKY15</strong> at checkout for<strong> 15% off $35</strong> or more!</p>",
+            "image_link": "",
+            "button_text": "Shop now",
+            "button_link": "shopify://collections/halloween",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": false,
+            "footer_alignment": "end",
+            "footer_text": "New Collection",
+            "footer_button": "Shop Now",
+            "footer_link": ""
+          }
+        },
+        "d065c0c5-2522-4095-a089-e2d80b936ecb": {
+          "type": "video_slide",
+          "settings": {
+            "video": "https://cdn.shopify.com/videos/c/o/v/20625b8e78764d24a5acb93aebe47309.mp4",
+            "content_in_container": false,
+            "content_position": "left middle",
+            "text_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "subheading": "STUNNING 360°",
+            "title": "<span class=\"uppercase tracking-wide font-bold\">Full Wrap Pints</span>",
+            "description": "<p>Maps, Science, History, Culture & More!</p>",
+            "image_link": "",
+            "button_text": "Shop now",
+            "button_link": "shopify://collections/pint-glasses",
+            "button_style": "sf__btn-secondary",
+            "button_size": "",
+            "show_footer": false,
+            "footer_alignment": "end",
+            "footer_text": "New Collection",
+            "footer_button": "Shop Now",
+            "footer_link": ""
+          }
+        }
+      },
+      "block_order": [
+        "video_slide_kGrE9f",
+        "slider_item_iDawC4",
+        "slider_item_9Ci3Lp",
+        "video_slide_T6GH93",
+        "slider_item_WFNUwN",
+        "d065c0c5-2522-4095-a089-e2d80b936ecb"
+      ],
+      "settings": {
+        "container": "w-full",
+        "slideshow_height": "fullscreen",
+        "show_overlay": false,
+        "dots_position": "right",
+        "dots_color": "light",
+        "show_dots": true,
+        "show_arrows": false,
+        "autorotate": true,
+        "autorotate_speed": 4,
+        "use_content_above": false,
+        "custom_class": "sf__index-slideshow"
+      }
+    },
+    "1623225671e61658ef": {
+      "type": "custom-content",
+      "blocks": {
+        "e100312a-df35-44a9-a7cd-352896db0433": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Pint_Lifestyle_SolarSystem_b720b618-58a9-4e56-bf57-f3c78416aeed.jpg",
+            "link": "shopify://collections/pint-glasses",
+            "title": "BEER",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "98da5699-651f-4d5a-b9be-28ece4e96404": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Rocks_Lifestyle_AmericanHistory_1485ec7c-6b37-4c30-b258-021a47b25573.jpg",
+            "link": "shopify://collections/whiskey-glasses",
+            "title": "WHISKEY",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "7dfe9422-4bf0-46ac-a469-4bacf016c397": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Halloween_Spiderwebs_Wine_5dba1ce4-5290-4247-9c18-fc3db58d450d.png",
+            "link": "shopify://collections/wine-glasses",
+            "title": "WINE",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "7b36b29c-2efa-418d-a2b8-f07c4188548f": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Science_Shot_Black_32e56d83-c706-403b-8146-986c6620b808.png",
+            "link": "shopify://collections/shot-glasses",
+            "title": "SHOT/VOTIVE",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "fc580eb9-756c-47af-a7f2-6d2b34641380": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Flask_website_1aeae5fd-14e3-4218-a1c1-5fd3ef649100.jpg",
+            "link": "shopify://collections/hip-flasks",
+            "title": "FLASKS",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "a9eae4b3-eaf3-420b-8bf8-fc372f50e6a0": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Lum_Coasters.jpg",
+            "link": "shopify://collections/coasters",
+            "title": "<span class=\"uppercase\">COASTERS</span>",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "3d46e4b3-a3a8-4eda-ab23-f069df6bc414": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "top_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Lum_BotOp2.jpg",
+            "link": "shopify://collections/bottle-openers",
+            "title": "BOTTLE OPENERS",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "b7c99da0-25ca-4ce5-b1b1-c71409174dc8": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "bottom_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Sticker_-_Flask_Camping_45895aab-878b-443f-a355-85019a4e7360.jpg",
+            "link": "shopify://collections/wood-stickers",
+            "title": "WOOD STICKERS",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        },
+        "955e2b96-cede-4ca4-9928-b7b717b125ab": {
+          "type": "image_card",
+          "settings": {
+            "width": "33%",
+            "content_position": "bottom_center",
+            "content_alignment": "center",
+            "text_size": "large",
+            "text_color": "white",
+            "image": "shopify://shop_images/Cutting_Board_-_Tribal_Camel_Mural_6d6c8b57-8c95-4a45-b978-a57f36052c6b.jpg",
+            "link": "shopify://collections/cutting-boards",
+            "title": "CUTTING BOARDS",
+            "subtitle": "",
+            "button_label": "",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "e100312a-df35-44a9-a7cd-352896db0433",
+        "98da5699-651f-4d5a-b9be-28ece4e96404",
+        "7dfe9422-4bf0-46ac-a469-4bacf016c397",
+        "7b36b29c-2efa-418d-a2b8-f07c4188548f",
+        "fc580eb9-756c-47af-a7f2-6d2b34641380",
+        "a9eae4b3-eaf3-420b-8bf8-fc372f50e6a0",
+        "3d46e4b3-a3a8-4eda-ab23-f069df6bc414",
+        "b7c99da0-25ca-4ce5-b1b1-c71409174dc8",
+        "955e2b96-cede-4ca4-9928-b7b717b125ab"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "1623225908b15e81fb": {
+      "type": "featured-collection",
+      "settings": {
+        "heading": "NEWEST DESIGNS",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "rgba(0,0,0,0)",
+        "collection": "favorites",
+        "enable_flashsale": false,
+        "show_countdown": false,
+        "product_to_show": 5,
+        "items_per_row": 5,
+        "item_gap": 30,
+        "pcard_layout": "2",
+        "pcard_image_ratio": "",
+        "show_vendor": false,
+        "hide_title": false,
+        "enable_slider": false,
+        "show_pagination": false,
+        "show_navigation": false,
+        "button_type": "link",
+        "button_text": "SHOP NOW",
+        "button_style": "sf__btn-primary",
+        "button_size": "",
+        "infinite_load": false,
+        "max_page_load": 3,
+        "use_scroll_mobile": true,
+        "item_gap_mobile": 10,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": "sf__index-featured-collection"
+      }
+    },
+    "165895014978270dc8": {
+      "type": "collection-list",
+      "blocks": {
+        "1658950148ef11bab4-1": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "holidays",
+            "title": "",
+            "item_image": "shopify://shop_images/halloween_a2997a19-fc78-4ab1-ba43-5f34fda7f444.jpg"
+          }
+        },
+        "683ee3e7-625f-459b-8065-7ae18c672302": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "outdoors",
+            "title": "Adventure & Outdoors",
+            "item_image": "shopify://shop_images/adventure_3d86050b-32f9-4442-8502-3c9f519c02de.jpg"
+          }
+        },
+        "28980292-1312-47f1-814c-40b6f74044c7": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "science-nature",
+            "title": "Science & Nature",
+            "item_image": "shopify://shop_images/scimath.jpg"
+          }
+        },
+        "893d3812-8ac5-481e-9e1e-43d835051e61": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "history",
+            "title": "History",
+            "item_image": "shopify://shop_images/history_34b98d60-bb36-420f-8d52-64e8b7c01df2.jpg"
+          }
+        },
+        "052b5156-6b76-4395-be8b-a41a547c5c98": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "family",
+            "title": "Family",
+            "item_image": "shopify://shop_images/family.jpg"
+          }
+        },
+        "ec5c8e7b-b526-4c0f-a17d-344096c5da82": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "pets",
+            "title": "Pets",
+            "item_image": "shopify://shop_images/pets_0d76289e-4e6a-43a3-97d6-79cb5022afa2.jpg"
+          }
+        },
+        "1658950148ef11bab4-2": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "sci-fi-fantasy",
+            "title": "Sci Fi & Fantasy",
+            "item_image": "shopify://shop_images/scifi_69d88aef-fdc2-4038-b229-33070f589d7a.jpg"
+          }
+        },
+        "378e3057-cde3-4589-afe7-aae0b8cf6660": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "military-patriotism",
+            "title": "",
+            "item_image": "shopify://shop_images/patriotic.jpg"
+          }
+        },
+        "7fd850e2-1975-4971-989b-5b72d74dc026": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "",
+            "title": "Religious & Spiritual",
+            "item_image": "shopify://shop_images/religious.jpg"
+          }
+        },
+        "4570a93c-f1c3-4cb3-ae6f-fd89764c1f45": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "spirituality",
+            "title": "Esoterica",
+            "item_image": "shopify://shop_images/esoteric.jpg"
+          }
+        },
+        "c1f74f90-38a5-45bb-a254-c79759eb1bb2": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "sports-hobbies",
+            "title": "",
+            "item_image": "shopify://shop_images/sports.jpg"
+          }
+        },
+        "518009c2-e16d-4298-b639-7f0b869bb122": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "wedding",
+            "title": "Weddings",
+            "item_image": "shopify://shop_images/wedding.jpg"
+          }
+        },
+        "d0dd1f68-1e20-4ffa-9c23-1e95268dcd98": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "topographic",
+            "title": "Cities & States",
+            "item_image": "shopify://shop_images/cities.jpg"
+          }
+        },
+        "adacc960-5f19-4ebd-9e99-8ecaca8b4184": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "maps-places",
+            "title": "Maps",
+            "item_image": "shopify://shop_images/maps2.jpg"
+          }
+        },
+        "da0b71bf-5801-46e9-835d-6ac0d0d2af22": {
+          "type": "collection_block",
+          "settings": {
+            "collection": "",
+            "title": "Music & Literature",
+            "item_image": "shopify://shop_images/music.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "1658950148ef11bab4-1",
+        "683ee3e7-625f-459b-8065-7ae18c672302",
+        "28980292-1312-47f1-814c-40b6f74044c7",
+        "893d3812-8ac5-481e-9e1e-43d835051e61",
+        "052b5156-6b76-4395-be8b-a41a547c5c98",
+        "ec5c8e7b-b526-4c0f-a17d-344096c5da82",
+        "1658950148ef11bab4-2",
+        "378e3057-cde3-4589-afe7-aae0b8cf6660",
+        "7fd850e2-1975-4971-989b-5b72d74dc026",
+        "4570a93c-f1c3-4cb3-ae6f-fd89764c1f45",
+        "c1f74f90-38a5-45bb-a254-c79759eb1bb2",
+        "518009c2-e16d-4298-b639-7f0b869bb122",
+        "d0dd1f68-1e20-4ffa-9c23-1e95268dcd98",
+        "adacc960-5f19-4ebd-9e99-8ecaca8b4184",
+        "da0b71bf-5801-46e9-835d-6ac0d0d2af22"
+      ],
+      "disabled": true,
+      "settings": {
+        "heading": "Collections",
+        "subheading": "",
+        "description": "Dozens of categories. Thousands of designs. Shop our entire collection.",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "layout": "grid",
+        "card_style": "standard",
+        "text_alignment": "center",
+        "hover_effect": "scaling-up",
+        "show_product_count": false,
+        "count_inline_title": false,
+        "image_rounded": true,
+        "items_per_row": 5,
+        "item_gap": 24,
+        "enable_slider": false,
+        "show_pagination": false,
+        "show_navigation": false,
+        "autorotate": false,
+        "autorotate_speed": 5,
+        "use_scroll_mobile": true,
+        "mobile_gap": 10,
+        "hidden_slide_control_mobile": false,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "162322539058f7ea8a": {
+      "type": "custom-content",
+      "blocks": {
+        "image_card_kVjjrM": {
+          "type": "image_card",
+          "settings": {
+            "width": "100%",
+            "content_position": "center_left",
+            "content_alignment": "center",
+            "text_size": "medium",
+            "text_color": "white",
+            "image": "shopify://shop_images/Lifestyle_Pint_14er_Bierstadt.png",
+            "link": "shopify://products/colorado-14ers-pints",
+            "title": "Colorado 14ers Collection",
+            "subtitle": "Introducing:",
+            "button_label": "Collect Every Peak",
+            "button_style": "sf__btn-link",
+            "button_size": "",
+            "use_content_above": false,
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "image_card_kVjjrM"
+      ],
+      "settings": {
+        "heading": "UNCOMMON GIFTS FOR EVERY OCCASION",
+        "subheading": "",
+        "description": "UPGRADE YOUR HOME WITH UNIQUE GIFTS & GOODS",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": "sf__index-custom-content-1"
+      }
+    },
+    "162322613280170962": {
+      "type": "custom-content",
+      "blocks": {
+        "162322613280170962-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/OC_Lum_b6107d29-9c03-4020-b8be-06069004c70b.jpg",
+            "link": "",
+            "width": "50%",
+            "alignment": "center",
+            "block_custom_class": ""
+          }
+        },
+        "162322613280170962-0": {
+          "type": "text",
+          "settings": {
+            "title": "CUSTOM MAPS TO COMMEMORATE LIFE'S ADVENTURES",
+            "subheading": "",
+            "text": "<p>Most maps have few surprises: their contour lines and borders mark known destinations. More precious are those maps we make for ourselves—of our cities and towns, our private places, our daily worlds, our lives. Here I was happy, in that place I discovered myself, this is where I met my love. These maps depict the tapestry of our lives. </p><p>Celebrate your moments and memories with our custom map drinkware.</p>",
+            "width": "50%",
+            "alignment": "center",
+            "align_text": "left",
+            "text_size": "medium",
+            "text_color": "black",
+            "button_label": "MAP YOUR MEMORIES NOW",
+            "button_link": "shopify://collections/maps-places",
+            "button_style": "sf__btn-primary",
+            "button_size": "",
+            "block_custom_class": ""
+          }
+        }
+      },
+      "block_order": [
+        "162322613280170962-1",
+        "162322613280170962-0"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "container-fluid",
+        "background_color": "",
+        "gap": 0,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": "sf__index-custom-content-3"
+      }
+    },
+    "1623230332326b7443": {
+      "type": "newsletter",
+      "settings": {
+        "container": "w-full",
+        "background_color": "",
+        "form_layout": "vertical",
+        "form_design": "1",
+        "heading": "EXCLUSIVE DEALS + DISCOUNTS",
+        "description": "<p>Join our mailing list and unlock an immediate 15% discount code for your next purchase, plus occasional deals exclusive to our newsletter.</p>",
+        "email_placeholder": "Enter your email",
+        "submit_button": "JOIN",
+        "text_color": "black",
+        "show_icon": true,
+        "icon_img_width": "60",
+        "show_agreement": true,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    },
+    "1661196383f4901872": {
+      "type": "custom-content",
+      "blocks": {
+        "166119638208dbd901-1": {
+          "type": "image",
+          "settings": {
+            "image": "shopify://shop_images/foothills_banner_4d120f0a-7bc4-4f53-a587-1a7c4d0de104.jpg",
+            "link": "",
+            "width": "100%",
+            "alignment": "end",
+            "block_custom_class": "zeropad"
+          }
+        }
+      },
+      "block_order": [
+        "166119638208dbd901-1"
+      ],
+      "settings": {
+        "heading": "",
+        "subheading": "",
+        "description": "",
+        "header_alignment": "center",
+        "container": "w-full",
+        "background_color": "",
+        "gap": 30,
+        "use_scroll_mobile": false,
+        "gap_mobile": 16,
+        "padding_top": 0,
+        "padding_bottom": 0,
+        "custom_class": ""
+      }
+    }
+  },
+  "order": [
+    "1623223002c02c7263",
+    "1623225671e61658ef",
+    "1623225908b15e81fb",
+    "165895014978270dc8",
+    "162322539058f7ea8a",
+    "162322613280170962",
+    "1623230332326b7443",
+    "1661196383f4901872"
+  ]
+}
