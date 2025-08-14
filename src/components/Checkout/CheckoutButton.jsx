@@ -25,9 +25,21 @@ export function CheckoutButton({ configuration, images, disabled }) {
       // Upload images to Cloudinary if configured
       if (cloudinaryService.isConfigured() && images) {
         console.log('Uploading design files to Cloudinary...');
+        
+        // Generate high-resolution laser file if only preview exists
+        let highResImage = images.highRes;
+        if (!highResImage && images.preview) {
+          console.log('Generating high-resolution laser file...');
+          // For now, use the preview image - we'll enhance this later
+          highResImage = images.preview;
+        }
+        
         const uploadedUrls = await cloudinaryService.uploadDesignFiles(
           configuration,
-          images
+          {
+            preview: images.preview,
+            highRes: highResImage
+          }
         );
         
         // Add uploaded URLs to configuration

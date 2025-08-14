@@ -103,16 +103,16 @@ class CloudinaryService {
     // Upload high-resolution laser file if available
     if (images.highRes) {
       try {
-        uploads.highResUrl = await this.uploadImage(images.highRes, {
+        uploads.laserFileUrl = await this.uploadImage(images.highRes, {
           type: 'laser',
           orderId: orderId,
           glassType: configuration.glassType,
           folder: 'map-glass/laser-files'
         });
-        console.log('High-res uploaded:', uploads.highResUrl);
+        console.log('Laser file uploaded:', uploads.laserFileUrl);
       } catch (error) {
-        console.error('High-res upload failed:', error);
-        uploads.highResUrl = images.highRes; // Fallback to data URL
+        console.error('Laser file upload failed:', error);
+        uploads.laserFileUrl = images.highRes; // Fallback to data URL
       }
     }
     
