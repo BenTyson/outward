@@ -1,0 +1,53 @@
+/* Product Page Layout - Shopify Standard Style */
+.product-page {
+  min-height: 100vh;
+  background: #ffffff;
+  padding: 40px 20px;
+}
+
+.product-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* Gallery Section */
+.product-gallery-section {
+  position: sticky;
+  top: 40px;
+  height: fit-content;
+}
+
+/* Details Section */
+.product-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.customization-section {
+  border-top: 1px solid #EEEEE0;
+  padding-top: 32px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1024px) {
+  .product-container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .product-gallery-section {
+    position: relative;
+    top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-page {
+    padding: 20px 16px;
+  }
+}

@@ -1,0 +1,173 @@
+{
+  "name": "Map Glass Configurator",
+  "settings": [
+    {
+      "type": "header",
+      "content": "General Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_map_configurator",
+      "label": "Enable Map Glass Configurator",
+      "default": false,
+      "info": "Show the customize button on product pages"
+    },
+    {
+      "type": "select",
+      "id": "configurator_source",
+      "label": "Configurator Source",
+      "options": [
+        {
+          "value": "theme",
+          "label": "Theme Assets (Production)"
+        },
+        {
+          "value": "external",
+          "label": "External URL (Vercel/CDN)"
+        },
+        {
+          "value": "development",
+          "label": "Local Development"
+        }
+      ],
+      "default": "theme",
+      "info": "Where to load the configurator files from"
+    },
+    {
+      "type": "header",
+      "content": "External URLs (if using external source)"
+    },
+    {
+      "type": "text",
+      "id": "configurator_js_url",
+      "label": "JavaScript URL",
+      "info": "Full URL to the configurator JavaScript file"
+    },
+    {
+      "type": "text",
+      "id": "configurator_css_url",
+      "label": "CSS URL",
+      "info": "Full URL to the configurator CSS file"
+    },
+    {
+      "type": "header",
+      "content": "Product Variants"
+    },
+    {
+      "type": "text",
+      "id": "configurator_variant_rocks",
+      "label": "Rocks Glass Variant ID",
+      "default": "43120044769368",
+      "info": "Shopify variant ID for rocks/whiskey glass"
+    },
+    {
+      "type": "text",
+      "id": "configurator_variant_pint",
+      "label": "Pint Glass Variant ID",
+      "default": "43120044802136",
+      "info": "Shopify variant ID for pint glass"
+    },
+    {
+      "type": "text",
+      "id": "configurator_variant_wine",
+      "label": "Wine Glass Variant ID",
+      "default": "43120044834904",
+      "info": "Shopify variant ID for wine glass"
+    },
+    {
+      "type": "text",
+      "id": "configurator_variant_shot",
+      "label": "Shot Glass Variant ID",
+      "default": "43120044867672",
+      "info": "Shopify variant ID for shot glass"
+    },
+    {
+      "type": "header",
+      "content": "API Configuration"
+    },
+    {
+      "type": "text",
+      "id": "mapbox_access_token",
+      "label": "Mapbox Access Token",
+      "info": "Your Mapbox API token (if not bundled in build)"
+    },
+    {
+      "type": "text",
+      "id": "cloudinary_cloud_name",
+      "label": "Cloudinary Cloud Name",
+      "default": "dq69mrv68",
+      "info": "Your Cloudinary cloud name"
+    },
+    {
+      "type": "text",
+      "id": "cloudinary_upload_preset",
+      "label": "Cloudinary Upload Preset",
+      "default": "lumengrave_maps",
+      "info": "Your Cloudinary upload preset"
+    },
+    {
+      "type": "header",
+      "content": "Behavior Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "configurator_open_cart_drawer",
+      "label": "Open Cart Drawer on Add",
+      "default": true,
+      "info": "Automatically open cart drawer after adding to cart"
+    },
+    {
+      "type": "text",
+      "id": "configurator_success_message",
+      "label": "Success Message",
+      "default": "Your custom map design has been added to cart!",
+      "info": "Message shown after successful add to cart"
+    },
+    {
+      "type": "checkbox",
+      "id": "configurator_track_events",
+      "label": "Track Analytics Events",
+      "default": true,
+      "info": "Send events to Google Analytics and Shopify Analytics"
+    },
+    {
+      "type": "header",
+      "content": "Display Settings"
+    },
+    {
+      "type": "select",
+      "id": "configurator_button_position",
+      "label": "Button Position",
+      "options": [
+        {
+          "value": "above_add_to_cart",
+          "label": "Above Add to Cart"
+        },
+        {
+          "value": "below_add_to_cart",
+          "label": "Below Add to Cart"
+        },
+        {
+          "value": "replace_add_to_cart",
+          "label": "Replace Add to Cart"
+        }
+      ],
+      "default": "above_add_to_cart",
+      "info": "Where to show the customize button"
+    },
+    {
+      "type": "checkbox",
+      "id": "configurator_show_on_all_products",
+      "label": "Show on All Products",
+      "default": false,
+      "info": "Show configurator on all products (not just map glasses)"
+    },
+    {
+      "type": "text",
+      "id": "configurator_product_tags",
+      "label": "Product Tags (comma-separated)",
+      "default": "customizable,map-glass",
+      "info": "Only show on products with these tags (if not showing on all)"
+    }
+  ]
+}

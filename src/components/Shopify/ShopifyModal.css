@@ -1,0 +1,299 @@
+/* Map Glass Configurator - Modal Styles */
+/* All styles namespaced with .mgc- prefix to avoid conflicts */
+
+.mgc-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999; /* High z-index to overlay Shopify theme */
+  padding: 20px;
+  animation: mgcFadeIn 0.3s ease-out;
+}
+
+@keyframes mgcFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.mgc-modal-container {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1400px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: mgcSlideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes mgcSlideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Header */
+.mgc-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 30px;
+  border-bottom: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+.mgc-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #161d25;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.mgc-modal-close {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #666;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mgc-modal-close:hover:not(:disabled) {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.mgc-modal-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal Body */
+.mgc-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  position: relative;
+}
+
+/* Scrollbar styling */
+.mgc-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mgc-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.mgc-modal-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.mgc-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Step 2 Wrapper with Checkout */
+.mgc-step2-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.mgc-checkout-section {
+  padding: 20px 30px;
+  border-top: 1px solid #e5e5e5;
+  background-color: #fafafa;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.mgc-checkout-button {
+  background-color: #738263;
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-width: 160px;
+}
+
+.mgc-checkout-button:hover:not(:disabled) {
+  background-color: #545f49;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(115, 130, 99, 0.3);
+}
+
+.mgc-checkout-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Processing Overlay */
+.mgc-processing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 12px;
+}
+
+.mgc-processing-content {
+  text-align: center;
+  padding: 30px;
+}
+
+.mgc-processing-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #738263;
+  border-radius: 50%;
+  animation: mgcSpin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes mgcSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.mgc-processing-content p {
+  margin: 0;
+  font-size: 16px;
+  color: #666;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Success/Error Messages */
+.mgc-success-message,
+.mgc-error-message {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 16px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  z-index: 1000000;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mgc-success-message {
+  background-color: #4caf50;
+  color: white;
+}
+
+.mgc-error-message {
+  background-color: #f44336;
+  color: white;
+}
+
+.mgc-success-message.show,
+.mgc-error-message.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .mgc-modal-overlay {
+    padding: 0;
+  }
+
+  .mgc-modal-container {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .mgc-modal-header {
+    padding: 16px 20px;
+  }
+
+  .mgc-modal-title {
+    font-size: 20px;
+  }
+
+  .mgc-checkout-section {
+    padding: 16px 20px;
+  }
+
+  .mgc-checkout-button {
+    width: 100%;
+  }
+
+  .mgc-success-message,
+  .mgc-error-message {
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    text-align: center;
+  }
+}
+
+/* Ensure modal content doesn't inherit theme styles */
+.mgc-modal-container * {
+  box-sizing: border-box;
+}
+
+/* Override potential theme conflicts */
+.mgc-modal-container h1,
+.mgc-modal-container h2,
+.mgc-modal-container h3,
+.mgc-modal-container h4,
+.mgc-modal-container h5,
+.mgc-modal-container h6 {
+  line-height: 1.4;
+  margin-top: 0;
+}
+
+.mgc-modal-container p {
+  line-height: 1.6;
+}
+
+.mgc-modal-container button {
+  font-family: inherit;
+}

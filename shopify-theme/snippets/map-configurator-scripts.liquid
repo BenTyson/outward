@@ -1,0 +1,93 @@
+{% comment %}
+  Map Glass Configurator Scripts
+  Include this in theme.liquid before closing </body> tag
+  Usage: {% include 'map-configurator-scripts' %}
+{% endcomment %}
+
+{% if settings.enable_map_configurator %}
+  <!-- Map Glass Configurator Integration -->
+  
+  <!-- Option 1: Load from theme assets (after uploading built files) -->
+  {% if settings.configurator_source == 'theme' %}
+    <link rel="stylesheet" href="{{ 'map-glass-configurator.css' | asset_url }}">
+    <script src="{{ 'map-glass-configurator.js' | asset_url }}" defer></script>
+  {% endif %}
+  
+  <!-- Option 2: Load from external URL (Vercel or CDN) -->
+  {% if settings.configurator_source == 'external' %}
+    <link rel="stylesheet" href="{{ settings.configurator_css_url }}">
+    <script src="{{ settings.configurator_js_url }}" defer></script>
+  {% endif %}
+  
+  <!-- Option 3: Load from Vercel (development) -->
+  {% if settings.configurator_source == 'development' %}
+    <link rel="stylesheet" href="http://localhost:5173/src/shopify-integration.css">
+    <script type="module">
+      import('http://localhost:5173/src/shopify-entry.jsx');
+    </script>
+  {% endif %}
+
+  <!-- Configuration -->
+  <script>
+    window.MapGlassConfiguratorConfig = {
+      // Shopify variant IDs for glass types
+      variants: {
+        rocks: {{ settings.configurator_variant_rocks | default: '43120044769368' }},
+        pint: {{ settings.configurator_variant_pint | default: '43120044802136' }},
+        wine: {{ settings.configurator_variant_wine | default: '43120044834904' }},
+        shot: {{ settings.configurator_variant_shot | default: '43120044867672' }}
+      },
+      
+      // API Keys (if not bundled)
+      mapboxToken: {{ settings.mapbox_access_token | json }},
+      cloudinaryCloudName: {{ settings.cloudinary_cloud_name | json }},
+      cloudinaryUploadPreset: {{ settings.cloudinary_upload_preset | json }},
+      
+      // Theme integration
+      cartDrawer: {{ settings.configurator_open_cart_drawer | default: false }},
+      successMessage: {{ settings.configurator_success_message | default: 'Design added to cart!' | json }},
+      
+      // Analytics
+      trackEvents: {{ settings.configurator_track_events | default: true }}
+    };
+
+    // Wait for configurator to load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if configurator loaded successfully
+      if (typeof window.MapGlassConfigurator !== 'undefined') {
+        console.log('Map Glass Configurator loaded successfully');
+      }
+    });
+
+    // Helper function to open configurator
+    window.openMapConfigurator = function(options) {
+      if (typeof window.MapGlassConfigurator === 'undefined') {
+        console.error('Map Glass Configurator not loaded');
+        return;
+      }
+      
+      window.MapGlassConfigurator.init(options).open();
+    };
+  </script>
+
+  <!-- Fallback styles for loading state -->
+  <style>
+    .map-configurator-loading {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #f0f0f0;
+      color: #666;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .map-configurator-error {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #ffe0e0;
+      color: #d00;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+  </style>
+{% endif %}

@@ -1,0 +1,89 @@
+/* Location Search Styles */
+.location-search {
+  width: 100%;
+}
+
+.geocoder-container {
+  width: 100%;
+}
+
+/* Style Mapbox Geocoder to match LumenGrave design */
+.geocoder-container .mapboxgl-ctrl-geocoder {
+  width: 100%;
+  max-width: none;
+  font-family: inherit;
+  box-shadow: none;
+  border: 1px solid #EEEEE0;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--input {
+  font-size: 16px;
+  padding: 12px 40px 12px 12px;
+  color: #171717;
+  height: 48px;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--input::placeholder {
+  color: #999999;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--input:focus {
+  outline: none;
+  border-color: #738263;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--icon {
+  top: 14px;
+  width: 20px;
+  height: 20px;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--button {
+  top: 14px;
+  width: 20px;
+  height: 20px;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestions {
+  border: 1px solid #EEEEE0;
+  border-radius: 4px;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestion {
+  padding: 12px;
+  font-size: 14px;
+  color: #171717;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestion:hover,
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestion.active {
+  background: #f8f8f8;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestion-title {
+  font-weight: 500;
+  color: #171717;
+}
+
+.geocoder-container .mapboxgl-ctrl-geocoder--suggestion-address {
+  color: #666666;
+  font-size: 13px;
+}
+
+/* Error State */
+.location-search-error {
+  padding: 12px;
+  background: #fff5f5;
+  border: 1px solid #ffdddd;
+  border-radius: 4px;
+  color: #cc0000;
+  font-size: 14px;
+}
+
+.location-search-error p {
+  margin: 0;
+}

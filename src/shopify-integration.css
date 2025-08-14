@@ -1,0 +1,129 @@
+/* Map Glass Configurator - Shopify Integration Styles */
+/* This file wraps all component styles with proper namespacing */
+
+/* Import base styles */
+@import './index.css';
+
+/* Namespace all component styles to prevent conflicts */
+.mgc-modal-container {
+  /* Import component styles within modal context */
+  @import './App.css';
+}
+
+/* Override any global styles that might conflict */
+.mgc-modal-container {
+  /* Reset box model */
+  * {
+    box-sizing: border-box;
+  }
+
+  /* Ensure our fonts take precedence */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #333;
+
+  /* Prevent theme styles from affecting our components */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin-bottom: 0.5em;
+  }
+
+  p {
+    margin-bottom: 1em;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  /* Ensure Mapbox controls are visible */
+  .mapboxgl-ctrl {
+    z-index: 1;
+  }
+
+  /* Ensure Three.js canvas is contained */
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* Hide configurator root when not in use */
+#map-glass-configurator-root:empty {
+  display: none;
+}
+
+/* Prevent body scroll when modal is open */
+body.mgc-modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* High specificity overrides for common theme conflicts */
+.mgc-modal-overlay {
+  /* Ensure modal is always on top */
+  z-index: 2147483647 !important;
+}
+
+/* Fix for potential theme button style conflicts */
+.mgc-modal-container button {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Fix for potential theme input style conflicts */
+.mgc-modal-container input[type="text"],
+.mgc-modal-container input[type="number"],
+.mgc-modal-container select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Ensure step content uses full height */
+.mgc-modal-body .step1,
+.mgc-modal-body .step2 {
+  height: 100%;
+  min-height: 600px;
+}
+
+/* Adjust wizard for modal context */
+.mgc-modal-body .wizard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mgc-modal-body .wizard-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Mobile adjustments for modal */
+@media (max-width: 768px) {
+  .mgc-modal-body .step1-content,
+  .mgc-modal-body .step2-content {
+    flex-direction: column;
+  }
+
+  .mgc-modal-body .map-panel,
+  .mgc-modal-body .glass-panel,
+  .mgc-modal-body .preview-panel,
+  .mgc-modal-body .tools-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .mgc-modal-body .step1,
+  .mgc-modal-body .step2 {
+    min-height: auto;
+  }
+}

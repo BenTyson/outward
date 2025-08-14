@@ -1,0 +1,307 @@
+/* Customization Panel Styles */
+.customization-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Step Indicator */
+.step-indicator {
+  display: flex;
+  gap: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #EEEEE0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #999999;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.step.active {
+  color: #171717;
+  font-weight: 500;
+}
+
+.step.completed {
+  color: #738263;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #f8f8f8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+  background: #738263;
+  color: white;
+}
+
+.step.completed .step-number {
+  background: #738263;
+  color: white;
+}
+
+.step-label {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Step Content */
+.step-content {
+  min-height: 400px;
+}
+
+/* Location Step */
+.location-step h3 {
+  font-size: 18px;
+  color: #171717;
+  margin: 0 0 16px 0;
+}
+
+.step-help {
+  color: #666666;
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+/* Customize Step */
+.customize-step {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.current-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.location-label {
+  color: #666666;
+}
+
+.location-value {
+  flex: 1;
+  color: #171717;
+  font-weight: 500;
+}
+
+.change-location {
+  background: none;
+  border: none;
+  color: #738263;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.change-location:hover {
+  color: #545f49;
+}
+
+.generate-button {
+  width: 100%;
+  padding: 16px;
+  background: #738263;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.generate-button:hover {
+  background: #545f49;
+}
+
+.generate-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Preview Step */
+.preview-step {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.preview-info h3 {
+  font-size: 20px;
+  color: #171717;
+  margin: 0 0 8px 0;
+}
+
+.preview-info p {
+  color: #666666;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Glass Type Selector */
+.glass-type-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.glass-type-selector label {
+  font-size: 14px;
+  color: #171717;
+  font-weight: 500;
+}
+
+.glass-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.glass-option {
+  padding: 12px;
+  border: 2px solid #EEEEE0;
+  background: white;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #171717;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.glass-option:hover:not(:disabled) {
+  border-color: #738263;
+}
+
+.glass-option.active {
+  border-color: #738263;
+  background: #f8f8f8;
+  font-weight: 500;
+}
+
+.glass-option:disabled {
+  color: #999999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Purchase Section */
+.purchase-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid #EEEEE0;
+}
+
+/* Quantity Selector */
+.quantity-selector {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quantity-selector label {
+  font-size: 14px;
+  color: #171717;
+  font-weight: 500;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #EEEEE0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.qty-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: white;
+  color: #171717;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.qty-btn:hover {
+  background: #f8f8f8;
+}
+
+.qty-input {
+  width: 50px;
+  height: 36px;
+  border: none;
+  border-left: 1px solid #EEEEE0;
+  border-right: 1px solid #EEEEE0;
+  text-align: center;
+  font-size: 14px;
+  color: #171717;
+}
+
+.qty-input:focus {
+  outline: none;
+}
+
+/* Start Over Link */
+.start-over-link {
+  background: none;
+  border: none;
+  color: #666666;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.start-over-link:hover {
+  color: #171717;
+}
+
+/* Override checkout button styles */
+.purchase-section .checkout-button {
+  width: 100%;
+  padding: 16px;
+  background: #738263;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.purchase-section .checkout-button:hover:not(:disabled) {
+  background: #000000;
+}
+
+.purchase-section .checkout-button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
