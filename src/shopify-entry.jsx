@@ -27,6 +27,7 @@ class MapGlassConfiguratorAPI {
    * @param {Object} options - Configuration options
    * @param {string} options.mountPoint - CSS selector for mount point (default: body)
    * @param {Object} options.product - Shopify product data
+   * @param {string} options.glassType - Pre-selected glass type
    * @param {Function} options.onAddToCart - Callback when item added to cart
    * @param {Function} options.onClose - Callback when modal closes
    * @param {Function} options.onComplete - Callback when design is complete
@@ -35,14 +36,16 @@ class MapGlassConfiguratorAPI {
     const {
       mountPoint = 'body',
       product = null,
+      glassType = null,
       onAddToCart = null,
       onClose = null,
       onComplete = null
     } = options;
 
-    // Store callbacks
+    // Store callbacks and data
     this.callbacks = { onAddToCart, onClose, onComplete };
     this.productData = product;
+    this.glassType = glassType;
 
     // Create modal container if it doesn't exist
     let container = document.getElementById('map-glass-configurator-root');
@@ -93,7 +96,7 @@ class MapGlassConfiguratorAPI {
             onClose={() => this.close()}
             onAddToCart={(data) => this.handleAddToCart(data)}
             productData={this.productData}
-            initialGlassType={options.glassType}
+            initialGlassType={options.glassType || this.glassType}
             initialLocation={options.location}
           />
         </MapConfigProvider>
@@ -144,9 +147,9 @@ class MapGlassConfiguratorAPI {
    */
   async handleAddToCart(data) {
     try {
-      // Prepare cart item data
+      // Prepare cart item data for product (no variant)
       const cartItem = {
-        id: this.getVariantId(data.configuration.glassType),
+        id: this.getProductId(data.configuration.glassType),
         quantity: 1,
         properties: {
           'Glass Type': data.configuration.glassType,
@@ -203,20 +206,20 @@ class MapGlassConfiguratorAPI {
   }
 
   /**
-   * Get variant ID for glass type
+   * Get product ID for glass type
    * @param {string} glassType - Glass type
-   * @returns {string} Shopify variant ID
+   * @returns {string} Shopify product ID
    */
-  getVariantId(glassType) {
-    // Production variant IDs from existing Shopify integration
-    const variants = {
-      'rocks': '43120044769368',  // Whiskey glass
-      'pint': '43120044802136',
-      'wine': '43120044834904',
-      'shot': '43120044867672'
+  getProductId(glassType) {
+    // Product IDs for each glass type (no variants)
+    const products = {
+      'rocks': '8448404062296',  // Custom rocks glass product
+      'pint': 'PRODUCT_ID_HERE',    // TODO: Update when pint product created
+      'wine': 'PRODUCT_ID_HERE',    // TODO: Update when wine product created
+      'shot': 'PRODUCT_ID_HERE'     // TODO: Update when shot product created
     };
     
-    return variants[glassType] || variants.rocks;
+    return products[glassType] || products.rocks;
   }
 
   /**

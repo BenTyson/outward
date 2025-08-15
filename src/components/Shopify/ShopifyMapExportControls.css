@@ -1,0 +1,38 @@
+/* Minimal Shopify Map Export Controls */
+
+.shopify-map-export-controls {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: transparent;
+}
+
+.shopify-generate-btn {
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.shopify-generate-btn:hover:not(:disabled) {
+  background: #333333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.shopify-generate-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.shopify-generate-btn:active:not(:disabled) {
+  transform: translateY(0);
+}

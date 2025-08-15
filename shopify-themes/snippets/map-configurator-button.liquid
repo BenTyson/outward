@@ -4,6 +4,15 @@
 {% endcomment %}
 
 {% if settings.enable_map_configurator %}
+  {% assign has_custom_tag = false %}
+  {% for tag in product.tags %}
+    {% if tag contains 'custom-' %}
+      {% assign has_custom_tag = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+  
+  {% if has_custom_tag %}
   <div class="map-configurator-button-wrapper" style="margin: 20px 0;">
     <button 
       type="button"
@@ -11,6 +20,7 @@
       class="btn btn-primary map-configurator-button"
       data-product-id="{{ product.id }}"
       data-product-handle="{{ product.handle }}"
+      data-glass-type="{% if product.tags contains 'custom-rocks' %}rocks{% elsif product.tags contains 'custom-pint' %}pint{% elsif product.tags contains 'custom-wine' %}wine{% elsif product.tags contains 'custom-shot' %}shot{% else %}rocks{% endif %}"
       style="
         width: 100%;
         padding: 14px 20px;
@@ -64,9 +74,10 @@
         ]
       };
 
-      // Initialize and open configurator
+      // Initialize and open configurator with pre-selected glass type
       window.MapGlassConfigurator.init({
         product: productData,
+        glassType: this.dataset.glassType, // Pass the pre-selected glass type
         onAddToCart: function(item) {
           // Handle successful add to cart
           console.log('Item added to cart:', item);
@@ -91,4 +102,5 @@
       }).open();
     });
   </script>
+  {% endif %}
 {% endif %}

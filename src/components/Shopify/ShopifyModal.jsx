@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useMapConfig } from '../../contexts/MapConfigContext';
-import Wizard from '../UI/Wizard';
-import Step1 from '../Steps/Step1';
-import Step2 from '../Steps/Step2';
+import ShopifyStep1 from './ShopifyStep1';
+import ShopifyStep2 from './ShopifyStep2';
 import cloudinaryService from '../../utils/cloudinary';
 import './ShopifyModal.css';
 
@@ -27,6 +26,7 @@ const ShopifyModal = ({
     previewImage,
     setGlassType,
     setLocation,
+    setStep,
     resetConfiguration
   } = useMapConfig();
 
@@ -39,6 +39,7 @@ const ShopifyModal = ({
   useEffect(() => {
     if (initialGlassType) {
       setGlassType(initialGlassType);
+      // Stay on Step 1 but glass type is pre-selected (hidden in ShopifyStep1)
     }
     if (initialLocation) {
       setLocation(initialLocation);
@@ -193,27 +194,11 @@ const ShopifyModal = ({
   const renderStep = () => {
     switch (currentStep) {
       case 1:
-        return <Step1 />;
+        return <ShopifyStep1 />;
       case 2:
-        return (
-          <div className="mgc-step2-wrapper">
-            <Step2 />
-            {/* Add checkout button in modal context */}
-            <div className="mgc-checkout-section">
-              {highResImage && previewImage && (
-                <button 
-                  className="mgc-checkout-button"
-                  onClick={handleCheckout}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? uploadProgress : 'Add to Cart'}
-                </button>
-              )}
-            </div>
-          </div>
-        );
+        return <ShopifyStep2 onCheckout={handleCheckout} />;
       default:
-        return <Step1 />;
+        return <ShopifyStep1 />;
     }
   };
 
@@ -235,7 +220,7 @@ const ShopifyModal = ({
         {/* Modal Header */}
         <div className="mgc-modal-header">
           <h2 className="mgc-modal-title">
-            Design Your Custom Map Glass
+            {currentStep === 1 ? 'Step 1: Create Your Map' : 'Step 2: Design Your Glass'}
           </h2>
           <button 
             className="mgc-modal-close"
@@ -251,9 +236,7 @@ const ShopifyModal = ({
 
         {/* Modal Body */}
         <div className="mgc-modal-body">
-          <Wizard>
-            {renderStep()}
-          </Wizard>
+          {renderStep()}
         </div>
 
         {/* Processing Overlay */}

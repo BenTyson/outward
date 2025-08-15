@@ -1,0 +1,153 @@
+/* Shopify-specific minimal Step1 styles */
+
+.shopify-step1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.shopify-step1-content {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+
+/* Full width map panel - no borders, no padding */
+.shopify-map-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  height: 100%;
+}
+
+.shopify-map-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* Remove all padding to make map truly full-width */
+  padding: 0;
+  margin: 0;
+}
+
+/* Override any inherited styles from original Step1 */
+.shopify-step1 .map-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  flex: 1;
+  height: 100%;
+}
+
+/* Make sure the MapSelector takes full space */
+.shopify-map-container > div {
+  height: 100%;
+  flex: 1;
+}
+
+/* Hide instructions text in Shopify modal */
+.shopify-step1 .map-instructions {
+  display: none !important;
+}
+
+/* Hide any other potential UI elements we don't need */
+.shopify-step1 .map-info {
+  display: none !important;
+}
+
+/* Style search bar with margins, narrower width, and more curved edges */
+.shopify-step1 .mapboxgl-ctrl-geocoder {
+  margin: 20px auto 0 auto !important; /* Add top margin and center horizontally */
+  max-width: 400px !important; /* Make search bar narrower */
+  width: calc(100% - 80px) !important; /* Add side margins */
+}
+
+.shopify-step1 .mapboxgl-ctrl-geocoder--input {
+  padding-left: 40px !important; /* Give more space for the search icon */
+  border-radius: 25px !important; /* More curved edges */
+  border: 2px solid #e1e5e9 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.shopify-step1 .mapboxgl-ctrl-geocoder--input:focus {
+  border-color: #4A90E2 !important;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2) !important;
+  outline: none !important;
+}
+
+.shopify-step1 .mapboxgl-ctrl-geocoder--icon-search {
+  left: 15px !important; /* Position icon properly with more curved design */
+}
+
+/* Map description styling */
+.shopify-map-description {
+  padding: 20px;
+  text-align: center;
+  background: white;
+  border-top: 1px solid #eee;
+}
+
+.shopify-map-description p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+/* Navigation Footer Styling */
+.shopify-wizard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: white;
+  border-top: 1px solid #eee;
+  margin-top: auto;
+}
+
+.shopify-wizard-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  min-width: 80px;
+}
+
+.shopify-wizard-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shopify-wizard-btn-primary {
+  background: #738263;
+  color: white;
+}
+
+.shopify-wizard-btn-primary:hover:not(:disabled) {
+  background: #545f49;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(115, 130, 99, 0.3);
+}
+
+.shopify-wizard-btn-secondary {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.shopify-wizard-btn-secondary:hover:not(:disabled) {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.shopify-step-indicator {
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 400;
+}
