@@ -22,13 +22,87 @@ This document describes a COMPLETE, DEPLOYED, and FUNCTIONAL implementation of g
 **When user requests root app changes**: Modify ONLY root src/ files
 **Never cross-contaminate** unless user explicitly requests synchronization
 
-## CURRENT DEPLOYMENT STATUS: ✅ COMPLETE AND WORKING
+## CURRENT DEPLOYMENT STATUS: ✅ FULLY DEPLOYED AND WORKING
 
 ### Glass-Type-Specific Product System
 - **Rocks Glass Product**: ID `8448404062296` with tag `custom-rocks` ✅ DEPLOYED
 - **Button Detection**: Only shows on products with `custom-*` tags ✅ WORKING
 - **Modal Behavior**: Pre-selects glass type, skips glass selection UI ✅ WORKING
 - **Cart Integration**: Adds correct product ID directly (no variants) ✅ WORKING
+
+### ✅ DEPLOYMENT COMPLETED (August 15, 2025)
+**Resolution**: Shopify CLI OAuth authentication corrupted → Fixed with Custom App access token
+**Deployment Method**: Theme Access password authentication (`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`)
+**Status**: All UI improvements successfully deployed to test theme
+
+### ✅ DEPLOYED UI IMPROVEMENTS (Live on Test Theme)
+**All fixes now live in Shopify modal:**
+1. **Stroke Size Controls**: ✅ DEPLOYED - Added stroke width sliders (0-8px) for text and icons
+2. **Discrete Slider Labels**: ✅ DEPLOYED - Added "Size" and "Stroke" labels above sliders  
+3. **Button Styling**: ✅ DEPLOYED - "Generate Final Design" now white text on black background
+4. **Clean UI**: ✅ DEPLOYED - Removed cream background div and unnecessary descriptive text
+5. **Simplified Controls**: ✅ DEPLOYED - Removed "Preview" and "High Res" buttons from modal
+6. **Background Fix**: ✅ DEPLOYED - Rocks glass uses correct `/glass-images/rocks-white.jpg`
+7. **Component Architecture**: ✅ DEPLOYED - ShopifyStep2 now uses ShopifyMapRenderer (isolated from root app)
+
+**Deployed Files**: 
+- `shopify-themes/assets/map-glass-configurator.js` (2.4MB) ✅ DEPLOYED
+- `shopify-themes/assets/map-glass-configurator.css` (58KB) ✅ DEPLOYED
+
+### 🔧 AUTHENTICATION SOLUTION (For Future Agents)
+**Problem**: Shopify CLI OAuth gets corrupted when attempting wrong store names
+**Solution**: Use Custom App with Theme Access permissions
+
+**Steps to Create Theme Access Token:**
+1. **Shopify Admin** → **Settings** → **Apps and sales channels** → **Develop apps**
+2. **Create new app** (name: "Theme CLI Access" or similar)
+3. **Configuration** → **Admin API access scopes** → Enable `read_themes` and `write_themes`
+4. **API credentials** → **Generate/Reveal Admin API access token**
+5. **Use token with CLI**: `shopify theme push --store=lumengrave.myshopify.com --theme=142600732760 --password=THEME_ACCESS_TOKEN`
+
+**Current Working Token**: `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` (stored in custom app "Theme CLI Access")
+
+### 📋 DEPLOYMENT TESTING COMPLETED
+**Test Theme URLs**:
+- **Preview**: https://lumengrave.myshopify.com?preview_theme_id=142600732760
+- **Editor**: https://lumengrave.myshopify.com/admin/themes/142600732760/editor
+
+**Verified Working**:
+- ✅ Stroke size sliders appear and function
+- ✅ "Generate Final Design" button has white-on-black styling  
+- ✅ No cream background or extra buttons visible
+- ✅ Rocks glass 3D preview shows correct background
+- ✅ All slider labels ("Size", "Stroke") display properly
+- ✅ Modal opens and functions correctly
+- ✅ Files successfully uploaded to theme assets
+
+### 🚀 NEXT AGENT INSTRUCTIONS
+
+**If Making Modal UI Changes:**
+1. **Modify only Shopify components**: `/src/components/Shopify/Shopify*.jsx` files
+2. **Build**: `npm run build:shopify` 
+3. **Copy files**: Built files appear in `dist-shopify/` → Copy to `shopify-themes/assets/`
+4. **Deploy**: `shopify theme push --store=lumengrave.myshopify.com --theme=142600732760 --password=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`
+5. **Test**: https://lumengrave.myshopify.com?preview_theme_id=142600732760
+
+**If Shopify CLI Authentication Fails:**
+- **DO NOT** attempt OAuth flow (it's broken)
+- **Use Theme Access token**: The token `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` works
+- **If token expires**: Create new Custom App following steps in § Authentication Solution above
+
+**Key Files for Modal Changes:**
+- `ShopifyModal.jsx` - Modal wrapper
+- `ShopifyStep1.jsx` + `ShopifyStep1.css` - Location selection
+- `ShopifyStep2.jsx` + `ShopifyStep2.css` - Design interface
+- `ShopifyTextIconControls.jsx` + `.css` - Text/icon controls
+- `ShopifyMapRenderer.jsx` - Map display (uses ShopifyMapExportControls)
+- `ShopifyMapExportControls.jsx` + `.css` - Generate button
+
+**Do NOT Modify These (Root App Protection):**
+- `/src/components/Steps/` - Core workflow
+- `/src/components/MapBuilder/` - Map functionality 
+- `/src/App.jsx` - Main application
+- `/src/contexts/MapConfigContext.jsx` - State management
 
 ## Current Implementation Status
 

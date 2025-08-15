@@ -101,11 +101,11 @@ const ShopifyMapRenderer = () => {
   // Auto-generate map when location changes
   useEffect(() => {
     const generateIfLocationChanged = async () => {
-      if (!location?.coordinates || !location?.zoom) {
+      if (!location?.lng || !location?.lat || !location?.zoom) {
         return;
       }
 
-      const currentLocationKey = `${location.coordinates[0]},${location.coordinates[1]},${location.zoom}`;
+      const currentLocationKey = `${location.lng},${location.lat},${location.zoom}`;
       
       if (lastLocationRef.current === currentLocationKey) {
         return;
@@ -137,7 +137,7 @@ const ShopifyMapRenderer = () => {
 
   // Generate final image with text and icons
   const generateFinalImage = useCallback(async () => {
-    if (!location?.coordinates || !location?.zoom) {
+    if (!location?.lng || !location?.lat || !location?.zoom) {
       setError('Location data is required to generate the image');
       return;
     }
@@ -156,11 +156,11 @@ const ShopifyMapRenderer = () => {
       const { width, height } = calculateDimensions(glassType);
       
       const mapUrl = getMapboxStaticUrl({
-        coordinates: location.coordinates,
+        lng: location.lng,
+        lat: location.lat,
         zoom: location.zoom,
         width,
-        height,
-        style: 'mapbox://styles/mapbox/streets-v11'
+        height
       });
 
       // Create canvas for composition
