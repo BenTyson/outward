@@ -30,10 +30,25 @@ This document describes a COMPLETE, DEPLOYED, and FUNCTIONAL implementation of g
 - **Modal Behavior**: Pre-selects glass type, skips glass selection UI ✅ WORKING
 - **Cart Integration**: Adds correct product ID directly (no variants) ✅ WORKING
 
-### ✅ DEPLOYMENT COMPLETED (August 15, 2025)
-**Resolution**: Shopify CLI OAuth authentication corrupted → Fixed with Custom App access token
-**Deployment Method**: Theme Access password authentication (`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`)
-**Status**: All UI improvements successfully deployed to test theme
+### ✅ LATEST DEPLOYMENT (August 15, 2025) - MODAL V3
+**Current Status**: Modal v3 working but laggy, map Step 2 displays properly
+**Active Theme**: MAP BUILDER (#142629077080) - Clean duplicate of live theme
+**Authentication**: Theme Access token method (OAuth flow is broken - DO NOT USE)
+
+### ✅ RECENT FIXES COMPLETED
+**Map Display Issue Resolution**:
+- **Problem**: Map in Step 2 returned 422 errors from Mapbox API (dimensions too large: 5676x2352px)
+- **Root Cause**: `calculateDimensions()` generated laser-quality resolution exceeding Mapbox's 1280px limit
+- **Solution**: Created `calculateMapboxDimensions()` to request smaller images, scale to high-res canvas
+- **Files Modified**: `src/utils/canvas.js`, `src/components/Shopify/ShopifyMapRenderer.jsx`
+- **Result**: ✅ Map displays properly in Step 2, no more 422 errors
+
+**Theme Setup & Deployment**:
+- **Problem**: Test theme (#142600732760) corrupted, missing templates 
+- **Solution**: User created fresh "MAP BUILDER" theme as live theme duplicate
+- **Integration**: Added configurator button + settings to MAP BUILDER theme
+- **Settings Added**: "Enable Map Glass Configurator" + "Configurator Source" options
+- **Status**: ✅ Button appears on custom-rocks products, modal opens successfully
 
 ### ✅ DEPLOYED UI IMPROVEMENTS (Live on Test Theme)
 **All fixes now live in Shopify modal:**
@@ -49,46 +64,75 @@ This document describes a COMPLETE, DEPLOYED, and FUNCTIONAL implementation of g
 - `shopify-themes/assets/map-glass-configurator.js` (2.4MB) ✅ DEPLOYED
 - `shopify-themes/assets/map-glass-configurator.css` (58KB) ✅ DEPLOYED
 
-### 🔧 AUTHENTICATION SOLUTION (For Future Agents)
-**Problem**: Shopify CLI OAuth gets corrupted when attempting wrong store names
-**Solution**: Use Custom App with Theme Access permissions
+### 🔧 CRITICAL AUTHENTICATION INSTRUCTIONS (For Future Agents)
 
-**Steps to Create Theme Access Token:**
-1. **Shopify Admin** → **Settings** → **Apps and sales channels** → **Develop apps**
-2. **Create new app** (name: "Theme CLI Access" or similar)
-3. **Configuration** → **Admin API access scopes** → Enable `read_themes` and `write_themes`
-4. **API credentials** → **Generate/Reveal Admin API access token**
-5. **Use token with CLI**: `shopify theme push --store=lumengrave.myshopify.com --theme=142600732760 --password=THEME_ACCESS_TOKEN`
+⚠️ **NEVER USE `shopify auth login` OR `shopify theme dev` - THEY ARE BROKEN** ⚠️
 
-**Current Working Token**: `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` (stored in custom app "Theme CLI Access")
+**ONLY WORKING METHOD**: Environment variable + theme access token
 
-### 📋 DEPLOYMENT TESTING COMPLETED
-**Test Theme URLs**:
-- **Preview**: https://lumengrave.myshopify.com?preview_theme_id=142600732760
-- **Editor**: https://lumengrave.myshopify.com/admin/themes/142600732760/editor
+**Deployment Commands That Work:**
+```bash
+# Set environment variable (replace [TOKEN] with actual token)
+export SHOPIFY_CLI_THEME_TOKEN=shpat_[REDACTED]
 
-**Verified Working**:
-- ✅ Stroke size sliders appear and function
-- ✅ "Generate Final Design" button has white-on-black styling  
-- ✅ No cream background or extra buttons visible
-- ✅ Rocks glass 3D preview shows correct background
-- ✅ All slider labels ("Size", "Stroke") display properly
+# Deploy to MAP BUILDER theme
+shopify theme push --theme=142629077080
+
+# Or deploy specific files only
+shopify theme push --theme=142629077080 --only=assets/map-glass-configurator.js
+```
+
+**Current Working Setup:**
+- **Theme**: MAP BUILDER (#142629077080)
+- **Token**: `shpat_[REDACTED]` (stored in Custom App "Theme CLI Access")
+- **Store**: lumengrave.myshopify.com
+
+**If Authentication Fails:**
+1. **DO NOT** run `shopify auth login` (corrupts everything)
+2. **DO NOT** try OAuth flows (they don't work)  
+3. **Create new Custom App**: Shopify Admin → Settings → Apps → Develop apps → Create app
+4. **Enable scopes**: `read_themes` and `write_themes`
+5. **Generate token**: API credentials → Admin API access token
+6. **Use environment variable**: `SHOPIFY_CLI_THEME_TOKEN=your_new_token`
+
+### 📋 CURRENT MAP BUILDER THEME STATUS
+**Active Theme URLs**:
+- **Preview**: https://lumengrave.myshopify.com?preview_theme_id=142629077080
+- **Editor**: https://lumengrave.myshopify.com/admin/themes/142629077080/editor
+
+**Current Status (Modal V3)**:
+- ✅ Map displays properly in Step 2 (Mapbox 422 error fixed)
+- ✅ Button appears on custom-rocks products
 - ✅ Modal opens and functions correctly
-- ✅ Files successfully uploaded to theme assets
+- ✅ Theme settings: "Enable Map Glass Configurator" + "Configurator Source" available
+- ✅ All previous UI improvements working (stroke sliders, clean styling, etc.)
+- ⚠️ **Known Issue**: Modal is laggy (performance optimization needed)
+- ❌ **Missing**: Rock glass background image still needs implementation
 
 ### 🚀 NEXT AGENT INSTRUCTIONS
 
 **If Making Modal UI Changes:**
 1. **Modify only Shopify components**: `/src/components/Shopify/Shopify*.jsx` files
 2. **Build**: `npm run build:shopify` 
-3. **Copy files**: Built files appear in `dist-shopify/` → Copy to `shopify-themes/assets/`
-4. **Deploy**: `shopify theme push --store=lumengrave.myshopify.com --theme=142600732760 --password=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`
-5. **Test**: https://lumengrave.myshopify.com?preview_theme_id=142600732760
+3. **Copy files**: `cp dist-shopify/*.css dist-shopify/*.cjs assets/` (rename .cjs to .js)
+4. **Deploy**: 
+   ```bash
+   export SHOPIFY_CLI_THEME_TOKEN=shpat_[REDACTED]
+   cd shopify-themes
+   shopify theme push --theme=142629077080
+   ```
+5. **Test**: https://lumengrave.myshopify.com?preview_theme_id=142629077080
 
-**If Shopify CLI Authentication Fails:**
-- **DO NOT** attempt OAuth flow (it's broken)
-- **Use Theme Access token**: The token `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` works
-- **If token expires**: Create new Custom App following steps in § Authentication Solution above
+**Priority Items for Next Agent:**
+1. **Performance**: Modal v3 is laggy - optimize React rendering/state updates
+2. **Rock Glass BG**: Implement missing rock glass background image in 3D preview
+3. **Testing**: Verify complete end-to-end workflow works smoothly
+
+**Authentication Reminder:**
+- **NEVER** use `shopify auth login` (breaks everything)
+- **ALWAYS** use `SHOPIFY_CLI_THEME_TOKEN` environment variable
+- **Theme ID**: 142629077080 (MAP BUILDER)
+- **Working token**: Stored in Custom App "Theme CLI Access"
 
 **Key Files for Modal Changes:**
 - `ShopifyModal.jsx` - Modal wrapper
