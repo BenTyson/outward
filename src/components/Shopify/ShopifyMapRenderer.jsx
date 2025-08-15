@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getMapboxStaticUrl, validateMapboxToken } from '../../utils/mapbox';
-import { calculateDimensions } from '../../utils/canvas';
+import { calculateDimensions, calculateMapboxDimensions } from '../../utils/canvas';
 import { useMapConfig } from '../../contexts/MapConfigContext';
 import { flatIcons, renderIcon } from '../../utils/icons';
 import ShopifyMapExportControls from './ShopifyMapExportControls';
@@ -153,25 +153,27 @@ const ShopifyMapRenderer = () => {
         throw new Error('Invalid Mapbox access token. Please check your configuration.');
       }
 
-      const { width, height } = calculateDimensions(glassType);
+      // Use different dimensions for Mapbox request vs final canvas
+      const { width: finalWidth, height: finalHeight } = calculateDimensions(glassType);
+      const { width: mapWidth, height: mapHeight } = calculateMapboxDimensions(glassType);
       
       const mapUrl = getMapboxStaticUrl({
         lng: location.lng,
         lat: location.lat,
         zoom: location.zoom,
-        width,
-        height
+        width: mapWidth,
+        height: mapHeight
       });
 
       // Create canvas for composition
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = finalWidth;
+      canvas.height = finalHeight;
       const ctx = canvas.getContext('2d');
 
       // Set canvas to black background
       ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, finalWidth, finalHeight);
 
       // Load the map image
       const mapImg = new Image();
@@ -183,18 +185,18 @@ const ShopifyMapRenderer = () => {
         mapImg.src = mapUrl;
       });
 
-      // Draw the map
-      ctx.drawImage(mapImg, 0, 0, width, height);
+      // Draw the map (scale the smaller Mapbox image to fit the full canvas)
+      ctx.drawImage(mapImg, 0, 0, finalWidth, finalHeight);
 
       // Render Text 1
       if (text1 && text1.content && text1.content.trim()) {
-        const fontSize = (text1.size / 100) * Math.min(width, height) * 0.15;
+        const fontSize = (text1.size / 100) * Math.min(finalWidth, finalHeight) * 0.15;
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        const x = (text1.position.x / 100) * width;
-        const y = (text1.position.y / 100) * height;
+        const x = (text1.position.x / 100) * finalWidth;
+        const y = (text1.position.y / 100) * finalHeight;
         const strokeWidth = text1.strokeWidth * (fontSize / 100);
         
         // Generate rounded stroke
@@ -215,13 +217,13 @@ const ShopifyMapRenderer = () => {
 
       // Render Text 2
       if (text2 && text2.content && text2.content.trim()) {
-        const fontSize = (text2.size / 100) * Math.min(width, height) * 0.15;
+        const fontSize = (text2.size / 100) * Math.min(finalWidth, finalHeight) * 0.15;
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        const x = (text2.position.x / 100) * width;
-        const y = (text2.position.y / 100) * height;
+        const x = (text2.position.x / 100) * finalWidth;
+        const y = (text2.position.y / 100) * finalHeight;
         const strokeWidth = text2.strokeWidth * (fontSize / 100);
         
         // Generate rounded stroke
@@ -242,9 +244,9 @@ const ShopifyMapRenderer = () => {
 
       // Render Icon
       if (icon1 && icon1.type && flatIcons[icon1.type]) {
-        const iconScale = (icon1.size / 100) * Math.min(width, height) * 0.2;
-        const x = (icon1.position.x / 100) * width;
-        const y = (icon1.position.y / 100) * height;
+        const iconScale = (icon1.size / 100) * Math.min(finalWidth, finalHeight) * 0.2;
+        const x = (icon1.position.x / 100) * finalWidth;
+        const y = (icon1.position.y / 100) * finalHeight;
         const scale = iconScale / 24; // SVG viewBox is 24x24
         const strokeWidth = icon1.strokeWidth;
         

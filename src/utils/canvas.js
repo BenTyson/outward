@@ -16,6 +16,27 @@ export const calculateDimensions = (glassType, targetDPI = 600) => {
   return { width, height, aspectRatio: ratio.width / ratio.height };
 };
 
+// Calculate dimensions suitable for Mapbox Static Images API (max 1280px)
+export const calculateMapboxDimensions = (glassType, maxDimension = 1280) => {
+  const ratio = GLASS_RATIOS[glassType];
+  if (!ratio) throw new Error(`Invalid glass type: ${glassType}`);
+  
+  const aspectRatio = ratio.width / ratio.height;
+  
+  let width, height;
+  if (aspectRatio > 1) {
+    // Width is larger
+    width = Math.min(maxDimension, Math.round(maxDimension));
+    height = Math.round(width / aspectRatio);
+  } else {
+    // Height is larger
+    height = Math.min(maxDimension, Math.round(maxDimension));
+    width = Math.round(height * aspectRatio);
+  }
+  
+  return { width, height, aspectRatio };
+};
+
 export const createHighResCanvas = (glassType) => {
   const { width, height } = calculateDimensions(glassType);
   const canvas = document.createElement('canvas');
