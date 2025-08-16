@@ -2737,6 +2737,13 @@
           }
         ],
         "default": "theme"
+      },
+      {
+        "type": "text",
+        "id": "map_admin_token",
+        "label": "Admin API Token",
+        "info": "Required for file uploads and checkout flow. Get from 'Map Configurator' custom app in Shopify admin.",
+        "placeholder": "shpat_..."
       }
     ]
   }
