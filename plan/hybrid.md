@@ -72,13 +72,13 @@ shopify-themes/snippets/map-configurator-*    ✅ Theme integration
 ### Current Working Configuration
 - **Theme**: MAP BUILDER (#142629077080)
 - **Store**: lumengrave.myshopify.com
-- **Token**: `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`
+- **Token**: Available in your environment variables or team documentation
 - **Scopes**: `read_files`, `write_files`, `read_products`, `write_products`, `read_themes`, `write_themes`
 
 ### Deployment Commands
 ```bash
-# Set environment variable
-export SHOPIFY_CLI_THEME_TOKEN=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
+# Set environment variable (get token from secure storage)
+export SHOPIFY_CLI_THEME_TOKEN=your_shopify_token_here
 
 # Deploy from correct directory
 cd /Users/bentyson/outward/shopify-themes
