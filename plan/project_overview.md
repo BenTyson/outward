@@ -10,7 +10,7 @@ This document provides a complete overview of the production-ready map glass con
 **Current State**: Simplified 2-step workflow with embedded 3D preview
 **Last Updated**: August 2025
 **Integration Status**: Phase 1 + Phase Model + Simplified Flow = COMPLETE
-**Next Phase**: Shopify Integration (Phase 3)
+**Next Phase**: Complete Shopify file upload system (App Proxy backend)
 
 ---
 
@@ -201,7 +201,8 @@ if (glassType === 'rocks') {
 ## Production Deployment Status
 
 ### **✅ Production Ready Features**
-- **Shopify Integration**: Live modal integration on MAP BUILDER theme
+- **Root App**: Complete standalone map configurator at lumengrave.com
+- **Shopify Modal Integration**: Live modal on MAP BUILDER theme (upload blocked)
 - **Environment-Aware Assets**: Automatic CDN switching for production deployment
 - **Mapbox API Compliance**: Dimension-aware requests to prevent 422 errors
 - **High-Quality Exports**: 4800px laser-ready PNG files
@@ -223,9 +224,49 @@ if (glassType === 'rocks') {
 - **Export Quality**: Production-grade 1200 DPI output
 
 ### **⚠️ Known Issues**
+- **Shopify Upload System**: File upload blocked by CORS (requires App Proxy backend)
 - **Modal Performance**: V3.1 is laggy, requires React rendering optimization
 - **Icon Stroke Quality**: Sharp/jagged edges on icon strokes, requires refinement
 - **Text Stroke**: Currently smooth and working well
+
+---
+
+## Shopify Integration Status
+
+### **Current Implementation**
+- **Theme**: MAP BUILDER (#142629077080) - Live Shopify theme
+- **Modal System**: Glass-type-specific modals with clean UI
+- **Product Detection**: Buttons appear only on `custom-*` tagged products
+- **Authentication**: Working Shopify CLI deployment with admin token
+
+### **✅ Working Components**
+- **Modal UI**: Complete 2-step interface (location → design)
+- **3D Preview**: Rock glass rendering with Three.js
+- **Image Generation**: 4-variant capture (preview, highres, model3d, thumbnail)
+- **Product Integration**: Pre-selected glass types, no variant selection needed
+- **Theme Integration**: Button snippets, script loading, settings configuration
+
+### **❌ Blocked Components**
+- **File Upload**: CORS policy blocks direct Shopify Admin API calls
+- **Cart Integration**: Dependent on successful file uploads
+- **Order Processing**: Admin enhancement script ready but unused
+
+### **Architecture Issue**
+```
+Current: Browser → Direct Admin API → CORS Block → Failure
+Required: Browser → App Proxy → Backend → Admin API → Success
+```
+
+### **Solution Path**
+1. **Backend Required**: Shopify App Proxy to handle Admin API calls securely
+2. **Documentation**: Complete solution in `/plan/proxy.md`
+3. **Frontend Updates**: Minimal changes to use proxy endpoints
+4. **Timeline**: ~1 week for complete implementation
+
+### **Reference Files**
+- **Current Status**: `/plan/hybrid.md` - Clean current status and next steps
+- **Backend Solution**: `/plan/proxy.md` - Complete App Proxy implementation guide
+- **Technical Details**: All Shopify components in `/src/components/Shopify/`
 
 ---
 

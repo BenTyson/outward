@@ -9,8 +9,8 @@
   
   <!-- Option 1: Load from theme assets (after uploading built files) -->
   {% if settings.configurator_source == 'theme' %}
-    <link rel="stylesheet" href="{{ 'map-glass-configurator.css' | asset_url }}">
-    <script src="{{ 'map-glass-configurator.js' | asset_url }}" defer></script>
+    <link rel="stylesheet" href="{{ 'map-glass-configurator.css' | asset_url }}?v={{ 'now' | date: '%s' }}">
+    <script src="{{ 'map-glass-configurator-final.js' | asset_url }}?v={{ 'now' | date: '%s' }}" defer></script>
   {% endif %}
   
   <!-- Option 2: Load from external URL (Vercel or CDN) -->
@@ -43,6 +43,9 @@
       cloudinaryCloudName: {{ settings.cloudinary_cloud_name | json }},
       cloudinaryUploadPreset: {{ settings.cloudinary_upload_preset | json }},
       
+      // Phase D: Admin API token for file uploads
+      adminApiToken: {{ settings.map_admin_token | json }},
+      
       // Theme integration
       cartDrawer: {{ settings.configurator_open_cart_drawer | default: false }},
       successMessage: {{ settings.configurator_success_message | default: 'Design added to cart!' | json }},
@@ -50,6 +53,13 @@
       // Analytics
       trackEvents: {{ settings.configurator_track_events | default: true }}
     };
+
+    // Debug: Log configuration setup
+    console.log('[CONFIG-DEBUG] MapGlassConfiguratorConfig set:', {
+      hasConfig: !!window.MapGlassConfiguratorConfig,
+      hasAdminToken: !!(window.MapGlassConfiguratorConfig && window.MapGlassConfiguratorConfig.adminApiToken),
+      configKeys: window.MapGlassConfiguratorConfig ? Object.keys(window.MapGlassConfiguratorConfig) : 'none'
+    });
 
     // Wait for configurator to load
     document.addEventListener('DOMContentLoaded', function() {

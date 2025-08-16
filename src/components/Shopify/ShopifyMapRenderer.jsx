@@ -7,7 +7,23 @@ import ShopifyMapExportControls from './ShopifyMapExportControls';
 import './ShopifyMapRenderer.css';
 
 const ShopifyMapRenderer = () => {
-  const { location, glassType, texts, icons, updateText, updateIcon, setMapImage, setLoading, setError, setModelImage, setModelPreviewAvailable } = useMapConfig();
+  const { 
+    location, 
+    glassType, 
+    texts, 
+    icons, 
+    updateText, 
+    updateIcon, 
+    setMapImage, 
+    setLoading, 
+    setError, 
+    setModelImage, 
+    setModelPreviewAvailable,
+    // Phase D: Checkout flow
+    setDesignComplete,
+    setGeneratedImages,
+    updateGeneratedImage
+  } = useMapConfig();
   const [localImageUrl, setLocalImageUrl] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [hasInitiallyGenerated, setHasInitiallyGenerated] = useState(false);
@@ -53,6 +69,65 @@ const ShopifyMapRenderer = () => {
     
     return shadows.join(', ');
   };
+
+  // Helper function to generate different sized canvases from the main canvas
+  const generateImageVariants = useCallback((mainCanvas) => {
+    const variants = {};
+    
+    // 1. Preview (800px) - scale down from main canvas for better quality
+    const previewCanvas = document.createElement('canvas');
+    const previewSize = 800;
+    const mainAspectRatio = mainCanvas.width / mainCanvas.height;
+    
+    if (mainAspectRatio > 1) {
+      previewCanvas.width = previewSize;
+      previewCanvas.height = previewSize / mainAspectRatio;
+    } else {
+      previewCanvas.height = previewSize;
+      previewCanvas.width = previewSize * mainAspectRatio;
+    }
+    
+    const previewCtx = previewCanvas.getContext('2d');
+    previewCtx.drawImage(mainCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+    variants.preview = previewCanvas.toDataURL('image/jpeg', 0.8);
+    
+    // 2. High-res (4800px) - scale up for laser engraving
+    const highresCanvas = document.createElement('canvas');
+    const highresSize = 4800;
+    
+    if (mainAspectRatio > 1) {
+      highresCanvas.width = highresSize;
+      highresCanvas.height = highresSize / mainAspectRatio;
+    } else {
+      highresCanvas.height = highresSize;
+      highresCanvas.width = highresSize * mainAspectRatio;
+    }
+    
+    const highresCtx = highresCanvas.getContext('2d');
+    // Use better scaling for high-res
+    highresCtx.imageSmoothingEnabled = true;
+    highresCtx.imageSmoothingQuality = 'high';
+    highresCtx.drawImage(mainCanvas, 0, 0, highresCanvas.width, highresCanvas.height);
+    variants.highres = highresCanvas.toDataURL('image/png', 1.0);
+    
+    // 3. Thumbnail (200px) - small version for cart
+    const thumbnailCanvas = document.createElement('canvas');
+    const thumbnailSize = 200;
+    
+    if (mainAspectRatio > 1) {
+      thumbnailCanvas.width = thumbnailSize;
+      thumbnailCanvas.height = thumbnailSize / mainAspectRatio;
+    } else {
+      thumbnailCanvas.height = thumbnailSize;
+      thumbnailCanvas.width = thumbnailSize * mainAspectRatio;
+    }
+    
+    const thumbnailCtx = thumbnailCanvas.getContext('2d');
+    thumbnailCtx.drawImage(mainCanvas, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
+    variants.thumbnail = thumbnailCanvas.toDataURL('image/jpeg', 0.7);
+    
+    return variants;
+  }, []);
 
   // Position calculation helper - converts percentage to pixels
   const getPixelPosition = useCallback((percentagePos, canvasWidth, canvasHeight) => {
@@ -280,6 +355,27 @@ const ShopifyMapRenderer = () => {
       setLocalImageUrl(finalImageUrl);
       setMapImage(finalImageUrl);
 
+      // Phase D: Generate all image variants for checkout flow
+      try {
+        const imageVariants = generateImageVariants(canvas);
+        
+        // Store all variants in context
+        setGeneratedImages(imageVariants);
+        
+        // Mark design as complete
+        setDesignComplete(true);
+        
+        console.log('[FINISH-BUTTON-DEBUG] Design marked as complete! Generated image variants:', {
+          preview: imageVariants.preview.length,
+          highres: imageVariants.highres.length,
+          thumbnail: imageVariants.thumbnail.length
+        });
+        
+      } catch (variantError) {
+        console.error('[FINISH-BUTTON-DEBUG] Failed to generate image variants:', variantError);
+        // Still allow basic functionality to work
+      }
+
       // Enable 3D preview for rocks glass
       if (glassType === 'rocks') {
         setModelImage(finalImageUrl);
@@ -293,7 +389,7 @@ const ShopifyMapRenderer = () => {
       setImageLoading(false);
       setLoading(false);
     }
-  }, [location, texts, icons, glassType, setMapImage, setLoading, setError, setModelImage, setModelPreviewAvailable]);
+  }, [location, texts, icons, glassType, setMapImage, setLoading, setError, setModelImage, setModelPreviewAvailable, generateImageVariants, setGeneratedImages, setDesignComplete]);
 
   // Handle drag events for text and icons...
   const handleDragStart = (e, type) => {

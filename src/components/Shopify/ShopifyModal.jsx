@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useMapConfig } from '../../contexts/MapConfigContext';
 import ShopifyStep1 from './ShopifyStep1';
 import ShopifyStep2 from './ShopifyStep2';
-import cloudinaryService from '../../utils/cloudinary';
+import { createShopifyUploader } from '../../utils/shopifyFiles';
 import './ShopifyModal.css';
 
 const ShopifyModal = ({ 
@@ -27,7 +27,18 @@ const ShopifyModal = ({
     setGlassType,
     setLocation,
     setStep,
-    resetConfiguration
+    resetConfiguration,
+    // Phase D: Checkout flow
+    designComplete,
+    model3dComplete,
+    finishEnabled,
+    generatedImages,
+    uploadingImages,
+    uploadedImageUrls,
+    uploadError,
+    setUploadingImages,
+    setUploadedImageUrls,
+    setUploadError
   } = useMapConfig();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,82 +124,78 @@ const ShopifyModal = ({
     }
   };
 
-  // Handle checkout process
-  const handleCheckout = async () => {
-    if (!highResImage || !previewImage) {
-      alert('Please generate your final design first');
+  // Phase D: Handle finish button (upload images and close modal)
+  const handleFinish = async () => {
+    if (!finishEnabled || uploadingImages) {
+      console.warn('Finish not enabled or upload in progress');
       return;
     }
 
-    setIsProcessing(true);
-    setUploadProgress('Preparing your design...');
+    if (!generatedImages || Object.keys(generatedImages).length === 0) {
+      alert('Please generate your design first');
+      return;
+    }
+
+    setUploadingImages(true);
+    setUploadProgress('Uploading design files...');
+    setUploadError(null);
 
     try {
-      // Capture 3D model preview if available
-      let modelPreview = null;
-      if (glassType === 'rocks') {
-        setUploadProgress('Capturing 3D preview...');
-        // Find and capture the 3D canvas
-        const canvas = document.querySelector('.model-preview-container canvas');
-        if (canvas) {
-          try {
-            modelPreview = canvas.toDataURL('image/png', 0.9);
-          } catch (error) {
-            console.warn('Could not capture 3D preview:', error);
-          }
-        }
-      }
-
-      // Upload images to Cloudinary
-      setUploadProgress('Uploading images...');
-      const uploadedImages = await cloudinaryService.uploadDesignFiles(
-        {
-          glassType,
-          location: location.name || 'Custom Location',
-          timestamp: Date.now()
-        },
-        {
-          highRes: highResImage,
-          preview: previewImage,
-          modelPreview: modelPreview
-        }
+      // Create uploader instance
+      const uploader = await createShopifyUploader();
+      const timestamp = Date.now();
+      
+      setUploadProgress('Uploading to Shopify Files...');
+      
+      // Upload all image variants to Shopify Files API
+      const imageUrls = await uploader.uploadMultipleImages(
+        generatedImages,
+        glassType,
+        timestamp
       );
-
-      // Prepare configuration data
-      const configurationData = {
-        configuration: {
-          glassType,
-          location: location.name || 'Custom Location',
-          coordinates,
-          zoom,
-          text1,
-          text2,
-          icons
-        },
-        images: uploadedImages
-      };
-
-      setUploadProgress('Adding to cart...');
       
-      // Call the parent's add to cart handler
-      await onAddToCart(configurationData);
+      console.log('Upload successful:', imageUrls);
       
-      setUploadProgress('Success! Added to cart.');
+      // Store uploaded URLs
+      setUploadedImageUrls(imageUrls);
+      setUploadProgress('Upload complete!');
       
-      // Reset after successful add
+      // Call parent's finish handler with the uploaded URLs
+      if (onAddToCart) {
+        // Pass URLs to product page integration
+        await onAddToCart(imageUrls);
+      }
+      
+      setUploadProgress('Success! Design ready for cart.');
+      
+      // Close modal after brief delay
       setTimeout(() => {
-        resetConfiguration();
-        setIsProcessing(false);
-        setUploadProgress('');
-      }, 1500);
+        handleClose();
+      }, 1000);
 
     } catch (error) {
-      console.error('Checkout failed:', error);
-      alert('Failed to add to cart. Please try again.');
-      setIsProcessing(false);
-      setUploadProgress('');
+      console.error('Upload failed:', error);
+      setUploadError(error.message);
+      setUploadProgress('Upload failed. Please try again.');
+      
+      // Show retry option
+      setTimeout(() => {
+        if (confirm('Upload failed. Would you like to try again?')) {
+          handleFinish(); // Retry
+        } else {
+          setUploadingImages(false);
+          setUploadProgress('');
+        }
+      }, 2000);
+    } finally {
+      if (!uploadError) {
+        setUploadingImages(false);
+      }
     }
   };
+
+  // Legacy checkout handler for backward compatibility
+  const handleCheckout = handleFinish;
 
   // Render steps
   const renderStep = () => {
@@ -196,7 +203,7 @@ const ShopifyModal = ({
       case 1:
         return <ShopifyStep1 />;
       case 2:
-        return <ShopifyStep2 onCheckout={handleCheckout} />;
+        return <ShopifyStep2 onFinish={handleFinish} />;
       default:
         return <ShopifyStep1 />;
     }
@@ -240,11 +247,18 @@ const ShopifyModal = ({
         </div>
 
         {/* Processing Overlay */}
-        {isProcessing && (
+        {(isProcessing || uploadingImages) && (
           <div className="mgc-processing-overlay">
             <div className="mgc-processing-content">
               <div className="mgc-processing-spinner"></div>
-              <p>{uploadProgress}</p>
+              <p>{uploadProgress || 'Processing...'}</p>
+              {uploadError && (
+                <div className="mgc-upload-error">
+                  <p style={{ color: '#ff6b6b', marginTop: '10px' }}>
+                    Error: {uploadError}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

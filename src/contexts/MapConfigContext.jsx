@@ -19,7 +19,21 @@ const initialState = {
   isLoading: false,
   error: null,
   currentStep: 1,
-  totalSteps: 2 // Always 2 steps: 1=Location, 2=Design+3DPreview
+  totalSteps: 2, // Always 2 steps: 1=Location, 2=Design+3DPreview
+  
+  // Phase D: Checkout Flow State
+  designComplete: false,      // Map + text generation done
+  model3dComplete: false,     // 3D render complete  
+  finishEnabled: false,       // Both above = true
+  generatedImages: {
+    preview: null,            // Canvas data URL (800px)
+    model3d: null,            // 3D canvas capture
+    highres: null,            // High resolution canvas (4800px)
+    thumbnail: null           // Scaled down version (200px)
+  },
+  uploadingImages: false,     // Upload in progress
+  uploadedImageUrls: null,    // Shopify CDN URLs after upload
+  uploadError: null           // Upload error message
 };
 
 const actionTypes = {
@@ -44,7 +58,17 @@ const actionTypes = {
   SET_STEP: 'SET_STEP',
   NEXT_STEP: 'NEXT_STEP',
   PREV_STEP: 'PREV_STEP',
-  RESET: 'RESET'
+  RESET: 'RESET',
+  
+  // Phase D: Checkout Flow Actions
+  SET_DESIGN_COMPLETE: 'SET_DESIGN_COMPLETE',
+  SET_MODEL3D_COMPLETE: 'SET_MODEL3D_COMPLETE', 
+  SET_FINISH_ENABLED: 'SET_FINISH_ENABLED',
+  SET_GENERATED_IMAGES: 'SET_GENERATED_IMAGES',
+  UPDATE_GENERATED_IMAGE: 'UPDATE_GENERATED_IMAGE',
+  SET_UPLOADING_IMAGES: 'SET_UPLOADING_IMAGES',
+  SET_UPLOADED_IMAGE_URLS: 'SET_UPLOADED_IMAGE_URLS',
+  SET_UPLOAD_ERROR: 'SET_UPLOAD_ERROR'
 };
 
 const mapConfigReducer = (state, action) => {
@@ -143,6 +167,37 @@ const mapConfigReducer = (state, action) => {
     case actionTypes.RESET:
       return initialState;
     
+    // Phase D: Checkout Flow Reducers
+    case actionTypes.SET_DESIGN_COMPLETE:
+      return { ...state, designComplete: action.payload };
+    
+    case actionTypes.SET_MODEL3D_COMPLETE:
+      return { ...state, model3dComplete: action.payload };
+    
+    case actionTypes.SET_FINISH_ENABLED:
+      return { ...state, finishEnabled: action.payload };
+    
+    case actionTypes.SET_GENERATED_IMAGES:
+      return { ...state, generatedImages: action.payload };
+    
+    case actionTypes.UPDATE_GENERATED_IMAGE:
+      return { 
+        ...state, 
+        generatedImages: { 
+          ...state.generatedImages, 
+          [action.payload.type]: action.payload.dataUrl 
+        }
+      };
+    
+    case actionTypes.SET_UPLOADING_IMAGES:
+      return { ...state, uploadingImages: action.payload };
+    
+    case actionTypes.SET_UPLOADED_IMAGE_URLS:
+      return { ...state, uploadedImageUrls: action.payload };
+    
+    case actionTypes.SET_UPLOAD_ERROR:
+      return { ...state, uploadError: action.payload };
+    
     default:
       return state;
   }
@@ -238,6 +293,39 @@ export const MapConfigProvider = ({ children }) => {
   const reset = useCallback(() => {
     dispatch({ type: actionTypes.RESET });
   }, []);
+
+  // Phase D: Checkout Flow Actions
+  const setDesignComplete = useCallback((complete) => {
+    dispatch({ type: actionTypes.SET_DESIGN_COMPLETE, payload: complete });
+  }, []);
+
+  const setModel3dComplete = useCallback((complete) => {
+    dispatch({ type: actionTypes.SET_MODEL3D_COMPLETE, payload: complete });
+  }, []);
+
+  const setFinishEnabled = useCallback((enabled) => {
+    dispatch({ type: actionTypes.SET_FINISH_ENABLED, payload: enabled });
+  }, []);
+
+  const setGeneratedImages = useCallback((images) => {
+    dispatch({ type: actionTypes.SET_GENERATED_IMAGES, payload: images });
+  }, []);
+
+  const updateGeneratedImage = useCallback((type, dataUrl) => {
+    dispatch({ type: actionTypes.UPDATE_GENERATED_IMAGE, payload: { type, dataUrl } });
+  }, []);
+
+  const setUploadingImages = useCallback((uploading) => {
+    dispatch({ type: actionTypes.SET_UPLOADING_IMAGES, payload: uploading });
+  }, []);
+
+  const setUploadedImageUrls = useCallback((urls) => {
+    dispatch({ type: actionTypes.SET_UPLOADED_IMAGE_URLS, payload: urls });
+  }, []);
+
+  const setUploadError = useCallback((error) => {
+    dispatch({ type: actionTypes.SET_UPLOAD_ERROR, payload: error });
+  }, []);
   
   const value = {
     ...state,
@@ -263,6 +351,15 @@ export const MapConfigProvider = ({ children }) => {
     nextStep,
     prevStep,
     reset,
+    // Phase D: Checkout Flow Actions
+    setDesignComplete,
+    setModel3dComplete,
+    setFinishEnabled,
+    setGeneratedImages,
+    updateGeneratedImage,
+    setUploadingImages,
+    setUploadedImageUrls,
+    setUploadError,
     // Computed values for convenience
     text1: state.texts[0]?.text || '',
     text2: state.texts[1]?.text || ''

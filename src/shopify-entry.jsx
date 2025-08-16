@@ -20,6 +20,8 @@ class MapGlassConfiguratorAPI {
       onClose: null,
       onComplete: null
     };
+    // Phase D: Store uploaded image URLs for cart integration
+    this.customImageUrls = null;
   }
 
   /**
@@ -94,7 +96,7 @@ class MapGlassConfiguratorAPI {
           <ShopifyModal
             isOpen={true}
             onClose={() => this.close()}
-            onAddToCart={(data) => this.handleAddToCart(data)}
+            onAddToCart={(imageUrls) => this.handleFinishComplete(imageUrls)}
             productData={this.productData}
             initialGlassType={options.glassType || this.glassType}
             initialLocation={options.location}
@@ -142,28 +144,100 @@ class MapGlassConfiguratorAPI {
   }
 
   /**
-   * Handle add to cart action
-   * @param {Object} data - Configuration data and images
+   * Phase D: Handle finish complete (modal uploads images and closes)
+   * @param {Object} imageUrls - Uploaded image URLs from Shopify Files API
    */
-  async handleAddToCart(data) {
+  async handleFinishComplete(imageUrls) {
+    console.log('Design complete with images:', imageUrls);
+    
+    // Store image URLs for cart integration
+    this.customImageUrls = imageUrls;
+    
+    // Replace main product image with 3D model
+    if (imageUrls.model3d) {
+      this.replaceProductImage(imageUrls.model3d);
+    }
+    
+    // Update UI to show customization complete
+    this.showCustomizationComplete();
+    
+    // Call complete callback
+    if (this.callbacks.onComplete) {
+      this.callbacks.onComplete(imageUrls);
+    }
+    
+    // Track completion
+    this.trackEvent('design_completed', { hasImages: Object.keys(imageUrls).length });
+  }
+
+  /**
+   * Replace main product image with custom 3D model
+   * @param {string} model3dUrl - URL of the 3D model image
+   */
+  replaceProductImage(model3dUrl) {
+    // Common product image selectors across themes
+    const selectors = [
+      '.product__media img',
+      '.product-single__photo img', 
+      '.featured-image img',
+      '[data-product-image] img',
+      '.product-media img',
+      '.main-product-image img'
+    ];
+    
+    for (const selector of selectors) {
+      const img = document.querySelector(selector);
+      if (img) {
+        img.src = model3dUrl;
+        img.srcset = ''; // Clear responsive images
+        img.alt = 'Custom Map Glass Design';
+        console.log('Replaced product image with 3D model');
+        break;
+      }
+    }
+  }
+
+  /**
+   * Show customization complete UI
+   */
+  showCustomizationComplete() {
+    // Update configurator button text
+    const button = document.querySelector('[data-map-configurator-button]');
+    if (button) {
+      button.textContent = 'Edit Custom Design';
+      button.classList.add('customized');
+    }
+    
+    // Show success message
+    this.showNotification('Custom design complete! Add to cart when ready.', 'success');
+  }
+
+  /**
+   * Handle add to cart action (called when user clicks add to cart on product page)
+   * @param {string} glassType - Glass type for fallback
+   */
+  async handleAddToCart(glassType) {
+    if (!this.customImageUrls) {
+      this.showNotification('Please customize your design first', 'error');
+      return;
+    }
+
     try {
-      // Prepare cart item data for product (no variant)
+      // Prepare cart item data with custom images
       const cartItem = {
-        id: this.getProductId(data.configuration.glassType),
+        id: this.getProductId(glassType),
         quantity: 1,
         properties: {
-          'Glass Type': data.configuration.glassType,
-          '_3D Model Preview': data.images.modelPreviewUrl || '',
-          '_Map Preview': data.images.previewUrl || '',
-          '_Laser File': data.images.laserFileUrl || '',
-          '_Configuration': JSON.stringify({
-            location: data.configuration.location,
-            coordinates: data.configuration.coordinates,
-            zoom: data.configuration.zoom,
-            text1: data.configuration.text1,
-            text2: data.configuration.text2,
-            icons: data.configuration.icons
-          })
+          // Hidden properties (underscore prefix) for admin
+          '_custom_map_preview': this.customImageUrls.preview || '',
+          '_custom_map_3d': this.customImageUrls.model3d || '',
+          '_custom_map_highres': this.customImageUrls.highres || '',
+          '_custom_map_thumb': this.customImageUrls.thumbnail || '',
+          '_design_timestamp': new Date().toISOString(),
+          '_glass_type': glassType,
+          
+          // Visible property for customer
+          'Custom Design': 'Personalized Map Glass'
         }
       };
 
@@ -191,17 +265,19 @@ class MapGlassConfiguratorAPI {
       }
 
       // Show success message
-      this.showSuccessMessage();
+      this.showNotification('Custom map glass added to cart!', 'success');
+
+      // Optional: Open cart drawer
+      if (window.theme && window.theme.openCartDrawer) {
+        window.theme.openCartDrawer();
+      }
 
       // Track success
       this.trackEvent('added_to_cart', cartItem);
 
-      // Close modal after delay
-      setTimeout(() => this.close(), 2000);
-
     } catch (error) {
       console.error('Failed to add to cart:', error);
-      this.showErrorMessage('Failed to add to cart. Please try again.');
+      this.showNotification('Error adding to cart. Please try again.', 'error');
     }
   }
 
@@ -244,46 +320,44 @@ class MapGlassConfiguratorAPI {
   }
 
   /**
-   * Show success message
+   * Show notification message
+   * @param {string} text - Message text
+   * @param {string} type - Message type ('success', 'error', 'info')
    */
-  showSuccessMessage() {
-    // Create or update success message
-    let message = document.getElementById('mgc-success-message');
-    if (!message) {
-      message = document.createElement('div');
-      message.id = 'mgc-success-message';
-      message.className = 'mgc-success-message';
-      document.body.appendChild(message);
+  showNotification(text, type = 'info') {
+    // Create or update notification
+    let notification = document.getElementById('mgc-notification');
+    if (!notification) {
+      notification = document.createElement('div');
+      notification.id = 'mgc-notification';
+      notification.className = 'mgc-notification';
+      document.body.appendChild(notification);
     }
     
-    message.textContent = 'Design added to cart!';
-    message.classList.add('show');
+    // Reset classes and set new type
+    notification.className = `mgc-notification mgc-notification--${type}`;
+    notification.textContent = text;
+    notification.classList.add('show');
     
+    const duration = type === 'error' ? 5000 : 3000;
     setTimeout(() => {
-      message.classList.remove('show');
-    }, 3000);
+      notification.classList.remove('show');
+    }, duration);
   }
 
   /**
-   * Show error message
+   * Legacy method for backward compatibility
+   */
+  showSuccessMessage() {
+    this.showNotification('Design added to cart!', 'success');
+  }
+
+  /**
+   * Legacy method for backward compatibility
    * @param {string} text - Error message text
    */
   showErrorMessage(text) {
-    // Create or update error message
-    let message = document.getElementById('mgc-error-message');
-    if (!message) {
-      message = document.createElement('div');
-      message.id = 'mgc-error-message';
-      message.className = 'mgc-error-message';
-      document.body.appendChild(message);
-    }
-    
-    message.textContent = text;
-    message.classList.add('show');
-    
-    setTimeout(() => {
-      message.classList.remove('show');
-    }, 5000);
+    this.showNotification(text, 'error');
   }
 
   /**
@@ -301,7 +375,7 @@ class MapGlassConfiguratorAPI {
     }
 
     // Send to Shopify Analytics if available
-    if (typeof Shopify !== 'undefined' && Shopify.analytics) {
+    if (typeof Shopify !== 'undefined' && Shopify.analytics && typeof Shopify.analytics.track === 'function') {
       Shopify.analytics.track(eventName, eventData);
     }
 
