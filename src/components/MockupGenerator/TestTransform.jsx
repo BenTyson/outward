@@ -77,7 +77,12 @@ const TestTransform = () => {
       setGlassImage(glassImg);
     };
     glassImg.onerror = (e) => console.error('Failed to load glass image:', e);
-    glassImg.src = '/glass-images/rocks-white.jpg';
+    // Use Shopify CDN URL when in Shopify environment
+    const isShopify = window.location.hostname.includes('myshopify.com') || 
+                      window.location.hostname.includes('lumengrave.com');
+    glassImg.src = isShopify 
+      ? 'https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046'
+      : '/glass-images/rocks-white.jpg';
   }, []);
   
   // Cylindrical image portion selection for glass wrapping effect

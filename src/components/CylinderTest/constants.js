@@ -42,8 +42,15 @@ export const THREEJS_CONFIG = {
   OPEN_ENDED: true // No top/bottom faces
 };
 
+// Detect if running in Shopify environment
+const isShopify = typeof window !== 'undefined' && 
+  (window.location.hostname.includes('myshopify.com') || 
+   window.location.hostname.includes('lumengrave.com'));
+
 export const ASSET_PATHS = {
-  BACKGROUND_IMAGE: '/glass-images/rocks-white.jpg',
+  BACKGROUND_IMAGE: isShopify 
+    ? 'https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046'
+    : '/glass-images/rocks-white.jpg',
   TEXTURE_IMAGE: '/glass-images/rocks-test-3.png',
   FALLBACK_TEXTURE: '/glass-images/rocks-test-design-optimal.png'
 };

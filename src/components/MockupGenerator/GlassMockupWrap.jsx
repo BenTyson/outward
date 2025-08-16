@@ -10,7 +10,12 @@ const GlassMockupWrap = ({ rotation = 0, frontLayer = {}, backLayer = {}, layerC
   useEffect(() => {
     const img = new Image();
     img.onload = () => setGlassImage(img);
-    img.src = '/glass-images/rocks-white.jpg';
+    // Use Shopify CDN URL when in Shopify environment
+    const isShopify = window.location.hostname.includes('myshopify.com') || 
+                      window.location.hostname.includes('lumengrave.com');
+    img.src = isShopify 
+      ? 'https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046'
+      : '/glass-images/rocks-white.jpg';
   }, []);
 
   // Load map design that wraps 360 degrees

@@ -15,8 +15,15 @@ const ProductGallery = ({ activeStep }) => {
   const [thumbnailIndex, setThumbnailIndex] = useState(0);
 
   // Gallery images for when no customization is active
+  // Use Shopify CDN URL when in Shopify environment
+  const isShopify = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('myshopify.com') || 
+     window.location.hostname.includes('lumengrave.com'));
+  
   const defaultImages = [
-    '/glass-images/rocks-white.jpg',
+    isShopify 
+      ? 'https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046'
+      : '/glass-images/rocks-white.jpg',
     '/glass-images/rocks-test-3.png',
     '/glass-images/rocks-test-2.png'
   ];

@@ -9,7 +9,12 @@ const GlassMockup2D = ({ mapCanvas, glassType = 'rocks', rotation = 0 }) => {
   useEffect(() => {
     const img = new Image();
     img.onload = () => setGlassImage(img);
-    img.src = '/glass-images/rocks-white.jpg';
+    // Use Shopify CDN URL when in Shopify environment
+    const isShopify = window.location.hostname.includes('myshopify.com') || 
+                      window.location.hostname.includes('lumengrave.com');
+    img.src = isShopify 
+      ? 'https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046'
+      : '/glass-images/rocks-white.jpg';
   }, [glassType]);
 
   // Apply cylindrical warp to simulate glass curve

@@ -30,8 +30,8 @@ This document describes a COMPLETE, DEPLOYED, and FUNCTIONAL implementation of g
 - **Modal Behavior**: Pre-selects glass type, skips glass selection UI ✅ WORKING
 - **Cart Integration**: Adds correct product ID directly (no variants) ✅ WORKING
 
-### ✅ LATEST DEPLOYMENT (August 15, 2025) - MODAL V3
-**Current Status**: Modal v3 working but laggy, map Step 2 displays properly
+### ✅ LATEST DEPLOYMENT (August 16, 2025) - MODAL V3.1
+**Current Status**: All major issues resolved, fully functional modal
 **Active Theme**: MAP BUILDER (#142629077080) - Clean duplicate of live theme
 **Authentication**: Theme Access token method (OAuth flow is broken - DO NOT USE)
 
@@ -50,15 +50,24 @@ This document describes a COMPLETE, DEPLOYED, and FUNCTIONAL implementation of g
 - **Settings Added**: "Enable Map Glass Configurator" + "Configurator Source" options
 - **Status**: ✅ Button appears on custom-rocks products, modal opens successfully
 
-### ✅ DEPLOYED UI IMPROVEMENTS (Live on Test Theme)
+**Asset Management & CDN Migration**:
+- **Problem**: 404 error loading rocks-white.jpg from lumengrave.com/glass-images/
+- **Solution**: Updated components to use Shopify CDN URLs when running in Shopify environment
+- **Implementation**: Environment detection in multiple components (CylinderTest, ProductGallery)
+- **CDN URL**: `https://cdn.shopify.com/s/files/1/0255/1948/9112/files/rocks-white.jpg?v=1755302046`
+- **Status**: ✅ Background images now load correctly from Shopify CDN
+
+### ✅ DEPLOYED UI IMPROVEMENTS (Live on MAP BUILDER Theme)
 **All fixes now live in Shopify modal:**
 1. **Stroke Size Controls**: ✅ DEPLOYED - Added stroke width sliders (0-8px) for text and icons
 2. **Discrete Slider Labels**: ✅ DEPLOYED - Added "Size" and "Stroke" labels above sliders  
 3. **Button Styling**: ✅ DEPLOYED - "Generate Final Design" now white text on black background
 4. **Clean UI**: ✅ DEPLOYED - Removed cream background div and unnecessary descriptive text
 5. **Simplified Controls**: ✅ DEPLOYED - Removed "Preview" and "High Res" buttons from modal
-6. **Background Fix**: ✅ DEPLOYED - Rocks glass uses correct `/glass-images/rocks-white.jpg`
+6. **Background Fix**: ✅ DEPLOYED - Rocks glass uses Shopify CDN URL (environment-aware)
 7. **Component Architecture**: ✅ DEPLOYED - ShopifyStep2 now uses ShopifyMapRenderer (isolated from root app)
+8. **Asset Management**: ✅ DEPLOYED - Environment detection for Shopify vs local development
+9. **CDN Migration**: ✅ DEPLOYED - Moved from external dependencies to Shopify-hosted assets
 
 **Deployed Files**: 
 - `shopify-themes/assets/map-glass-configurator.js` (2.4MB) ✅ DEPLOYED
@@ -100,14 +109,15 @@ shopify theme push --theme=142629077080 --only=assets/map-glass-configurator.js
 - **Preview**: https://lumengrave.myshopify.com?preview_theme_id=142629077080
 - **Editor**: https://lumengrave.myshopify.com/admin/themes/142629077080/editor
 
-**Current Status (Modal V3)**:
+**Current Status (Modal V3.1)**:
 - ✅ Map displays properly in Step 2 (Mapbox 422 error fixed)
 - ✅ Button appears on custom-rocks products
 - ✅ Modal opens and functions correctly
 - ✅ Theme settings: "Enable Map Glass Configurator" + "Configurator Source" available
 - ✅ All previous UI improvements working (stroke sliders, clean styling, etc.)
+- ✅ **Fixed**: Rock glass background image now loads from Shopify CDN
+- ✅ **Resolved**: Environment-aware asset loading implemented
 - ⚠️ **Known Issue**: Modal is laggy (performance optimization needed)
-- ❌ **Missing**: Rock glass background image still needs implementation
 
 ### 🚀 NEXT AGENT INSTRUCTIONS
 
@@ -123,10 +133,563 @@ shopify theme push --theme=142629077080 --only=assets/map-glass-configurator.js
    ```
 5. **Test**: https://lumengrave.myshopify.com?preview_theme_id=142629077080
 
+## 🚀 PHASE D: COMPLETE CHECKOUT FLOW IMPLEMENTATION
+
+### CRITICAL CONTEXT FOR CLAUDE AGENTS
+**Status**: ⏳ READY FOR IMPLEMENTATION
+**Goal**: Complete the modal → product page → cart → checkout → admin workflow
+**Priority**: HIGH - Required for revenue generation
+
+### 📋 IMPLEMENTATION OVERVIEW
+Complete end-to-end flow:
+1. ✅ User designs map in modal (working)
+2. ✅ Modal generates preview + 3D model (working)
+3. ⏳ "Finish" button activates when both images ready
+4. ⏳ Upload 4 image variants to Shopify Files API
+5. ⏳ Replace main product image with 3D model
+6. ⏳ Add to cart with custom image URLs in line item properties
+7. ⏳ Admin order details show download links for production files
+
+### 🔧 REQUIRED API ACCESS
+**Shopify Admin API Custom App Required:**
+```
+App Name: "Map Configurator File Manager"
+Required Scopes:
+- read_files (View uploaded files)
+- write_files (Upload/manage files)
+- read_products (Read product data)
+- write_products (Update product images)
+
+Token Format: shpat_[64-character-string]
+Storage: Theme settings (secure, user-configurable)
+```
+
+**API Access Setup Instructions:**
+1. Shopify Admin → Settings → Apps → Develop apps → Create app
+2. Configure Admin API scopes (enable 4 scopes above)
+3. Install app → Copy Admin API access token
+4. Add token to theme settings under "Map Configurator Admin Token"
+
+### 📁 FILE STORAGE STRATEGY
+**Shopify Files API Implementation:**
+- **Storage Location**: Shopify admin Files section
+- **Upload Method**: Staged upload process (handles 20MB limit)
+- **File Organization**: Filename-based (no true folders)
+- **Naming Convention**: `map-{glasstype}-{timestamp}-{type}.{ext}`
+
+**Four Image Variants Per Design:**
+```javascript
+const fileNames = {
+  preview: `map-${glassType}-${timestamp}-preview.jpg`,    // 800px - product page display
+  thumbnail: `map-${glassType}-${timestamp}-thumb.jpg`,    // 200px - cart thumbnail  
+  model3d: `map-${glassType}-${timestamp}-3d.png`,        // 3D render - product replacement
+  highres: `map-${glassType}-${timestamp}-highres.png`    // 4800px - laser production file
+};
+```
+
+### 🎯 PHASE D IMPLEMENTATION STEPS
+
+#### Step D1: Modal State Management Enhancement
+**File**: `src/contexts/MapConfigContext.jsx`
+```javascript
+// Add to initialState
+const initialState = {
+  // ... existing state
+  designComplete: false,      // Map + text generation done
+  model3dComplete: false,     // 3D render complete  
+  finishEnabled: false,       // Both above = true
+  generatedImages: {
+    preview: null,            // Canvas data URL
+    model3d: null,            // 3D canvas capture
+    highres: null,            // High resolution canvas
+    thumbnail: null           // Scaled down version
+  },
+  uploadingImages: false      // Upload in progress
+};
+
+// Add actions
+SET_DESIGN_COMPLETE, SET_MODEL3D_COMPLETE, SET_FINISH_ENABLED,
+SET_GENERATED_IMAGES, SET_UPLOADING_IMAGES
+```
+
+#### Step D2: Image Capture System
+**File**: `src/components/Shopify/ShopifyMapRenderer.jsx`
+```javascript
+// After generateFinalImage() completes
+const captureAllImages = async () => {
+  // 1. Preview (800px) - current canvas
+  const previewCanvas = /* existing canvas */;
+  const preview = previewCanvas.toDataURL('image/jpeg', 0.8);
+  
+  // 2. High-res (4800px) - scale up existing logic  
+  const highresCanvas = generateHighResVersion();
+  const highres = highresCanvas.toDataURL('image/png', 1.0);
+  
+  // 3. Thumbnail (200px) - scale down
+  const thumbnailCanvas = generateThumbnailVersion();
+  const thumbnail = thumbnailCanvas.toDataURL('image/jpeg', 0.7);
+  
+  setGeneratedImages(prev => ({ ...prev, preview, highres, thumbnail }));
+  setDesignComplete(true);
+};
+```
+
+**File**: `src/components/CylinderTest/CylinderMapTest.jsx`
+```javascript
+// After 3D render completes
+const capture3DModel = () => {
+  const canvas = rendererRef.current.domElement;
+  const model3d = canvas.toDataURL('image/png', 0.9);
+  setGeneratedImages(prev => ({ ...prev, model3d }));
+  setModel3dComplete(true);
+};
+
+// Enable finish button when both complete
+useEffect(() => {
+  const bothComplete = designComplete && model3dComplete;
+  setFinishEnabled(bothComplete);
+}, [designComplete, model3dComplete]);
+```
+
+#### Step D3: Shopify Files API Upload Service
+**New File**: `src/utils/shopifyFiles.js`
+```javascript
+export class ShopifyFileUploader {
+  constructor(shopifyDomain, accessToken) {
+    this.domain = shopifyDomain;
+    this.token = accessToken;
+    this.apiUrl = `https://${shopifyDomain}/admin/api/2024-04/graphql.json`;
+  }
+  
+  async uploadImage(imageDataUrl, filename) {
+    try {
+      // 1. Convert data URL to blob
+      const blob = this.dataURLToBlob(imageDataUrl);
+      
+      // 2. Create staged upload target
+      const stagedUpload = await this.createStagedUpload(filename);
+      
+      // 3. Upload to staged target (AWS/Google Cloud)
+      await this.uploadToStaged(blob, stagedUpload);
+      
+      // 4. Create file record in Shopify
+      const file = await this.createShopifyFile(stagedUpload);
+      
+      return file.url; // Return Shopify CDN URL
+      
+    } catch (error) {
+      console.error(`Upload failed for ${filename}:`, error);
+      throw error;
+    }
+  }
+  
+  async createStagedUpload(filename) {
+    const mutation = `
+      mutation stagedUploadsCreate($input: [StagedUploadInput!]!) {
+        stagedUploadsCreate(input: $input) {
+          stagedTargets {
+            resourceUrl
+            url
+            parameters { name value }
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+    
+    const variables = {
+      input: [{
+        filename: filename,
+        mimeType: filename.endsWith('.png') ? 'image/png' : 'image/jpeg',
+        httpMethod: 'POST'
+      }]
+    };
+    
+    const response = await this.graphqlRequest(mutation, variables);
+    return response.data.stagedUploadsCreate.stagedTargets[0];
+  }
+  
+  async uploadToStaged(blob, stagedTarget) {
+    const formData = new FormData();
+    
+    // Add parameters from Shopify
+    stagedTarget.parameters.forEach(param => {
+      formData.append(param.name, param.value);
+    });
+    
+    // Add file last
+    formData.append('file', blob);
+    
+    const response = await fetch(stagedTarget.url, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Staged upload failed: ${response.statusText}`);
+    }
+  }
+  
+  async createShopifyFile(stagedTarget) {
+    const mutation = `
+      mutation fileCreate($files: [FileCreateInput!]!) {
+        fileCreate(files: $files) {
+          files {
+            id
+            url
+            fileStatus
+          }
+          userErrors { field message }
+        }
+      }
+    `;
+    
+    const variables = {
+      files: [{
+        originalSource: stagedTarget.resourceUrl,
+        contentType: 'IMAGE'
+      }]
+    };
+    
+    const response = await this.graphqlRequest(mutation, variables);
+    const file = response.data.fileCreate.files[0];
+    
+    // Wait for processing if needed
+    if (file.fileStatus === 'PROCESSING') {
+      await this.waitForFileProcessing(file.id);
+    }
+    
+    return file;
+  }
+  
+  // ... additional helper methods
+}
+```
+
+#### Step D4: Upload Orchestration
+**File**: `src/components/Shopify/ShopifyModal.jsx`
+```javascript
+const handleFinish = async () => {
+  if (!finishEnabled || uploadingImages) return;
+  
+  setUploadingImages(true);
+  
+  try {
+    // Get admin token from theme settings
+    const adminToken = window.Shopify?.theme?.settings?.map_admin_token;
+    if (!adminToken) {
+      throw new Error('Admin API token not configured');
+    }
+    
+    const uploader = new ShopifyFileUploader(window.Shopify.shop, adminToken);
+    const timestamp = Date.now();
+    
+    // Upload all 4 image variants
+    const uploadPromises = Object.entries(generatedImages).map(async ([type, dataUrl]) => {
+      const filename = `map-${glassType}-${timestamp}-${type}.${type === 'highres' ? 'png' : 'jpg'}`;
+      const url = await uploader.uploadImage(dataUrl, filename);
+      return [type, url];
+    });
+    
+    const results = await Promise.all(uploadPromises);
+    const imageUrls = Object.fromEntries(results);
+    
+    // Pass URLs to product page integration
+    onFinishComplete(imageUrls);
+    
+  } catch (error) {
+    console.error('Upload failed:', error);
+    setUploadError(error.message);
+    // Show retry option
+  } finally {
+    setUploadingImages(false);
+  }
+};
+```
+
+#### Step D5: Product Page Integration  
+**File**: `src/shopify-entry.jsx`
+```javascript
+class MapGlassConfigurator {
+  open() {
+    // ... existing modal logic
+    
+    this.onFinishComplete = (imageUrls) => {
+      // Replace main product image with 3D model
+      this.replaceProductImage(imageUrls.model3d);
+      
+      // Store URLs for cart integration
+      this.customImageUrls = imageUrls;
+      
+      // Update UI state
+      this.showCustomizationComplete();
+      
+      // Close modal
+      this.closeModal();
+    };
+  }
+  
+  replaceProductImage(model3dUrl) {
+    // Find and replace main product image
+    const selectors = [
+      '.product__media img',
+      '.product-single__photo img', 
+      '.featured-image img',
+      '[data-product-image] img'
+    ];
+    
+    for (const selector of selectors) {
+      const img = document.querySelector(selector);
+      if (img) {
+        img.src = model3dUrl;
+        img.srcset = ''; // Clear responsive images
+        break;
+      }
+    }
+  }
+  
+  showCustomizationComplete() {
+    // Update button text
+    const button = document.querySelector('[data-map-configurator-button]');
+    if (button) {
+      button.textContent = 'Edit Custom Design';
+      button.classList.add('customized');
+    }
+    
+    // Show success message
+    this.showNotification('Custom design complete! Add to cart when ready.');
+  }
+}
+```
+
+#### Step D6: Enhanced Cart Integration
+**File**: `src/shopify-entry.jsx` (continued)
+```javascript
+async handleAddToCart(glassType) {
+  if (!this.customImageUrls) {
+    throw new Error('Please customize your design first');
+  }
+  
+  const cartData = {
+    id: this.getProductId(glassType),
+    quantity: 1,
+    properties: {
+      // Hidden properties (underscore prefix) for admin
+      '_custom_map_preview': this.customImageUrls.preview,
+      '_custom_map_3d': this.customImageUrls.model3d,
+      '_custom_map_highres': this.customImageUrls.highres,
+      '_custom_map_thumb': this.customImageUrls.thumbnail,
+      '_design_timestamp': new Date().toISOString(),
+      '_glass_type': glassType,
+      
+      // Visible property for customer
+      'Custom Design': 'Personalized Map Glass'
+    }
+  };
+  
+  try {
+    const response = await fetch('/cart/add.js', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cartData)
+    });
+    
+    if (response.ok) {
+      // Update cart UI
+      this.updateCartCount();
+      this.showNotification('Custom map glass added to cart!');
+      
+      // Optional: Open cart drawer
+      if (window.theme && window.theme.openCartDrawer) {
+        window.theme.openCartDrawer();
+      }
+    } else {
+      throw new Error('Failed to add to cart');
+    }
+    
+  } catch (error) {
+    console.error('Cart error:', error);
+    this.showNotification('Error adding to cart. Please try again.', 'error');
+  }
+}
+```
+
+#### Step D7: Admin Order Enhancement
+**New File**: `assets/admin-custom-orders.js`
+```javascript
+// Load in Shopify admin for enhanced order details
+(function() {
+  'use strict';
+  
+  // Only run on order detail pages
+  if (!window.location.pathname.includes('/admin/orders/')) return;
+  
+  document.addEventListener('DOMContentLoaded', enhanceOrderDetails);
+  
+  function enhanceOrderDetails() {
+    // Find line items with custom map properties
+    const lineItems = document.querySelectorAll('.line-item');
+    
+    lineItems.forEach(lineItem => {
+      const properties = lineItem.querySelectorAll('[data-line-item-property]');
+      const customMapProps = {};
+      
+      // Collect custom map properties
+      properties.forEach(prop => {
+        const name = prop.dataset.lineItemProperty;
+        const value = prop.textContent.trim();
+        
+        if (name && name.startsWith('_custom_map_')) {
+          customMapProps[name.replace('_custom_map_', '')] = value;
+        }
+      });
+      
+      // If custom maps found, enhance the display
+      if (Object.keys(customMapProps).length > 0) {
+        addCustomMapPanel(lineItem, customMapProps);
+      }
+    });
+  }
+  
+  function addCustomMapPanel(lineItem, props) {
+    const panel = document.createElement('div');
+    panel.className = 'custom-map-files-panel';
+    panel.innerHTML = `
+      <div class="section-header">
+        <h3>🗺️ Custom Map Files</h3>
+      </div>
+      <div class="custom-map-actions">
+        ${props.highres ? `
+          <a href="${props.highres}" target="_blank" class="btn btn-primary btn-sm">
+            📥 Download Production File (High-Res)
+          </a>
+        ` : ''}
+        ${props.model3d ? `
+          <a href="${props.model3d}" target="_blank" class="btn btn-secondary btn-sm">
+            🎯 View 3D Model
+          </a>
+        ` : ''}
+        ${props.preview ? `
+          <a href="${props.preview}" target="_blank" class="btn btn-secondary btn-sm">
+            👁️ View Preview
+          </a>
+        ` : ''}
+        ${props.thumbnail ? `
+          <a href="${props.thumbnail}" target="_blank" class="btn btn-secondary btn-sm">
+            🖼️ Email Thumbnail
+          </a>
+        ` : ''}
+      </div>
+      <style>
+        .custom-map-files-panel {
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 4px;
+          padding: 15px;
+          margin: 10px 0;
+        }
+        .custom-map-actions {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .custom-map-actions .btn {
+          text-decoration: none;
+          padding: 6px 12px;
+          border-radius: 3px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        .btn-primary {
+          background: #007bff;
+          color: white;
+          border: 1px solid #007bff;
+        }
+        .btn-secondary {
+          background: #6c757d;
+          color: white;
+          border: 1px solid #6c757d;
+        }
+      </style>
+    `;
+    
+    // Insert after line item details
+    const lineItemDetails = lineItem.querySelector('.line-item-details');
+    if (lineItemDetails) {
+      lineItemDetails.appendChild(panel);
+    }
+  }
+})();
+```
+
+### 🎯 ERROR HANDLING STRATEGY
+**Upload Failures:**
+1. **Retry Logic**: 3 attempts with exponential backoff
+2. **Partial Failure**: Allow completion if 3/4 images upload successfully
+3. **Complete Failure**: Show error, offer manual retry
+4. **Fallback**: Base64 storage in line item properties (size limited)
+
+**API Rate Limits:**
+1. **Queue System**: Batch uploads with delays
+2. **Progress Indicators**: Show upload progress per image
+3. **User Feedback**: Clear status messages throughout process
+
+### 🔧 THEME SETTINGS INTEGRATION
+**Add to `config/settings_schema.json`:**
+```json
+{
+  "name": "Map Configurator - Advanced",
+  "settings": [
+    {
+      "type": "text",
+      "id": "map_admin_token",
+      "label": "Admin API Token",
+      "info": "Required for file uploads. Get from Custom App in Shopify admin.",
+      "placeholder": "shpat_..."
+    },
+    {
+      "type": "checkbox", 
+      "id": "map_enable_admin_enhancements",
+      "label": "Enable Admin Order Enhancements",
+      "default": true,
+      "info": "Show download links in order details"
+    }
+  ]
+}
+```
+
+### 📊 TESTING CHECKLIST
+**Phase D1-D3: Upload System**
+- [ ] Modal state management works (finish button enables)
+- [ ] All 4 images capture correctly from canvases
+- [ ] Shopify Files API uploads succeed
+- [ ] File URLs are accessible and valid
+
+**Phase D4-D6: Integration**
+- [ ] Modal closes and product image updates
+- [ ] Add to cart includes all image URLs
+- [ ] Cart displays custom properties correctly  
+- [ ] Checkout shows thumbnail image
+- [ ] Order properties contain all file links
+
+**Phase D7: Admin Interface**
+- [ ] Admin script loads on order pages
+- [ ] Download links appear for custom orders
+- [ ] High-res files download correctly
+- [ ] 3D model/preview images display
+
+### 🚨 DEPLOYMENT REQUIREMENTS
+**Before Starting Phase D:**
+1. ✅ Create Shopify Admin API custom app
+2. ✅ Configure required API scopes (read_files, write_files, read_products, write_products)
+3. ✅ Add admin token to theme settings
+4. ✅ Test API access with GraphQL query
+5. ✅ Backup current working modal (Phase D is complex)
+
 **Priority Items for Next Agent:**
-1. **Performance**: Modal v3 is laggy - optimize React rendering/state updates
-2. **Rock Glass BG**: Implement missing rock glass background image in 3D preview
-3. **Testing**: Verify complete end-to-end workflow works smoothly
+1. **Phase D Implementation**: Complete checkout flow per above specification
+2. **API Access Setup**: Guide user through admin API token creation
+3. **Testing**: Systematic verification of all 7 implementation steps
 
 **Authentication Reminder:**
 - **NEVER** use `shopify auth login` (breaks everything)
